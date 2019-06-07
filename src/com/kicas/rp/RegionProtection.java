@@ -1,6 +1,7 @@
 package com.kicas.rp;
 
 import com.kicas.rp.command.CommandHandler;
+import com.kicas.rp.data.DataManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -8,11 +9,13 @@ import java.util.Objects;
 
 public class RegionProtection extends JavaPlugin {
     private final CommandHandler commandHandler;
+    private final DataManager dataManager;
 
     private static RegionProtection instance;
 
     public RegionProtection() {
         this.commandHandler = new CommandHandler();
+        this.dataManager = new DataManager(getDataFolder());
         instance = this;
     }
 
@@ -24,6 +27,10 @@ public class RegionProtection extends JavaPlugin {
 
     public static RegionProtection getInstance() {
         return instance;
+    }
+
+    public static DataManager getDataManager() {
+        return instance.dataManager;
     }
 
     public static void log(Object x) {

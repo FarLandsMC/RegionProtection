@@ -11,12 +11,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Region implements Serializable {
+    protected final int id;
     protected ExtendedUuid owner;
     protected final Map<RegionFlag, Serializable> flags;
 
-    protected Region(ExtendedUuid owner) {
+    protected Region(int id, ExtendedUuid owner) {
+        this.id = id;
         this.owner = owner;
         this.flags = new HashMap<>();
+    }
+
+    public int getId() {
+        return id;
     }
 
     public ExtendedUuid getOwner() {
