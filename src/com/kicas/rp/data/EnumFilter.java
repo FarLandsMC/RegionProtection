@@ -9,30 +9,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EnumFilter implements Serializable {
-    private List<Integer> whitelist;
-    private List<Integer> blacklist;
+    private final List<Integer> filter;
+    private boolean isWhitelist;
     
-    public EnumFilter(List<Integer> whitelist, List<Integer> blacklist) {
-        this.whitelist = whitelist;
-        this.blacklist = blacklist;
+    public EnumFilter(List<Integer> filter, boolean isWhitelist) {
+        this.filter = filter;
+        this.isWhitelist = isWhitelist;
     }
+
     public EnumFilter() {
-        this(new ArrayList<>(), new ArrayList<>());
+        this(new ArrayList<>(), false);
     }
     
     public boolean isAllowed(Enum e) {
-        return whitelist.contains(e.ordinal());
+        return isWhitelist == filter.contains(e.ordinal());
     }
     
     @Override
     public void serialize(Encoder encoder) throws IOException {
-        encoder.writeArray(whitelist);
-        encoder.writeArray(blacklist);
+        encoder.writeArray(filter);
     }
     
     @Override
     public void deserialize(Decoder decoder) throws IOException {
-        whitelist = decoder.readArrayAsList(Integer.class);
-        blacklist = decoder.readArrayAsList(Integer.class);
+        filter.addAll(decoder.readArrayAsList(Integer.class));
     }
 }
