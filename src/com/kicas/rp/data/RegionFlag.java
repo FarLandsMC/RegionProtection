@@ -6,7 +6,8 @@ public enum RegionFlag {
     ACCESS_TRUST(false, ExtendedUuidList.class),
     CONTAINER_TRUST(false, ExtendedUuidList.class),
     BUILD_TRUST(false, ExtendedUuidList.class),
-    MANAGEMENT_TRUST(false, ExtendedUuidList.class);
+    MANAGEMENT_TRUST(false, ExtendedUuidList.class),
+    DENY_SPAWN(EnumFilter.class);
 
     public static final RegionFlag[] VALUES = values();
 
