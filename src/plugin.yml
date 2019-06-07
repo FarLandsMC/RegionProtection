@@ -1,0 +1,6 @@
+api-version: 1.14
+main: com.kicas.rp.RegionProtection
+name: RegionProtection
+description: To be determined
+author: [xCassyx, Kishiko73]
+version: 1
