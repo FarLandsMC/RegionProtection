@@ -11,10 +11,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Region implements Serializable {
+    protected ExtendedUuid owner;
     protected final Map<RegionFlag, Serializable> flags;
 
-    protected Region() {
+    protected Region(ExtendedUuid owner) {
+        this.owner = owner;
         this.flags = new HashMap<>();
+    }
+
+    public ExtendedUuid getOwner() {
+        return owner;
+    }
+
+    public void setOwner(ExtendedUuid owner) {
+        this.owner = owner;
     }
 
     public abstract boolean contains(Location loc);
@@ -30,6 +40,7 @@ public abstract class Region implements Serializable {
 
     @Override
     public void serialize(Encoder encoder) throws IOException {
+        owner.serialize(encoder);
         encoder.writeInt(flags.size());
         for(Map.Entry<RegionFlag, Serializable> entry : flags.entrySet()) {
             encoder.write(entry.getKey().ordinal());
@@ -40,6 +51,8 @@ public abstract class Region implements Serializable {
 
     @Override
     public void deserialize(Decoder decoder) throws IOException {
+        owner = new ExtendedUuid();
+        owner.deserialize(decoder);
         int len = decoder.readInt();
         while(len > 0) {
             RegionFlag flag = RegionFlag.VALUES[decoder.read()];

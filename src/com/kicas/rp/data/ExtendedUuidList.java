@@ -25,7 +25,7 @@ public class ExtendedUuidList extends HashSet<UUID> implements Serializable {
             return false;
         if(contains(ExtendedUuid.PUBLIC))
             return true;
-        else if(contains(ExtendedUuid.ADMIN_ONLY))
+        else if(contains(ExtendedUuid.ADMIN))
             return player.isOp();
         else
             return contains(player.getUniqueId());

@@ -12,7 +12,7 @@ public class ExtendedUuid implements Serializable {
     private UUID uuid;
 
     public static final UUID PUBLIC = new UUID(0, 0);
-    public static final UUID ADMIN_ONLY = new UUID(0, 1);
+    public static final UUID ADMIN = new UUID(0, 1);
 
     public ExtendedUuid(UUID uuid) {
         this.uuid = uuid;
@@ -22,10 +22,14 @@ public class ExtendedUuid implements Serializable {
         this(player.getUniqueId());
     }
 
+    public ExtendedUuid() {
+        this((UUID)null);
+    }
+
     public boolean matches(Player player) {
         if(PUBLIC.equals(uuid))
             return true;
-        else if(ADMIN_ONLY.equals(uuid))
+        else if(ADMIN.equals(uuid))
             return player.isOp();
         else
             return uuid.equals(player.getUniqueId());
