@@ -6,38 +6,45 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-public class Region implements Serializable {
-    private int id;
+public class Region extends FlagContainer implements Serializable {
+    private String name;
     private int priority;
     private ExtendedUuid owner;
     private World world;
     private Location min, max;
-    private final Map<RegionFlag, Serializable> flags;
 
-    public Region(int id, int priority, ExtendedUuid owner, Location min, Location max) {
-        this.id = id;
+    public Region(String name, int priority, ExtendedUuid owner, Location min, Location max) {
+        this.name = name;
         this.priority = priority;
         this.owner = owner;
         this.world = min.getWorld();
         this.min = min;
         this.max = max;
-        this.flags = new HashMap<>();
     }
 
     public Region() {
-        this(0, 0, null, null, null);
+        this(null, 0, null, null, null);
     }
 
-    public int getId() {
-        return id;
+    public String getName() {
+        return name;
+    }
+
+    public int getPriority() {
+        return priority;
     }
 
     public boolean contains(Location loc) {
         return loc.getX() > min.getX() && loc.getY() > min.getY() && loc.getZ() > min.getZ() &&
                 loc.getX() < max.getX() && loc.getY() < max.getY() && loc.getZ() < max.getZ();
+    }
+
+    public boolean intersects(Region other) {
+        return max.getBlockX() > other.getMin().getBlockX() && min.getBlockX() < other.max.getBlockX() &&
+                max.getBlockY() > other.getMin().getBlockY() && min.getBlockY() < other.max.getBlockY() &&
+                max.getBlockZ() > other.getMin().getBlockZ() && min.getBlockZ() < other.max.getBlockZ();
     }
 
     public Location getMin() {
@@ -63,26 +70,12 @@ public class Region implements Serializable {
             max.setZ(newVertex.getZ());
     }
 
-    public boolean isFlagSet(RegionFlag flag) {
-        return flags.containsKey(flag);
-    }
-
-    public void setFlag(RegionFlag flag) {
-        flags.put(flag, null);
-    }
-
-    public void setFlag(RegionFlag flag, Serializable meta) {
-        flags.put(flag, meta);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T extends Serializable> T getFlagMeta(RegionFlag flag) {
-        return (T)flags.get(flag);
-    }
-
     @Override
     public void serialize(Encoder encoder) throws IOException {
-        encoder.writeInt(id);
+        if(name == null)
+            encoder.writeInt(0);
+        else
+            encoder.writeUTF8Raw(name);
         encoder.write(priority);
         owner.serialize(encoder);
         encoder.writeUuid(world.getUID());
@@ -95,14 +88,13 @@ public class Region implements Serializable {
         encoder.writeInt(flags.size());
         for(Map.Entry<RegionFlag, Serializable> entry : flags.entrySet()) {
             encoder.write(entry.getKey().ordinal());
-            if(entry.getKey().hasMeta())
-                entry.getValue().serialize(encoder);
+            entry.getValue().serialize(encoder);
         }
     }
 
     @Override
     public void deserialize(Decoder decoder) throws IOException {
-        id = decoder.readInt();
+        name = decoder.readUTF8Raw();
         priority = decoder.read();
         owner = new ExtendedUuid();
         owner.deserialize(decoder);
@@ -112,11 +104,8 @@ public class Region implements Serializable {
         int len = decoder.readInt();
         while(len > 0) {
             RegionFlag flag = RegionFlag.VALUES[decoder.read()];
-            Serializable meta = null;
-            if(flag.hasMeta()) {
-                meta = ReflectionHelper.instantiate(flag.getMetaClass());
-                meta.deserialize(decoder);
-            }
+            Serializable meta = ReflectionHelper.instantiate(flag.getMetaClass());
+            meta.deserialize(decoder);
             flags.put(flag, meta);
         }
     }

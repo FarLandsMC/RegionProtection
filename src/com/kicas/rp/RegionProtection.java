@@ -3,6 +3,7 @@ package com.kicas.rp;
 import com.kicas.rp.command.CommandHandler;
 import com.kicas.rp.data.DataManager;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
@@ -21,6 +22,7 @@ public class RegionProtection extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        initConfig();
         commandHandler.registerCommands();
         Bukkit.getPluginManager().registerEvents(commandHandler, this);
         dataManager.load();
@@ -46,5 +48,10 @@ public class RegionProtection extends JavaPlugin {
     public static void error(Object x) {
         String msg = Objects.toString(x);
         Bukkit.getLogger().severe("[FLv1] - " + msg);
+    }
+
+    private void initConfig() {
+        FileConfiguration config = getConfig();
+        saveConfig();
     }
 }
