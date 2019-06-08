@@ -23,6 +23,12 @@ public class RegionProtection extends JavaPlugin {
     public void onEnable() {
         commandHandler.registerCommands();
         Bukkit.getPluginManager().registerEvents(commandHandler, this);
+        dataManager.load();
+    }
+
+    @Override
+    public void onDisable() {
+        dataManager.save();
     }
 
     public static RegionProtection getInstance() {

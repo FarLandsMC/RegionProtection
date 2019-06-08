@@ -27,11 +27,13 @@ public class EnumFilter implements Serializable {
     
     @Override
     public void serialize(Encoder encoder) throws IOException {
+        encoder.write(isWhitelist ? 1 : 0);
         encoder.writeArray(filter);
     }
     
     @Override
     public void deserialize(Decoder decoder) throws IOException {
+        isWhitelist = decoder.read() == 1;
         filter.addAll(decoder.readArrayAsList(Integer.class));
     }
 }
