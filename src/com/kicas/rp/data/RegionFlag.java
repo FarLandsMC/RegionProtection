@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.RegionProtection;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
@@ -42,6 +43,11 @@ public enum RegionFlag {
 
     public Class<? extends Serializable> getMetaClass() {
         return metaClass;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getDefaultValue() {
+        return (T)RegionProtection.getDataManager().getFlagDefaultValue(this);
     }
 
     public static class BooleanMeta implements Serializable {

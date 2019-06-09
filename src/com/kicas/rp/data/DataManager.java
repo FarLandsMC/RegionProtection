@@ -6,6 +6,7 @@ import com.kicas.rp.util.Encoder;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,11 +15,12 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class DataManager {
+public class DataManager implements Listener {
     private final File rootDir;
     private final List<Region> regions;
     private final Map<Long, List<Region>> lookupTable;
-    private final Map<UUID, PlayerData> playerData;
+    private final Map<UUID, PlayerSession> playerSessions;
+    private final Map<RegionFlag, Object> defaultFlagValues;
 
     public static final byte REGION_FORMAT_VERSION = 0;
     public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
@@ -27,7 +29,12 @@ public class DataManager {
         this.rootDir = rootDir;
         this.regions = new ArrayList<>();
         this.lookupTable = new HashMap<>();
-        this.playerData = new HashMap<>();
+        this.playerSessions = new HashMap<>();
+        this.defaultFlagValues = new HashMap<>();
+    }
+
+    public Object getFlagDefaultValue(RegionFlag flag) {
+        return defaultFlagValues.get(flag);
     }
 
     public Region getRegionByName(String name) {
@@ -78,13 +85,12 @@ public class DataManager {
             // Highlight claims
             return null;
         }
-        PlayerData pd = playerData.get(creator.getUniqueId());
+        PlayerSession pd = playerSessions.get(creator.getUniqueId());
         long area = (max.getBlockX() - min.getBlockX()) * (max.getBlockZ() - min.getBlockZ());
         if(area > pd.getClaimBlocks()) {
             creator.sendMessage(ChatColor.RED + "You need " + (area - pd.getClaimBlocks()) + " more claim blocks to create this claim.");
             return null;
         }
-        region.setFlag(RegionFlag.OVERLAP, false);
         addRegionToLookupTable(region);
         return region;
     }
@@ -126,15 +132,17 @@ public class DataManager {
                     throw new RuntimeException("Could not load player data file since it uses format version " + format + " and is not up to date.");
                 int len = decoder.readInt();
                 while(len > 0) {
-                    PlayerData pd = new PlayerData();
+                    PlayerSession pd = new PlayerSession();
                     pd.deserialize(decoder);
-                    playerData.put(pd.getUuid(), pd);
+                    playerSessions.put(pd.getUuid(), pd);
                 }
             }
         }catch(IOException ex) {
             RegionProtection.error("Failed to load regions file: " + ex.getMessage());
             ex.printStackTrace();
         }
+
+        initDefaultFlagValues();
     }
 
     public void save() {
@@ -158,8 +166,8 @@ public class DataManager {
                 playerDataFile.createNewFile();
             Encoder encoder = new Encoder(new FileOutputStream(playerDataFile));
             encoder.write(PLAYER_DATA_FORMAT_VERSION);
-            encoder.writeInt(playerData.size());
-            for(PlayerData pd : playerData.values())
+            encoder.writeInt(playerSessions.size());
+            for(PlayerSession pd : playerSessions.values())
                 pd.serialize(encoder);
         }catch(IOException ex) {
             RegionProtection.error("Failed to save player data file: " + ex.getMessage());
@@ -177,5 +185,14 @@ public class DataManager {
                 lookupTable.get(key).add(region);
             }
         }
+    }
+
+    private void initDefaultFlagValues() {
+        defaultFlagValues.put(RegionFlag.ACCESS_TRUST, ExtendedUuidList.EMPTY_LIST);
+        defaultFlagValues.put(RegionFlag.CONTAINER_TRUST, ExtendedUuidList.EMPTY_LIST);
+        defaultFlagValues.put(RegionFlag.BUILD_TRUST, ExtendedUuidList.EMPTY_LIST);
+        defaultFlagValues.put(RegionFlag.MANAGEMENT_TRUST, ExtendedUuidList.EMPTY_LIST);
+        defaultFlagValues.put(RegionFlag.DENY_SPAWN, EnumFilter.EMPTY_FILTER);
+        defaultFlagValues.put(RegionFlag.OVERLAP, false);
     }
 }

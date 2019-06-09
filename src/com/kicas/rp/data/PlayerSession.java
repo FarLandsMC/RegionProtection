@@ -7,16 +7,18 @@ import com.kicas.rp.util.Serializable;
 import java.io.IOException;
 import java.util.UUID;
 
-public class PlayerData implements Serializable {
+public class PlayerSession implements Serializable {
     private UUID uuid;
     private int claimBlocks;
+    private RegionHighlighter currentHighlighter;
 
-    public PlayerData(UUID uuid) {
+    public PlayerSession(UUID uuid) {
         this.uuid = uuid;
         this.claimBlocks = 0;
+        this.currentHighlighter = null;
     }
 
-    public PlayerData() {
+    public PlayerSession() {
         this(null);
     }
 
@@ -34,6 +36,13 @@ public class PlayerData implements Serializable {
 
     public void subtractClaimBlocks(int amount) {
         claimBlocks -= amount;
+    }
+
+    public void setRegionHighlighter(RegionHighlighter highlighter) {
+        if(currentHighlighter != null && !currentHighlighter.isComplete())
+            currentHighlighter.remove();
+        currentHighlighter = highlighter;
+        currentHighlighter.showBlocks();
     }
 
     @Override

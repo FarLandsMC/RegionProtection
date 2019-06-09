@@ -1,8 +1,6 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.util.Pair;
-import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -19,6 +17,7 @@ public class RegionHighlighter {
     private final Map<Location, BlockData> original;
     private final Map<Location, Material> changes;
     private int removalTaskId;
+    private boolean complete;
 
     public RegionHighlighter(Player player, Collection<Region> regions, Material lightSource, Material block) {
         this.player = player;
@@ -26,14 +25,22 @@ public class RegionHighlighter {
         this.block = block;
         this.original = new HashMap<>();
         this.changes = new HashMap<>();
+        this.complete = false;
         initBlocks(regions);
-        showBlocks();
     }
 
     public void remove() {
-        if(player.isOnline())
-            original.forEach(player::sendBlockChange);
+        if(player.isOnline()) {
+            original.forEach((loc, data) -> {
+                if(loc.getChunk().isLoaded())
+                    player.sendBlockChange(loc, data);
+            });
+        }
         Bukkit.getScheduler().cancelTask(removalTaskId);
+    }
+
+    public boolean isComplete() {
+        return complete;
     }
 
     private void initBlocks(Collection<Region> regions) {
@@ -63,12 +70,24 @@ public class RegionHighlighter {
         });
     }
 
-    private void showBlocks() {
-        changes.forEach((loc, mat) -> player.sendBlockChange(loc, mat.createBlockData()));
+    public void showBlocks() {
+        changes.forEach((loc, mat) -> {
+            if(loc.getChunk().isLoaded())
+                player.sendBlockChange(loc, mat.createBlockData());
+        });
         removalTaskId = Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), () -> {
-            if(player.isOnline())
-                original.forEach(player::sendBlockChange);
+            if(player.isOnline()) {
+                original.forEach((loc, data) -> {
+                    if(loc.getChunk().isLoaded())
+                        player.sendBlockChange(loc, data);
+                });
+            }
+            setComplete();
         }, 20L * 60L).getTaskId();
+    }
+
+    private void setComplete() {
+        complete = true;
     }
 
     private void addChange(Location location, Material replacement) {

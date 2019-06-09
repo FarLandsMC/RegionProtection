@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.UUID;
 
 public class ExtendedUuidList extends HashSet<UUID> implements Serializable {
+    public static final ExtendedUuidList EMPTY_LIST = new ExtendedUuidList();
+
     @Override
     public boolean add(UUID uuid) {
         if(ExtendedUuid.PUBLIC.equals(uuid)) {

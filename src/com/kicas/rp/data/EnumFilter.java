@@ -6,11 +6,14 @@ import com.kicas.rp.util.Serializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class EnumFilter implements Serializable {
     private final List<Integer> filter;
     private boolean isWhitelist;
+
+    public static final EnumFilter EMPTY_FILTER = new EnumFilter(Collections.emptyList(), false);
     
     public EnumFilter(List<Integer> filter, boolean isWhitelist) {
         this.filter = filter;

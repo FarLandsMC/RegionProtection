@@ -17,7 +17,7 @@ public class FlagContainer {
     }
 
     public boolean isAllowed(RegionFlag flag) {
-        return !flags.containsKey(flag) || ((RegionFlag.BooleanMeta)flags.get(flag)).value;
+        return flags.containsKey(flag) ? ((RegionFlag.BooleanMeta)flags.get(flag)).value : flag.getDefaultValue();
     }
 
     public void setFlag(RegionFlag flag, boolean allow) {
