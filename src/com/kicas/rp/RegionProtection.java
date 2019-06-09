@@ -2,6 +2,7 @@ package com.kicas.rp;
 
 import com.kicas.rp.command.CommandHandler;
 import com.kicas.rp.data.DataManager;
+import com.kicas.rp.data.RegionFlag;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -53,5 +54,7 @@ public class RegionProtection extends JavaPlugin {
     private void initConfig() {
         FileConfiguration config = getConfig();
         saveConfig();
+
+        RegionFlag.registerDefaults(config);
     }
 }

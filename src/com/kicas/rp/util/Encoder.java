@@ -36,7 +36,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes a byte to the output stream.
      * @param by the byte.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void write(int by) throws IOException {
         out.write(by);
@@ -45,7 +45,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes many bytes to the output stream.
      * @param bytes the bytes.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void write(byte[] bytes) throws IOException {
         out.write(bytes);
@@ -62,9 +62,18 @@ public class Encoder implements Flushable, Closeable {
     }
 
     /**
+     * Writes a boolean to the output stream.
+     * @param b the boolean.
+     * @throws IOException if an I/O error occurs.
+     */
+    public void writeBoolean(boolean b) throws IOException {
+        out.write(b ? 1 : 0);
+    }
+
+    /**
      * Writes a <code>short</code>, or 2-byte integer to the output stream.
      * @param s the <code>short</code>.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeShort(short s) throws IOException {
         out.write(s >>> 8);
@@ -74,7 +83,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes an array of shorts, or 2-byte integers to the output stream.
      * @param a the array.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeShortArray(short[] a) throws IOException {
         writeInt(a.length);
@@ -85,7 +94,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes a <code>short</code>, or 2-byte integer to the output stream.
      * @param i the integer, which will be down casted.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeShort(int i) throws IOException {
         out.write(i >>> 8);
@@ -95,7 +104,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes an array of shorts, or 2-byte integers to the output stream.
      * @param a the array.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeShortArray(int[] a) throws IOException {
         writeInt(a.length);
@@ -106,7 +115,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes an <code>int</code>, or 4-byte integer to the output stream.
      * @param i the integer.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeInt(int i) throws IOException {
         out.write(i >>> 24);
@@ -118,7 +127,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes an array of ints, or 4-byte integers to the output stream.
      * @param a the array.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeIntArray(int[] a) throws IOException {
         writeInt(a.length);
@@ -129,7 +138,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes a <code>long</code>, or 8-byte integer to the output stream.
      * @param l the <code>long</code>.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeLong(long l) throws IOException {
         out.write((int)(l >>> 56));
@@ -145,7 +154,7 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes an array of longs, or 8-byte integers to the output stream.
      * @param a the array.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeLongArray(long[] a) throws IOException {
         writeInt(a.length);
@@ -157,7 +166,7 @@ public class Encoder implements Flushable, Closeable {
      * Writes a <code>float</code> to the output stream according to the IEEE 754 floating-point "single format" bit
      * layout, preserving Not-a-Number (NaN) values.
      * @param f the <code>float</code>.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeFloat(float f) throws IOException {
         writeInt(Float.floatToRawIntBits(f));
@@ -167,7 +176,7 @@ public class Encoder implements Flushable, Closeable {
      * Writes an array of floats to the output stream according to the IEEE 754 floating-point "single format" bit
      * layout, preserving Not-a-Number (NaN) values.
      * @param a the array.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeFloatArray(float[] a) throws IOException {
         writeInt(a.length);
@@ -179,7 +188,7 @@ public class Encoder implements Flushable, Closeable {
      * Writes a <code>double</code> to the output stream according to the IEEE 754 floating-point "double format" bit
      * layout, preserving Not-a-Number (NaN) values.
      * @param d the <code>double</code>.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeDouble(double d) throws IOException {
         writeLong(Double.doubleToRawLongBits(d));
@@ -189,7 +198,7 @@ public class Encoder implements Flushable, Closeable {
      * Writes an array of doubles to the output stream according to the IEEE 754 floating-point "double format" bit
      * layout, preserving Not-a-Number (NaN) values.
      * @param a the array.
-     * @throws IOException if and I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeDoubleArray(double[] a) throws IOException {
         writeInt(a.length);

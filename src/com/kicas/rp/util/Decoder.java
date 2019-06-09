@@ -66,6 +66,15 @@ public class Decoder implements Closeable {
     }
 
     /**
+     * Reads a boolean from the input stream.
+     * @return the next boolean in the input stream.
+     * @throws IOException if an I/O error occurs.
+     */
+    public boolean readBoolean() throws IOException {
+        return in.read() == 1;
+    }
+
+    /**
      * Reads a <code>short</code>, or 2-byte integer from the input stream.
      * @return the next <code>short</code> in the input stream.
      * @throws IOException if an I/O error occurs.

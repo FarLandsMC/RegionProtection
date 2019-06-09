@@ -83,7 +83,7 @@ public class TextUtils {
                     }
 
                     // Get the color arguments
-                    Pair<String, Integer> args = Utils.getEnclosed(i + 1, input);
+                    Pair<String, Integer> args = getEnclosed(i + 1, input);
                     if(args.getFirst() == null)
                         throw new SyntaxException("Bracket mismatch", i, input);
                     i = args.getSecond() - 1;
@@ -115,7 +115,7 @@ public class TextUtils {
                         component.setLength(0);
                     }
 
-                    Pair<String, Integer> section = Utils.getEnclosed(i, input);
+                    Pair<String, Integer> section = getEnclosed(i, input);
                     if(section.getFirst() == null)
                         throw new SyntaxException("Bracket mismatch", i, input);
                     i = section.getSecond() - 1;
@@ -130,7 +130,7 @@ public class TextUtils {
                 case FUNCTION_CHAR:
                 {
                     // Get the args
-                    Pair<String, Integer> rawArgs = Utils.getEnclosed(i + 1, input);
+                    Pair<String, Integer> rawArgs = getEnclosed(i + 1, input);
                     if(rawArgs.getFirst() == null)
                         throw new SyntaxException("Bracket mismatch", i, input);
                     List<String> args = new ArrayList<>();
@@ -170,7 +170,7 @@ public class TextUtils {
 
                         // Parse the text
                         BaseComponent[] text = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(2).startsWith("{") ? Utils.getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
+                                args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
 
                         // Apply the link
                         for(BaseComponent bc : text)
@@ -182,9 +182,9 @@ public class TextUtils {
 
                         // Parse both texts
                         BaseComponent[] hover = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(1).startsWith("{") ? Utils.getEnclosed(0, args.get(1)).getFirst() : args.get(1), values);
+                                args.get(1).startsWith("{") ? getEnclosed(0, args.get(1)).getFirst() : args.get(1), values);
                         BaseComponent[] text = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(2).startsWith("{") ? Utils.getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
+                                args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
 
                         // Apply the hover text
                         for(BaseComponent bc : text)
@@ -221,7 +221,7 @@ public class TextUtils {
 
                         // Parse the text
                         BaseComponent[] text = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(2).startsWith("{") ? Utils.getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
+                                args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
 
                         // Apply the command
                         for(BaseComponent bc : text)
@@ -233,9 +233,9 @@ public class TextUtils {
 
                         // Parse both texts
                         BaseComponent[] hover = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(2).startsWith("{") ? Utils.getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
+                                args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
                         BaseComponent[] text = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(3).startsWith("{") ? Utils.getEnclosed(0, args.get(3)).getFirst() : args.get(3), values);
+                                args.get(3).startsWith("{") ? getEnclosed(0, args.get(3)).getFirst() : args.get(3), values);
 
                         // Apply the command
                         for(BaseComponent bc : text) {
@@ -249,9 +249,9 @@ public class TextUtils {
 
                         // Parse both texts
                         BaseComponent[] hover = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(2).startsWith("{") ? Utils.getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
+                                args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst() : args.get(2), values);
                         BaseComponent[] text = parseExpression(new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
-                                args.get(3).startsWith("{") ? Utils.getEnclosed(0, args.get(3)).getFirst() : args.get(3), values);
+                                args.get(3).startsWith("{") ? getEnclosed(0, args.get(3)).getFirst() : args.get(3), values);
 
                         // Apply the command
                         for(BaseComponent bc : text) {
@@ -289,6 +289,22 @@ public class TextUtils {
         tc.setClickEvent(null);
         tc.setHoverEvent(null);
         return tc;
+    }
+
+    private static Pair<String, Integer> getEnclosed(int start, String string) {
+        boolean curved = string.charAt(start) == '('; // ()s or {}s
+        int depth = 1, i = start + 1;
+        while(depth > 0) { // Exits when there are no pairs of open brackets
+            if(i == string.length()) // Avoid index out of bound errors
+                return new Pair<>(null, -1);
+            char c = string.charAt(i++);
+            if(c == (curved ? ')' : '}')) // We've closed off a pair
+                -- depth;
+            else if(c == (curved ? '(' : '{')) // We've started a pair
+                ++ depth;
+        }
+        // Return the stuff inside the brackets, and the index of the char after the last bracket
+        return new Pair<>(string.substring(start + 1, i - 1), i);
     }
 
     public static class SyntaxException extends RuntimeException {

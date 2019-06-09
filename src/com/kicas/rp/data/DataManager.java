@@ -6,7 +6,6 @@ import com.kicas.rp.util.Encoder;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,12 +14,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class DataManager implements Listener {
+public class DataManager {
     private final File rootDir;
     private final List<Region> regions;
     private final Map<Long, List<Region>> lookupTable;
     private final Map<UUID, PlayerSession> playerSessions;
-    private final Map<RegionFlag, Object> defaultFlagValues;
 
     public static final byte REGION_FORMAT_VERSION = 0;
     public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
@@ -30,11 +28,6 @@ public class DataManager implements Listener {
         this.regions = new ArrayList<>();
         this.lookupTable = new HashMap<>();
         this.playerSessions = new HashMap<>();
-        this.defaultFlagValues = new HashMap<>();
-    }
-
-    public Object getFlagDefaultValue(RegionFlag flag) {
-        return defaultFlagValues.get(flag);
     }
 
     public Region getRegionByName(String name) {
@@ -141,8 +134,6 @@ public class DataManager implements Listener {
             RegionProtection.error("Failed to load regions file: " + ex.getMessage());
             ex.printStackTrace();
         }
-
-        initDefaultFlagValues();
     }
 
     public void save() {
@@ -185,14 +176,5 @@ public class DataManager implements Listener {
                 lookupTable.get(key).add(region);
             }
         }
-    }
-
-    private void initDefaultFlagValues() {
-        defaultFlagValues.put(RegionFlag.ACCESS_TRUST, ExtendedUuidList.EMPTY_LIST);
-        defaultFlagValues.put(RegionFlag.CONTAINER_TRUST, ExtendedUuidList.EMPTY_LIST);
-        defaultFlagValues.put(RegionFlag.BUILD_TRUST, ExtendedUuidList.EMPTY_LIST);
-        defaultFlagValues.put(RegionFlag.MANAGEMENT_TRUST, ExtendedUuidList.EMPTY_LIST);
-        defaultFlagValues.put(RegionFlag.DENY_SPAWN, EnumFilter.EMPTY_FILTER);
-        defaultFlagValues.put(RegionFlag.OVERLAP, false);
     }
 }

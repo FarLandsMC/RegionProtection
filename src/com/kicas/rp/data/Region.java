@@ -86,9 +86,12 @@ public class Region extends FlagContainer implements Serializable {
         encoder.writeInt(max.getBlockY());
         encoder.writeInt(max.getBlockZ());
         encoder.writeInt(flags.size());
-        for(Map.Entry<RegionFlag, Serializable> entry : flags.entrySet()) {
+        for(Map.Entry<RegionFlag, Object> entry : flags.entrySet()) {
             encoder.write(entry.getKey().ordinal());
-            entry.getValue().serialize(encoder);
+            if(entry.getKey().isBoolean())
+                encoder.writeBoolean((boolean)entry.getValue());
+            else
+                ((Serializable)entry.getValue()).serialize(encoder);
         }
     }
 
@@ -104,8 +107,13 @@ public class Region extends FlagContainer implements Serializable {
         int len = decoder.readInt();
         while(len > 0) {
             RegionFlag flag = RegionFlag.VALUES[decoder.read()];
-            Serializable meta = ReflectionHelper.instantiate(flag.getMetaClass());
-            meta.deserialize(decoder);
+            Object meta;
+            if(flag.isBoolean())
+                meta = decoder.readBoolean();
+            else{
+                meta = ReflectionHelper.instantiate(flag.getMetaClass());
+                ((Serializable)meta).deserialize(decoder);
+            }
             flags.put(flag, meta);
         }
     }

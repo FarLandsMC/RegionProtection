@@ -1,11 +1,10 @@
 package com.kicas.rp.data;
 
-import com.kicas.rp.RegionProtection;
-import com.kicas.rp.util.Decoder;
-import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
+import org.bukkit.configuration.file.FileConfiguration;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public enum RegionFlag {
     ACCESS_TRUST(false, ExtendedUuidList.class),
@@ -16,11 +15,12 @@ public enum RegionFlag {
     OVERLAP;
 
     public static final RegionFlag[] VALUES = values();
+    private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
 
     private final boolean adminOnly;
-    private final Class<? extends Serializable> metaClass;
+    private final Class<?> metaClass;
 
-    RegionFlag(boolean adminOnly, Class<? extends Serializable> metaClass) {
+    RegionFlag(boolean adminOnly, Class<?> metaClass) {
         this.adminOnly = adminOnly;
         this.metaClass = metaClass;
     }
@@ -30,41 +30,36 @@ public enum RegionFlag {
     }
 
     RegionFlag(boolean adminOnly) {
-        this(adminOnly, BooleanMeta.class);
+        this(adminOnly, boolean.class);
     }
 
     RegionFlag() {
-        this(true, BooleanMeta.class);
+        this(true, boolean.class);
     }
 
     public boolean isAdminOnly() {
         return adminOnly;
     }
 
-    public Class<? extends Serializable> getMetaClass() {
+    public Class<?> getMetaClass() {
         return metaClass;
+    }
+
+    public boolean isBoolean() {
+        return boolean.class.equals(metaClass);
     }
 
     @SuppressWarnings("unchecked")
     public <T> T getDefaultValue() {
-        return (T)RegionProtection.getDataManager().getFlagDefaultValue(this);
+        return (T)DEFAULT_VALUES.get(this);
     }
 
-    public static class BooleanMeta implements Serializable {
-        public boolean value;
-
-        public BooleanMeta(boolean value) {
-            this.value = value;
-        }
-
-        @Override
-        public void serialize(Encoder encoder) throws IOException {
-            encoder.write(value ? 1 : 0);
-        }
-
-        @Override
-        public void deserialize(Decoder decoder) throws IOException {
-            value = decoder.read() == 1;
-        }
+    public static void registerDefaults(FileConfiguration config) {
+        DEFAULT_VALUES.put(ACCESS_TRUST, ExtendedUuidList.EMPTY_LIST);
+        DEFAULT_VALUES.put(CONTAINER_TRUST, ExtendedUuidList.EMPTY_LIST);
+        DEFAULT_VALUES.put(BUILD_TRUST, ExtendedUuidList.EMPTY_LIST);
+        DEFAULT_VALUES.put(MANAGEMENT_TRUST, ExtendedUuidList.EMPTY_LIST);
+        DEFAULT_VALUES.put(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(OVERLAP, false);
     }
 }
