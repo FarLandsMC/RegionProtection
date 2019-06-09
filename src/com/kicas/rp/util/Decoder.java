@@ -182,6 +182,8 @@ public class Decoder implements Closeable {
      */
     public String readUTF8Raw() throws IOException {
         byte[] buffer = new byte[readInt()];
+        if(buffer.length == 0)
+            return "";
         int read = read(buffer, 0, buffer.length);
         return new String(buffer, 0, read, StandardCharsets.UTF_8);
     }
@@ -193,6 +195,8 @@ public class Decoder implements Closeable {
      */
     public String readASCIIRaw() throws IOException {
         byte[] buffer = new byte[readInt()];
+        if(buffer.length == 0)
+            return "";
         int read = read(buffer, 0, buffer.length);
         return new String(buffer, 0, read, StandardCharsets.US_ASCII);
     }

@@ -203,9 +203,13 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occur.
      */
     public void writeUTF8Raw(String s) throws IOException {
-        byte[] raw = s.getBytes(StandardCharsets.UTF_8);
-        writeInt(raw.length);
-        out.write(raw);
+        if(s.isEmpty())
+            out.write(0);
+        else{
+            byte[] raw = s.getBytes(StandardCharsets.UTF_8);
+            writeInt(raw.length);
+            out.write(raw);
+        }
     }
 
     /**
@@ -214,10 +218,14 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occur.
      */
     public void writeASCIIRaw(String s) throws IOException {
-        char[] cs = s.toCharArray();
-        writeInt(cs.length);
-        for(char c : cs)
-            out.write(c & 0xFF);
+        if(s.isEmpty())
+            out.write(0);
+        else{
+            char[] cs = s.toCharArray();
+            writeInt(cs.length);
+            for (char c : cs)
+                out.write(c & 0xFF);
+        }
     }
 
     /**
