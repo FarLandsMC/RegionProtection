@@ -72,12 +72,18 @@ public class RegionHighlighter {
     }
 
     private void addChange(Location location, Material replacement) {
-        location = findReplacementLocation(location);
-        original.put(location, location.getBlock() == null ? Material.AIR.createBlockData() : location.getBlock().getBlockData());
+        location = findReplacementLocation(location.clone());
+        original.put(location, location.getBlock().getBlockData());
         changes.put(location, replacement);
     }
 
-    private Location findReplacementLocation(Location start) {
-        return null;
+    private Location findReplacementLocation(Location replacement) {
+        replacement.setY(player.getLocation().getBlockY() + 1);
+        replacement.setX(replacement.getBlockX() + .5);
+        replacement.setZ(replacement.getBlockZ() + .5);
+        while (replacement.getBlock().getType().equals(Material.AIR) && replacement.getBlockY() > 0) {
+            replacement.setY(replacement.getY() - 1);
+        }
+        return replacement;
     }
 }
