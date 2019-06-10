@@ -65,14 +65,16 @@ public class PlayerActionHandler implements Listener {
     @EventHandler
     public void onHotbarScroll(PlayerItemHeldEvent event) {
         if(RegionProtection.getClaimCreationTool().equals(Utils.stackType(event.getPlayer().getInventory().getItem(event.getNewSlot())))) {
-            event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + RegionProtection.getDataManager()
-                    .getPlayerSession(event.getPlayer()).getClaimBlocks() + " more blocks.");
+            PlayerSession ps = RegionProtection.getDataManager().getPlayerSession(event.getPlayer());
+            event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + ps.getClaimBlocks() + " more blocks.");
+            List<Region> regions = RegionProtection.getDataManager().getRegionsAt(event.getPlayer().getLocation());
+            if(regions != null)
+                ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions, null, null, true));
         }
     }
 
     private static void detailClaimAt(Player recipient, Location location) {
-        Region claim = RegionProtection.getDataManager().getRegionsAt(location)
-                .stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP)).findAny().orElse(null);
+        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(location);
         if(claim == null) {
             recipient.sendMessage(ChatColor.RED + "No one has claimed this block.");
             RegionProtection.getDataManager().getPlayerSession(recipient).setRegionHighlighter(null);

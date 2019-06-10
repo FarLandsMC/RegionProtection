@@ -15,7 +15,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DataManager implements Listener {
     private final File rootDir;
@@ -39,6 +38,15 @@ public class DataManager implements Listener {
             playerSessions.put(event.getPlayer().getUniqueId(), new PlayerSession(event.getPlayer().getUniqueId()));
     }
 
+    public void associate(Region parent, Region associated) {
+        regions.get(associated.getMin().getWorld().getUID()).remove(associated);
+        if(associated.getPriority() < parent.getPriority())
+            associated.setPriority(parent.getPriority());
+        associated.setOwner(parent.getOwner());
+        associated.setAssociation(parent);
+        parent.getAssociatedRegions().add(associated);
+    }
+
     public List<Region> getRegionsInWorld(World world) {
         return regions.get(world.getUID());
     }
@@ -53,6 +61,11 @@ public class DataManager implements Listener {
         return regions == null ? Collections.emptyList() : regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
     }
 
+    public Region getHighestPriorityRegionAt(Location location) {
+        List<Region> regions = getRegionsAt(location);
+        return regions == null ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority)).orElse(null);
+    }
+
     public FlagContainer getFlagsAt(Location location) {
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(((long)(location.getBlockX() >> 7)) << 32 |
                 ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL));
@@ -61,31 +74,23 @@ public class DataManager implements Listener {
         regions = regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
         if(regions.size() == 1)
             return regions.get(0);
-        FlagContainer flags = new FlagContainer();
+        FlagContainer flags = new FlagContainer(null);
         regions.stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
             region.getFlags().forEach((flag, meta) -> {
                 if(!flags.hasFlag(flag))
                     flags.setFlag(flag, meta);
             });
+            if(flags.getOwner() == null)
+                flags.setOwner(region.getOwner());
         });
-        return flags.isEmpty() ? null : flags;
-    }
-
-    public Region tryCreateAdminRegion(String name, Player creator, int priority, Location min, Location max) {
-        if(getRegionByName(creator.getWorld(), name) != null) {
-            creator.sendMessage(ChatColor.RED + "A region with this name already exists.");
-            return null;
-        }
-        Region region = new Region(name, priority, new UUID(0, 0), min, max);
-        addRegionToLookupTable(region);
-        return region;
+        return flags;
     }
 
     public Region tryCreateClaim(Player creator, Location pos1, Location pos2) {
         Location min = new Location(pos1.getWorld(), Math.min(pos1.getX(), pos2.getX()), 63, Math.min(pos1.getZ(), pos2.getZ()));
         Location max = new Location(pos1.getWorld(), Math.max(pos1.getX(), pos2.getX()), pos1.getWorld().getMaxHeight(),
                 Math.max(pos1.getZ(), pos2.getZ()));
-        Region region = new Region(null, 0, creator.getUniqueId(), min, max);
+        Region region = new Region(null, 0, creator.getUniqueId(), min, max, null);
         List<Region> collisions = new LinkedList<>();
         for(int x = min.getBlockX() >> 7;x <= max.getBlockX() >> 7;++ x) {
             for(int z = min.getBlockZ() >> 7;z <= max.getBlockZ() >> 7;++ z) {
@@ -96,7 +101,7 @@ public class DataManager implements Listener {
         }
         if(!collisions.isEmpty()) {
             creator.sendMessage(ChatColor.RED + "You cannot create a claim here since it overlaps other claims.");
-            playerSessions.get(creator.getUniqueId()).setRegionHighlighter(new RegionHighlighter(creator, collisions, Material.GLOWSTONE, Material.NETHERRACK));
+            playerSessions.get(creator.getUniqueId()).setRegionHighlighter(new RegionHighlighter(creator, collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
             return null;
         }
         PlayerSession ps = playerSessions.get(creator.getUniqueId());
@@ -223,5 +228,6 @@ public class DataManager implements Listener {
                 worldTable.get(key).add(region);
             }
         }
+        region.getAssociatedRegions().forEach(this::addRegionToLookupTable);
     }
 }

@@ -5,6 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,14 +16,18 @@ public class Region extends FlagContainer implements Serializable {
     private UUID owner;
     private World world;
     private Location min, max;
+    private Region association;
+    private final List<Region> associatedRegions;
 
-    public Region(String name, int priority, UUID owner, Location min, Location max) {
+    public Region(String name, int priority, UUID owner, Location min, Location max, Region association) {
         super(owner);
         this.name = name;
         this.priority = priority;
         this.world = min.getWorld();
         this.min = min.clone();
         this.max = max.clone();
+        this.association = association;
+        this.associatedRegions = new ArrayList<>();
     }
 
     public Region(World world) {
@@ -30,6 +36,19 @@ public class Region extends FlagContainer implements Serializable {
         this.world = world;
         this.min = null;
         this.max = null;
+        this.association = null;
+        this.associatedRegions = new ArrayList<>();
+    }
+
+    public Region(Region association) {
+        super(association.getOwner());
+        this.name = null;
+        this.priority = 0;
+        this.world = association.getMin().getWorld();
+        this.min = null;
+        this.max = null;
+        this.association = association;
+        this.associatedRegions = new ArrayList<>();
     }
 
     public String getName() {
@@ -38,6 +57,26 @@ public class Region extends FlagContainer implements Serializable {
 
     public int getPriority() {
         return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public List<Region> getAssociatedRegions() {
+        return associatedRegions;
+    }
+
+    public boolean hasAssociation() {
+        return association != null;
+    }
+
+    public Region getAssociation() {
+        return association;
+    }
+
+    public void setAssociation(Region association) {
+        this.association = association;
     }
 
     public boolean contains(Location loc) {
@@ -78,7 +117,8 @@ public class Region extends FlagContainer implements Serializable {
     public void serialize(Encoder encoder) throws IOException {
         encoder.writeUTF8Raw(name == null ? "" : name);
         encoder.write(priority);
-        encoder.writeUuid(owner);
+        if(association == null)
+            encoder.writeUuid(owner);
         encoder.writeInt(min.getBlockX());
         encoder.writeInt(min.getBlockY());
         encoder.writeInt(min.getBlockZ());
@@ -93,13 +133,19 @@ public class Region extends FlagContainer implements Serializable {
             else
                 ((Serializable)entry.getValue()).serialize(encoder);
         }
+        if(association == null) {
+            encoder.writeInt(associatedRegions.size());
+            for(Region region : associatedRegions)
+                region.serialize(encoder);
+        }
     }
 
     @Override
     public void deserialize(Decoder decoder) throws IOException {
         name = decoder.readUTF8Raw();
         priority = decoder.read();
-        owner = decoder.readUuid();
+        if(owner == null)
+            owner = decoder.readUuid();
         min = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
         max = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
         int len = decoder.readInt();
@@ -113,6 +159,14 @@ public class Region extends FlagContainer implements Serializable {
                 ((Serializable)meta).deserialize(decoder);
             }
             flags.put(flag, meta);
+        }
+        if(association == null) {
+            len = decoder.readInt();
+            while(len > 0) {
+                Region assoc = new Region(this);
+                assoc.deserialize(decoder);
+                associatedRegions.add(assoc);
+            }
         }
     }
 }

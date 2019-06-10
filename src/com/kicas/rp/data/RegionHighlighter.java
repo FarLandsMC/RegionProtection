@@ -14,29 +14,29 @@ import java.util.Map;
 
 public class RegionHighlighter {
     private final Player player;
-    private final Material lightSource, block;
     private final Map<Location, BlockData> original;
     private final Map<Location, Material> changes;
     private int removalTaskId;
     private boolean complete;
 
-    public RegionHighlighter(Player player, Collection<Region> regions, Material lightSource, Material block) {
+    public RegionHighlighter(Player player, Collection<Region> regions, Material lightSource, Material block, boolean includeAssociations) {
         this.player = player;
-        this.lightSource = lightSource;
-        this.block = block;
         this.original = new HashMap<>();
         this.changes = new HashMap<>();
         this.complete = false;
-        initBlocks(regions);
+        initBlocks(regions, lightSource, block, includeAssociations);
     }
+
     public RegionHighlighter(Player player, Collection<Region> regions) {
-        this(player, regions, Material.GLOWSTONE, Material.GOLD_BLOCK);
+        this(player, regions, null, null, false);
     }
+
     public RegionHighlighter(Player player, Region region, Material lightSource, Material block) {
-        this(player, Collections.singleton(region), lightSource, block);
+        this(player, Collections.singleton(region), lightSource, block, false);
     }
+
     public RegionHighlighter(Player player, Region region) {
-        this(player, Collections.singleton(region));
+        this(player, Collections.singleton(region), null, null, false);
     }
 
     public void remove() {
@@ -53,30 +53,34 @@ public class RegionHighlighter {
         return complete;
     }
 
-    private void initBlocks(Collection<Region> regions) {
-        regions.forEach(region -> {
-            addChange(region.getMin(), lightSource);
-            addChange(region.getMin().clone().add(1, 0, 0), block);
-            addChange(region.getMin().clone().add(0, 0, 1), block);
-            addChange(region.getMax(), lightSource);
-            addChange(region.getMax().clone().subtract(1, 0, 0), block);
-            addChange(region.getMax().clone().subtract(0, 0, 1), block);
+    private void initBlocks(Collection<Region> regions, Material lightSource, Material block, boolean includeAssociations) {
+        regions.stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
+            Material ls = lightSource == null ? (region.hasAssociation() ? Material.SEA_LANTERN : Material.GLOWSTONE) : lightSource;
+            Material bk = block == null ? (region.hasAssociation() ? Material.IRON_BLOCK : Material.GOLD_BLOCK) : block;
+            addChange(region.getMin(), ls);
+            addChange(region.getMin().clone().add(1, 0, 0), bk);
+            addChange(region.getMin().clone().add(0, 0, 1), bk);
+            addChange(region.getMax(), ls);
+            addChange(region.getMax().clone().subtract(1, 0, 0), bk);
+            addChange(region.getMax().clone().subtract(0, 0, 1), bk);
             Location vertex = new Location(region.getMin().getWorld(), region.getMin().getX(), 0, region.getMax().getZ());
-            addChange(vertex, lightSource);
-            addChange(vertex.clone().add(1, 0, 0), block);
-            addChange(vertex.clone().subtract(0, 0, 1), block);
+            addChange(vertex, ls);
+            addChange(vertex.clone().add(1, 0, 0), bk);
+            addChange(vertex.clone().subtract(0, 0, 1), bk);
             vertex = new Location(region.getMin().getWorld(), region.getMax().getX(), 0, region.getMin().getZ());
-            addChange(vertex, lightSource);
-            addChange(vertex.clone().subtract(1, 0, 0), block);
-            addChange(vertex.clone().add(0, 0, 1), block);
+            addChange(vertex, ls);
+            addChange(vertex.clone().subtract(1, 0, 0), bk);
+            addChange(vertex.clone().add(0, 0, 1), bk);
             for(int i = region.getMin().getBlockX() + 10;i < region.getMax().getBlockX() - 5;i += 10) {
-                addChange(new Location(region.getMin().getWorld(), i, 0, region.getMin().getZ()), block);
-                addChange(new Location(region.getMin().getWorld(), i, 0, region.getMax().getZ()), block);
+                addChange(new Location(region.getMin().getWorld(), i, 0, region.getMin().getZ()), bk);
+                addChange(new Location(region.getMin().getWorld(), i, 0, region.getMax().getZ()), bk);
             }
             for(int i = region.getMin().getBlockZ() + 10;i < region.getMax().getBlockZ() - 5;i += 10) {
-                addChange(new Location(region.getMin().getWorld(), region.getMin().getX(), 0, i), block);
-                addChange(new Location(region.getMin().getWorld(), region.getMax().getX(), 0, i), block);
+                addChange(new Location(region.getMin().getWorld(), region.getMin().getX(), 0, i), bk);
+                addChange(new Location(region.getMin().getWorld(), region.getMax().getX(), 0, i), bk);
             }
+            if(includeAssociations)
+                initBlocks(region.getAssociatedRegions(), lightSource, block, includeAssociations);
         });
     }
 
@@ -102,7 +106,8 @@ public class RegionHighlighter {
 
     private void addChange(Location location, Material replacement) {
         location = findReplacementLocation(location.clone());
-        original.put(location, location.getBlock().getBlockData());
+        if(!original.containsKey(location))
+            original.put(location, location.getBlock().getBlockData());
         changes.put(location, replacement);
     }
     

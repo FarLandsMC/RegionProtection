@@ -36,6 +36,10 @@ public class FlagContainer {
         return isAdminOwned() ? player.isOp() : owner.equals(player.getUniqueId());
     }
 
+    public void setOwner(UUID uuid) {
+        owner = uuid;
+    }
+
     public boolean isEmpty() {
         return flags.isEmpty();
     }
