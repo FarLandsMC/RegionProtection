@@ -6,18 +6,19 @@ import org.bukkit.World;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 public class Region extends FlagContainer implements Serializable {
     private String name;
     private int priority;
-    private ExtendedUuid owner;
+    private UUID owner;
     private World world;
     private Location min, max;
 
-    public Region(String name, int priority, ExtendedUuid owner, Location min, Location max) {
+    public Region(String name, int priority, UUID owner, Location min, Location max) {
+        super(owner);
         this.name = name;
         this.priority = priority;
-        this.owner = owner;
         this.world = min.getWorld();
         this.min = min.clone();
         this.max = max.clone();
@@ -26,7 +27,6 @@ public class Region extends FlagContainer implements Serializable {
     public Region(World world) {
         this.name = null;
         this.priority = 0;
-        this.owner = null;
         this.world = world;
         this.min = null;
         this.max = null;
@@ -38,14 +38,6 @@ public class Region extends FlagContainer implements Serializable {
 
     public int getPriority() {
         return priority;
-    }
-
-    public ExtendedUuid getOwner() {
-        return owner;
-    }
-
-    public boolean isAdminOwned() {
-        return owner.isAdmin();
     }
 
     public boolean contains(Location loc) {
@@ -86,7 +78,7 @@ public class Region extends FlagContainer implements Serializable {
     public void serialize(Encoder encoder) throws IOException {
         encoder.writeUTF8Raw(name == null ? "" : name);
         encoder.write(priority);
-        owner.serialize(encoder);
+        encoder.writeUuid(owner);
         encoder.writeInt(min.getBlockX());
         encoder.writeInt(min.getBlockY());
         encoder.writeInt(min.getBlockZ());
@@ -107,8 +99,7 @@ public class Region extends FlagContainer implements Serializable {
     public void deserialize(Decoder decoder) throws IOException {
         name = decoder.readUTF8Raw();
         priority = decoder.read();
-        owner = new ExtendedUuid();
-        owner.deserialize(decoder);
+        owner = decoder.readUuid();
         min = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
         max = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
         int len = decoder.readInt();

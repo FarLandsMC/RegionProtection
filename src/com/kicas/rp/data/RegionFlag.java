@@ -1,17 +1,15 @@
 package com.kicas.rp.data;
 
-import com.kicas.rp.util.Serializable;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public enum RegionFlag {
-    ACCESS_TRUST(false, ExtendedUuidList.class),
-    CONTAINER_TRUST(false, ExtendedUuidList.class),
-    BUILD_TRUST(false, ExtendedUuidList.class),
-    MANAGEMENT_TRUST(false, ExtendedUuidList.class),
+    TRUST(false, TrustMeta.class),
     DENY_SPAWN(EnumFilter.class),
+    DENY_BREAK(EnumFilter.class),
+    DENY_PLACE(EnumFilter.class),
     OVERLAP;
 
     public static final RegionFlag[] VALUES = values();
@@ -25,7 +23,7 @@ public enum RegionFlag {
         this.metaClass = metaClass;
     }
 
-    RegionFlag(Class<? extends Serializable> metaClass) {
+    RegionFlag(Class<?> metaClass) {
         this(true, metaClass);
     }
 
@@ -55,11 +53,10 @@ public enum RegionFlag {
     }
 
     public static void registerDefaults(FileConfiguration config) {
-        DEFAULT_VALUES.put(ACCESS_TRUST, ExtendedUuidList.EMPTY_LIST);
-        DEFAULT_VALUES.put(CONTAINER_TRUST, ExtendedUuidList.EMPTY_LIST);
-        DEFAULT_VALUES.put(BUILD_TRUST, ExtendedUuidList.EMPTY_LIST);
-        DEFAULT_VALUES.put(MANAGEMENT_TRUST, ExtendedUuidList.EMPTY_LIST);
+        DEFAULT_VALUES.put(TRUST, TrustMeta.EMPTY_TRUST_META);
         DEFAULT_VALUES.put(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(DENY_BREAK, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(DENY_PLACE, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(OVERLAP, false);
     }
 }

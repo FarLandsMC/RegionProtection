@@ -80,7 +80,7 @@ public class PlayerActionHandler implements Listener {
             if(claim.isAdminOwned())
                 recipient.sendMessage(ChatColor.RED + "This belongs to an administrator.");
             else
-                recipient.sendMessage(ChatColor.GOLD + "This belongs to " + claim.getOwner().getName());
+                recipient.sendMessage(ChatColor.GOLD + "This belongs to " + claim.getOwnerName());
             RegionProtection.getDataManager().getPlayerSession(recipient).setRegionHighlighter(new RegionHighlighter(recipient, claim));
         }
     }

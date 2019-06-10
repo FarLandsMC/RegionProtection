@@ -1,13 +1,43 @@
 package com.kicas.rp.data;
 
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class FlagContainer {
     protected final Map<RegionFlag, Object> flags;
+    protected UUID owner;
+
+    public FlagContainer(UUID owner) {
+        this.flags = new HashMap<>();
+        this.owner = owner;
+    }
 
     public FlagContainer() {
-        this.flags = new HashMap<>();
+        this(new UUID(0, 0));
+    }
+
+    public boolean isAdminOwned() {
+        return owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0;
+    }
+
+    public UUID getOwner() {
+        return owner;
+    }
+
+    public String getOwnerName() {
+        return isAdminOwned() ? "an administrator" : Bukkit.getOfflinePlayer(owner).getName();
+    }
+
+    public boolean isOwner(Player player) {
+        return isAdminOwned() ? player.isOp() : owner.equals(player.getUniqueId());
+    }
+
+    public boolean isEmpty() {
+        return flags.isEmpty();
     }
 
     public boolean hasFlag(RegionFlag flag) {

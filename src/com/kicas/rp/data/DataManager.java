@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DataManager implements Listener {
     private final File rootDir;
@@ -53,14 +54,21 @@ public class DataManager implements Listener {
     }
 
     public FlagContainer getFlagsAt(Location location) {
+        List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(((long)(location.getBlockX() >> 7)) << 32 |
+                ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL));
+        if(regions == null)
+            return null;
+        regions = regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
+        if(regions.size() == 1)
+            return regions.get(0);
         FlagContainer flags = new FlagContainer();
-        getRegionsAt(location).stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
+        regions.stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
             region.getFlags().forEach((flag, meta) -> {
                 if(!flags.hasFlag(flag))
                     flags.setFlag(flag, meta);
             });
         });
-        return flags;
+        return flags.isEmpty() ? null : flags;
     }
 
     public Region tryCreateAdminRegion(String name, Player creator, int priority, Location min, Location max) {
@@ -68,7 +76,7 @@ public class DataManager implements Listener {
             creator.sendMessage(ChatColor.RED + "A region with this name already exists.");
             return null;
         }
-        Region region = new Region(name, priority, new ExtendedUuid(ExtendedUuid.ADMIN), min, max);
+        Region region = new Region(name, priority, new UUID(0, 0), min, max);
         addRegionToLookupTable(region);
         return region;
     }
@@ -77,7 +85,7 @@ public class DataManager implements Listener {
         Location min = new Location(pos1.getWorld(), Math.min(pos1.getX(), pos2.getX()), 63, Math.min(pos1.getZ(), pos2.getZ()));
         Location max = new Location(pos1.getWorld(), Math.max(pos1.getX(), pos2.getX()), pos1.getWorld().getMaxHeight(),
                 Math.max(pos1.getZ(), pos2.getZ()));
-        Region region = new Region(null, 0, new ExtendedUuid(creator), min, max);
+        Region region = new Region(null, 0, creator.getUniqueId(), min, max);
         List<Region> collisions = new LinkedList<>();
         for(int x = min.getBlockX() >> 7;x <= max.getBlockX() >> 7;++ x) {
             for(int z = min.getBlockZ() >> 7;z <= max.getBlockZ() >> 7;++ z) {
