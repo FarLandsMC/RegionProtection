@@ -213,7 +213,7 @@ public class Encoder implements Flushable, Closeable {
      */
     public void writeUTF8Raw(String s) throws IOException {
         if(s.isEmpty())
-            out.write(0);
+            writeInt(0);
         else{
             byte[] raw = s.getBytes(StandardCharsets.UTF_8);
             writeInt(raw.length);
@@ -228,7 +228,7 @@ public class Encoder implements Flushable, Closeable {
      */
     public void writeASCIIRaw(String s) throws IOException {
         if(s.isEmpty())
-            out.write(0);
+            writeInt(0);
         else{
             char[] cs = s.toCharArray();
             writeInt(cs.length);
@@ -249,80 +249,51 @@ public class Encoder implements Flushable, Closeable {
     }
 
     /**
-     * Writes a generic array to the output stream, assuming the encoder provided is a method reference to this object.
-     * @param a the array.
-     * @param encoder the encoder method.
-     * @param <T> the type of data being written.
-     * @throws Exception and an exception occurs within the encoder.
-     */
-    public <T> void writeArray(T[] a, UnsafeConsumer<T, Exception> encoder) throws Exception {
-        writeInt(a.length);
-        for(T ele : a)
-            encoder.accept(ele);
-    }
-
-    /**
      * Writes an array of the specified type to the output stream using uncompressed, default methods for the encoding.
      * @param a the array.
-     * @param <T> the type of data being encoded.
      * @throws IOException if an I/O error occurs.
      */
-    public <T> void writeArray(T[] a) throws IOException {
+    public void writeArray(Object[] a) throws IOException {
         writeInt(a.length);
         if(a.length == 0)
             return;
         Class<?> componentType = a.getClass().getComponentType();
         if(byte.class.equals(componentType) || Byte.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 out.write((byte)ele);
         }else if(short.class.equals(componentType) || Short.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 writeShort((short)ele);
         }else if(int.class.equals(componentType) || Integer.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 writeInt((int)ele);
         }else if(long.class.equals(componentType) || Long.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 writeLong((long)ele);
         }else if(float.class.equals(componentType) || Float.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 writeFloat((float)ele);
         }else if(double.class.equals(componentType) || Double.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 writeDouble((double)ele);
         }else if(String.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 writeUTF8Raw((String)ele);
         }else if(UUID.class.equals(componentType)) {
-            for(T ele : a)
+            for(Object ele : a)
                 writeUuid((UUID)ele);
         }else if(byte[].class.equals(componentType)) {
-            for(T ele : a) {
+            for(Object ele : a) {
                 writeInt(((byte[])ele).length);
                 write((byte[])ele);
             }
         }else if(Byte[].class.equals(componentType)) {
-            for(T ele : a) {
+            for(Object ele : a) {
                 writeInt(((Byte[])ele).length);
                 for(Byte b : ((Byte[])ele))
                     out.write(b);
             }
         }
-    }
-
-    /**
-     * Writes a collection to the output stream in the form of an array, assuming the encoder provided is a method
-     * reference to this object.
-     * @param c the collection.
-     * @param encoder the encoder.
-     * @param <T> the type of data being written.
-     * @throws Exception if an exception occurs within the encoder.
-     */
-    @SuppressWarnings("unchecked")
-    public <T> void writeArray(Collection<T> c, UnsafeConsumer<T, Exception> encoder) throws Exception {
-        writeInt(c.size());
-        for(T ele : c)
-            encoder.accept(ele);
     }
 
     /**

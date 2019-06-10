@@ -1,8 +1,11 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.RegionProtection;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -11,11 +14,13 @@ public class PlayerSession implements Serializable {
     private UUID uuid;
     private int claimBlocks;
     private RegionHighlighter currentHighlighter;
+    private Location lastClickedBlock;
 
     public PlayerSession(UUID uuid) {
         this.uuid = uuid;
         this.claimBlocks = 0;
         this.currentHighlighter = null;
+        this.lastClickedBlock = null;
     }
 
     public PlayerSession() {
@@ -42,7 +47,16 @@ public class PlayerSession implements Serializable {
         if(currentHighlighter != null && !currentHighlighter.isComplete())
             currentHighlighter.remove();
         currentHighlighter = highlighter;
-        currentHighlighter.showBlocks();
+        if(highlighter != null)
+            Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), currentHighlighter::showBlocks, 1L);
+    }
+
+    public Location getLastClickedBlock() {
+        return lastClickedBlock;
+    }
+
+    public void setLastClickedBlock(Location lastClickedBlock) {
+        this.lastClickedBlock = lastClickedBlock;
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +28,18 @@ public class RegionHighlighter {
         this.changes = new HashMap<>();
         this.complete = false;
         initBlocks(regions);
+    }
+
+    public RegionHighlighter(Player player, Collection<Region> regions) {
+        this(player, regions, Material.GLOWSTONE, Material.GOLD_BLOCK);
+    }
+
+    public RegionHighlighter(Player player, Region region, Material lightSource, Material block) {
+        this(player, Collections.singleton(region), lightSource, block);
+    }
+
+    public RegionHighlighter(Player player, Region region) {
+        this(player, Collections.singleton(region));
     }
 
     public void remove() {
@@ -59,11 +72,11 @@ public class RegionHighlighter {
             addChange(vertex, lightSource);
             addChange(vertex.clone().subtract(1, 0, 0), block);
             addChange(vertex.clone().add(0, 0, 1), block);
-            for(int i = region.getMin().getBlockX() + 10;i < region.getMax().getBlockX() - 5;++ i) {
+            for(int i = region.getMin().getBlockX() + 10;i < region.getMax().getBlockX() - 5;i += 10) {
                 addChange(new Location(region.getMin().getWorld(), i, 0, region.getMin().getZ()), block);
                 addChange(new Location(region.getMin().getWorld(), i, 0, region.getMax().getZ()), block);
             }
-            for(int i = region.getMin().getBlockZ() + 10;i < region.getMax().getBlockZ() - 5;++ i) {
+            for(int i = region.getMin().getBlockZ() + 10;i < region.getMax().getBlockZ() - 5;i += 10) {
                 addChange(new Location(region.getMin().getWorld(), region.getMin().getX(), 0, i), block);
                 addChange(new Location(region.getMin().getWorld(), region.getMax().getX(), 0, i), block);
             }
@@ -97,10 +110,11 @@ public class RegionHighlighter {
     }
 
     private Location findReplacementLocation(Location replacement) {
-        replacement.setY(player.getLocation().getBlockY() + 1);
+        replacement.setY(replacement.getWorld().getMaxHeight());
         replacement.setX(replacement.getBlockX() + .5);
         replacement.setZ(replacement.getBlockZ() + .5);
-        while (replacement.getBlock().getType().equals(Material.AIR) && replacement.getBlockY() > 0) {
+        while(!replacement.getBlock().getType().isSolid() && !Material.WATER.equals(replacement.getBlock().getType()) &&
+                !Material.LAVA.equals(replacement.getBlock().getType()) && replacement.getBlockY() > 0) {
             replacement.setY(replacement.getY() - 1);
         }
         return replacement;

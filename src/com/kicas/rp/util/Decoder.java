@@ -122,8 +122,8 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public long readLong() throws IOException {
-        return ((long)in.read() << 56) | ((long)in.read() << 48) | ((long)in.read() << 40) | ((long)in.read() << 32) |
-                (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+        return ((long)in.read()) << 56 | ((long)in.read()) << 48 | ((long)in.read()) << 40 | ((long)in.read()) << 32 |
+                ((long)in.read()) << 24 | ((long)in.read()) << 16 | ((long)in.read()) << 8 | ((long)in.read());
     }
 
     /**
@@ -221,19 +221,6 @@ public class Decoder implements Closeable {
     }
 
     /**
-     * Reads an array of the specified type from the input stream using the specified decoder, which should be a method
-     * reference to this decoder instance.
-     * @param dest the destination array, which can be of size 0.
-     * @param decoder the decoder function.
-     * @param <T> the type of data being decoded.
-     * @return the next array of the given type in the input stream.
-     * @throws IOException if an I/O error occurs.
-     */
-    public <T> T[] readArray(T[] dest, UnsafeSupplier<T, IOException> decoder) throws IOException {
-        return readArrayAsList(decoder).toArray(dest);
-    }
-
-    /**
      * Reads an array of the specified type from the input stream using default decoders.
      * @param dest the destination array, which can be of size 0.
      * @param <T> the type of data being decoded.
@@ -243,24 +230,6 @@ public class Decoder implements Closeable {
     @SuppressWarnings("unchecked")
     public <T> T[] readArray(T[] dest) throws IOException {
         return readArrayAsList((Class<T>)dest.getClass().getComponentType()).toArray(dest);
-    }
-
-    /**
-     * Reads an array of the specified type as a list from the input stream using the given decoder function, which
-     * should be a method reference to this decoder instance.
-     * @param decoder the decoder function.
-     * @param <T> the type of data being decoded.
-     * @return the next array of the given type in the input stream as a list.
-     * @throws IOException if an I/O error occurs.
-     */
-    public <T> ArrayList<T> readArrayAsList(UnsafeSupplier<T, IOException> decoder) throws IOException {
-        int len = readInt();
-        ArrayList<T> list = new ArrayList<>(len);
-        while(len > 0) {
-            list.add(decoder.get());
-            -- len;
-        }
-        return list;
     }
 
     /**

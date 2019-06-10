@@ -3,6 +3,7 @@ package com.kicas.rp.data;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
@@ -26,6 +27,14 @@ public class ExtendedUuid implements Serializable {
         this((UUID)null);
     }
 
+    public boolean isPublic() {
+        return PUBLIC.equals(uuid);
+    }
+
+    public boolean isAdmin() {
+        return ADMIN.equals(uuid);
+    }
+
     public boolean matches(Player player) {
         if(PUBLIC.equals(uuid))
             return true;
@@ -33,6 +42,15 @@ public class ExtendedUuid implements Serializable {
             return player.isOp();
         else
             return uuid.equals(player.getUniqueId());
+    }
+
+    public String getName() {
+        if(PUBLIC.equals(uuid))
+            return "public";
+        else if(ADMIN.equals(uuid))
+            return "administrator";
+        else
+            return Bukkit.getOfflinePlayer(uuid).getName();
     }
 
     @Override

@@ -1,17 +1,15 @@
 package com.kicas.rp.util;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.function.Function;
 
 public final class Utils {
     private Utils() { }
 
-    public static Material blockType(Location location) {
-        Block block = location.getBlock();
-        return block == null ? Material.AIR : block.getType();
+    public static Material stackType(ItemStack stack) {
+        return stack == null ? Material.AIR : stack.getType();
     }
 
     public static int indexOfDefault(int index, int def) {

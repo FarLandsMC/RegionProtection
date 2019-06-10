@@ -28,7 +28,7 @@ public class FlagContainer {
 
     @SuppressWarnings("unchecked")
     public <T> T getFlagMeta(RegionFlag flag) {
-        return (T)flags.get(flag);
+        return flags.containsKey(flag) ? (T)flags.get(flag) : flag.getDefaultValue();
     }
 
     public Map<RegionFlag, Object> getFlags() {
