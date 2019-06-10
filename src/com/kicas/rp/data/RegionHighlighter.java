@@ -29,15 +29,12 @@ public class RegionHighlighter {
         this.complete = false;
         initBlocks(regions);
     }
-
     public RegionHighlighter(Player player, Collection<Region> regions) {
         this(player, regions, Material.GLOWSTONE, Material.GOLD_BLOCK);
     }
-
     public RegionHighlighter(Player player, Region region, Material lightSource, Material block) {
         this(player, Collections.singleton(region), lightSource, block);
     }
-
     public RegionHighlighter(Player player, Region region) {
         this(player, Collections.singleton(region));
     }
@@ -108,14 +105,31 @@ public class RegionHighlighter {
         original.put(location, location.getBlock().getBlockData());
         changes.put(location, replacement);
     }
-
+    
+    /**
+     * Make the block you want to display more likely to be visible to the player
+     * @param replacement input block location
+     * @return A location with modified Y to be on surface closest to the players foot level
+     */
     private Location findReplacementLocation(Location replacement) {
-        replacement.setY(replacement.getWorld().getMaxHeight());
+        replacement.setY(Math.min(player.getLocation().getBlockY(), player.getWorld().getMaxHeight()));
+        // aligning to .5 so no further action is required for barrier particles
         replacement.setX(replacement.getBlockX() + .5);
         replacement.setZ(replacement.getBlockZ() + .5);
-        while(!replacement.getBlock().getType().isSolid() && !Material.WATER.equals(replacement.getBlock().getType()) &&
-                !Material.LAVA.equals(replacement.getBlock().getType()) && replacement.getBlockY() > 0) {
-            replacement.setY(replacement.getY() - 1);
+        
+        // We don't go from the max height down in case the player is inside a cave
+        if (replacement.getBlock().getType().isSolid() || replacement.getBlock().isLiquid()) {
+            // Replacement is in the ground, so we need to move up
+            while (!replacement.getBlock().getType().isSolid() && !replacement.getBlock().isLiquid()
+                    && replacement.getBlockY() < replacement.getWorld().getMaxHeight()) {
+                replacement.setY(replacement.getY() + 1);
+            }
+        } else {
+            // Replacement is in the air, so we need to move down
+            while (!replacement.getBlock().getType().isSolid() && !replacement.getBlock().isLiquid()
+                    && replacement.getBlockY() > 0) {
+                replacement.setY(replacement.getY() - 1);
+            }
         }
         return replacement;
     }
