@@ -21,7 +21,7 @@ public class PlayerEventHandler implements Listener {
             return;
         }
 
-        if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD) && !flags.isOwner(event.getPlayer())) {
+        if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
             event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
         }
@@ -39,7 +39,7 @@ public class PlayerEventHandler implements Listener {
             return;
         }
 
-        if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD) && !flags.isOwner(event.getPlayer())) {
+        if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
             event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
             event.setCancelled(true);
         }

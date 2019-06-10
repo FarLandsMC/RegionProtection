@@ -21,8 +21,9 @@ public class TrustMeta implements Serializable {
         this.publicTrustLevel = TrustLevel.NONE;
     }
 
-    public boolean hasTrust(Player player, TrustLevel trust) {
-        return trustData.containsKey(player.getUniqueId()) ? trustData.get(player.getUniqueId()).isAtLeast(trust) : publicTrustLevel.isAtLeast(trust);
+    public boolean hasTrust(Player player, TrustLevel trust, FlagContainer container) {
+        return (trustData.containsKey(player.getUniqueId()) ? trustData.get(player.getUniqueId()).isAtLeast(trust) :
+                publicTrustLevel.isAtLeast(trust)) || container.isOwner(player);
     }
 
     public void trust(Player player, TrustLevel trust) {
