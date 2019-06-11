@@ -13,7 +13,6 @@ import java.util.UUID;
 public class Region extends FlagContainer implements Serializable {
     private String name;
     private int priority;
-    private UUID owner;
     private World world;
     private Location min, max;
     private Region association;
@@ -31,6 +30,7 @@ public class Region extends FlagContainer implements Serializable {
     }
 
     public Region(World world) {
+        super(null);
         this.name = null;
         this.priority = 0;
         this.world = world;
@@ -71,6 +71,10 @@ public class Region extends FlagContainer implements Serializable {
         return association != null;
     }
 
+    public boolean isAssociated(Region other) {
+        return association == null ? associatedRegions.contains(other) : association.equals(other);
+    }
+
     public Region getAssociation() {
         return association;
     }
@@ -84,10 +88,19 @@ public class Region extends FlagContainer implements Serializable {
                 loc.getX() <= max.getX() && loc.getY() <= max.getY() && loc.getZ() <= max.getZ();
     }
 
+    public boolean contains(Region region) {
+        return contains(region.getMin()) && contains(region.getMax());
+    }
+
     public boolean intersects(Region other) {
         return max.getBlockX() >= other.getMin().getBlockX() && min.getBlockX() <= other.max.getBlockX() &&
                 max.getBlockY() >= other.getMin().getBlockY() && min.getBlockY() <= other.max.getBlockY() &&
                 max.getBlockZ() >= other.getMin().getBlockZ() && min.getBlockZ() <= other.max.getBlockZ();
+    }
+
+    public boolean isCorner(Location loc) {
+        return (loc.getBlockX() == min.getBlockX() || loc.getBlockX() == max.getBlockX()) &&
+                (loc.getBlockZ() == min.getBlockZ() || loc.getBlockZ() == max.getBlockZ());
     }
 
     public Location getMin() {
@@ -98,19 +111,33 @@ public class Region extends FlagContainer implements Serializable {
         return max;
     }
 
-    public void resetVertex(Location newVertex) {
-        if(newVertex.getX() < min.getX())
-            min.setX(newVertex.getX());
+    public Pair<Location, Location> getBounds() {
+        return new Pair<>(min.clone(), max.clone());
+    }
+
+    public void setBounds(Pair<Location, Location> bounds) {
+        min = bounds.getFirst().clone();
+        max = bounds.getSecond().clone();
+    }
+
+    public void moveVertex(Location from, Location to) {
+        if(min.getBlockX() == from.getBlockX())
+            min.setX(to.getX());
         else
-            max.setX(newVertex.getX());
-        if(newVertex.getY() < min.getY())
-            min.setY(newVertex.getY());
+            max.setX(to.getX());
+        if(min.getBlockZ() == from.getBlockZ())
+            min.setZ(to.getBlockZ());
         else
-            max.setY(newVertex.getY());
-        if(newVertex.getZ() < min.getZ())
-            min.setZ(newVertex.getZ());
-        else
-            max.setZ(newVertex.getZ());
+            max.setZ(to.getBlockZ());
+        Location oldMin = min.clone();
+        min.setX(Math.min(min.getX(), max.getX()));
+        min.setZ(Math.min(min.getZ(), max.getZ()));
+        max.setX(Math.max(oldMin.getX(), max.getX()));
+        max.setZ(Math.max(oldMin.getZ(), max.getZ()));
+    }
+
+    public long area() {
+        return (long)(max.getBlockX() - min.getBlockX()) * (long)(max.getBlockZ() - min.getBlockZ());
     }
 
     @Override
@@ -144,7 +171,7 @@ public class Region extends FlagContainer implements Serializable {
     public void deserialize(Decoder decoder) throws IOException {
         name = decoder.readUTF8Raw();
         priority = decoder.read();
-        if(owner == null)
+        if(association == null)
             owner = decoder.readUuid();
         min = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
         max = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
@@ -159,6 +186,7 @@ public class Region extends FlagContainer implements Serializable {
                 ((Serializable)meta).deserialize(decoder);
             }
             flags.put(flag, meta);
+            -- len;
         }
         if(association == null) {
             len = decoder.readInt();
@@ -166,6 +194,7 @@ public class Region extends FlagContainer implements Serializable {
                 Region assoc = new Region(this);
                 assoc.deserialize(decoder);
                 associatedRegions.add(assoc);
+                -- len;
             }
         }
     }

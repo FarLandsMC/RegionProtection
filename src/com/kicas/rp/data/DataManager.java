@@ -3,6 +3,7 @@ package com.kicas.rp.data;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
+import com.kicas.rp.util.Pair;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -63,7 +64,12 @@ public class DataManager implements Listener {
 
     public Region getHighestPriorityRegionAt(Location location) {
         List<Region> regions = getRegionsAt(location);
-        return regions == null ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority)).orElse(null);
+        return regions.isEmpty() ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority)).orElse(null);
+    }
+
+    public List<Region> getUnassociatedRegionsAt(Location location) {
+        List<Region> regions = getRegionsAt(location);
+        return regions.stream().filter(region -> !region.hasAssociation()).collect(Collectors.toList());
     }
 
     public FlagContainer getFlagsAt(Location location) {
@@ -72,6 +78,8 @@ public class DataManager implements Listener {
         if(regions == null)
             return null;
         regions = regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
+        if(regions.isEmpty())
+            return null;
         if(regions.size() == 1)
             return regions.get(0);
         FlagContainer flags = new FlagContainer(null);
@@ -91,21 +99,10 @@ public class DataManager implements Listener {
         Location max = new Location(pos1.getWorld(), Math.max(pos1.getX(), pos2.getX()), pos1.getWorld().getMaxHeight(),
                 Math.max(pos1.getZ(), pos2.getZ()));
         Region region = new Region(null, 0, creator.getUniqueId(), min, max, null);
-        List<Region> collisions = new LinkedList<>();
-        for(int x = min.getBlockX() >> 7;x <= max.getBlockX() >> 7;++ x) {
-            for(int z = min.getBlockZ() >> 7;z <= max.getBlockZ() >> 7;++ z) {
-                List<Region> regions = lookupTable.get(pos1.getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL));
-                if(regions != null)
-                    regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.intersects(region)).forEach(collisions::add);
-            }
-        }
-        if(!collisions.isEmpty()) {
-            creator.sendMessage(ChatColor.RED + "You cannot create a claim here since it overlaps other claims.");
-            playerSessions.get(creator.getUniqueId()).setRegionHighlighter(new RegionHighlighter(creator, collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
+        if(!checkCollisions(creator, region))
             return null;
-        }
         PlayerSession ps = playerSessions.get(creator.getUniqueId());
-        long area = (max.getBlockX() - min.getBlockX()) * (max.getBlockZ() - min.getBlockZ());
+        long area = region.area();
         if(area > ps.getClaimBlocks()) {
             creator.sendMessage(ChatColor.RED + "You need " + (area - ps.getClaimBlocks()) + " more claim blocks to create this claim.");
             return null;
@@ -119,6 +116,80 @@ public class DataManager implements Listener {
         regions.get(creator.getWorld().getUID()).add(region);
         addRegionToLookupTable(region);
         return region;
+    }
+
+    public Region tryResizeClaim(Player player, Region claim, Location from, Location to) {
+        long oldArea = claim.area();
+        Pair<Location, Location> bounds = claim.getBounds();
+        claim.moveVertex(from, to);
+        if(!checkCollisions(player, claim)) {
+            claim.setBounds(bounds);
+            return null;
+        }
+        PlayerSession ps = playerSessions.get(player.getUniqueId());
+        long dArea = claim.area() - oldArea;
+        if(dArea > ps.getClaimBlocks()) {
+            claim.setBounds(bounds);
+            player.sendMessage(ChatColor.RED + "You need " + (dArea - ps.getClaimBlocks()) + " more claim blocks to resize this claim.");
+            return null;
+        }
+        if(claim.area() < RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) {
+            claim.setBounds(bounds);
+            player.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at least " +
+                    RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
+            return null;
+        }
+        ps.subtractClaimBlocks((int)dArea);
+        // Remove the old claim from the lookup table
+        for(int x = bounds.getFirst().getBlockX() >> 7;x <= bounds.getSecond().getBlockX() >> 7;++ x) {
+            for(int z = bounds.getFirst().getBlockZ() >> 7;z <= bounds.getSecond().getBlockZ() >> 7;++ z) {
+                List<Region> regions = lookupTable.get(bounds.getFirst().getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL));
+                if(regions != null)
+                    regions.remove(claim);
+            }
+        }
+        addRegionToLookupTable(claim);
+        return claim;
+    }
+
+    public Region tryCreateSubdivision(Player creator, Region claim, Location pos1, Location pos2) {
+        Location min = new Location(pos1.getWorld(), Math.min(pos1.getX(), pos2.getX()), 63, Math.min(pos1.getZ(), pos2.getZ()));
+        Location max = new Location(pos1.getWorld(), Math.max(pos1.getX(), pos2.getX()), pos1.getWorld().getMaxHeight(),
+                Math.max(pos1.getZ(), pos2.getZ()));
+        Region region = new Region(null, claim.getPriority() + 1, creator.getUniqueId(), min, max, claim);
+        if(!claim.contains(region)) {
+            creator.sendMessage(ChatColor.RED + "A claim subdivision must be completely withing the surrounding claim.");
+            return null;
+        }
+        List<Region> collisions = new LinkedList<>();
+        claim.getAssociatedRegions().stream().filter(r -> r.intersects(region)).forEach(collisions::add);
+        if(!collisions.isEmpty()) {
+            creator.sendMessage(ChatColor.RED + "This subdivision overlaps with other subdivisions.");
+            playerSessions.get(creator.getUniqueId()).setRegionHighlighter(new RegionHighlighter(creator, collisions,
+                    Material.GLOWSTONE, Material.NETHERRACK, false));
+            return null;
+        }
+        claim.getAssociatedRegions().add(region);
+        addRegionToLookupTable(region);
+        return region;
+    }
+
+    private boolean checkCollisions(Player owner, Region region) {
+        List<Region> collisions = new LinkedList<>();
+        for(int x = region.getMin().getBlockX() >> 7;x <= region.getMax().getBlockX() >> 7;++ x) {
+            for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
+                List<Region> regions = lookupTable.get(region.getMin().getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL));
+                if(regions != null)
+                    regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.intersects(region) && !r.equals(region) &&
+                            !r.isAssociated(region)).forEach(collisions::add);
+            }
+        }
+        if(!collisions.isEmpty()) {
+            owner.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
+            playerSessions.get(owner.getUniqueId()).setRegionHighlighter(new RegionHighlighter(owner, collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
+            return false;
+        }
+        return true;
     }
 
     public PlayerSession getPlayerSession(Player player) {
@@ -154,7 +225,7 @@ public class DataManager implements Listener {
                     -- worldCount;
                 }
             }
-        }catch(IOException ex) {
+        }catch(Throwable ex) {
             RegionProtection.error("Failed to load regions file: " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -176,7 +247,7 @@ public class DataManager implements Listener {
                     -- len;
                 }
             }
-        }catch(IOException ex) {
+        }catch(Throwable ex) {
             RegionProtection.error("Failed to load regions file: " + ex.getMessage());
             ex.printStackTrace();
         }

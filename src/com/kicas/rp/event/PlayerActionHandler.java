@@ -13,6 +13,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.util.RayTraceResult;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,21 +39,64 @@ public class PlayerActionHandler implements Listener {
         if(Action.RIGHT_CLICK_BLOCK.equals(event.getAction())) {
             if(RegionProtection.getClaimCreationTool().equals(event.getMaterial())) {
                 if(ps.getLastClickedBlock() == null) {
+                    List<Region> regions = dm.getUnassociatedRegionsAt(event.getClickedBlock().getLocation());
+                    /*if(regions.stream().anyMatch(region -> !region.isOwner(player))) {
+                        player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
+                        event.setCancelled(true);
+                        return;
+                    }*/
                     ps.setLastClickedBlock(event.getClickedBlock().getLocation());
-                    player.sendMessage(ChatColor.GOLD + "Claim corner set. Select another corner to create your claim.");
+                    if(regions.isEmpty() || regions.size() > 1) {
+                        ps.setAction(PlayerRegionAction.CREATE_REGION);
+                        player.sendMessage(ChatColor.GOLD + "Claim corner set. Select another corner to create your claim.");
+                    }else{
+                        if(regions.get(0).isCorner(ps.getLastClickedBlock())) {
+                            ps.setAction(PlayerRegionAction.MOD_REGION);
+                            ps.setCurrentSelectedRegion(regions.get(0));
+                            player.sendMessage(ChatColor.GOLD + "Claim corner selected. Select another block to resize the claim.");
+                        }else{
+                            ps.setAction(PlayerRegionAction.SUBDIVIDE_REGION);
+                            ps.setCurrentSelectedRegion(regions.get(0));
+                            player.sendMessage(ChatColor.GOLD + "You are subdividing this claim. Select another block to create the subdivision.");
+                        }
+                    }
                 }else{
                     Location vertex = ps.getLastClickedBlock();
                     ps.setLastClickedBlock(null);
-                    Region claim = RegionProtection.getDataManager().tryCreateClaim(player, vertex, event.getClickedBlock().getLocation());
-                    if(claim != null) {
-                        player.sendMessage(ChatColor.GREEN + "Claim created. You have " + ps.getClaimBlocks() + " claim blocks remaining.");
-                        ps.setRegionHighlighter(new RegionHighlighter(player, claim));
+                    switch(ps.getAction()) {
+                        case CREATE_REGION:
+                        {
+                            Region claim = dm.tryCreateClaim(player, vertex, event.getClickedBlock().getLocation());
+                            if(claim != null) {
+                                player.sendMessage(ChatColor.GREEN + "Claim created. You have " + ps.getClaimBlocks() + " claim blocks remaining.");
+                                ps.setRegionHighlighter(new RegionHighlighter(player, claim));
+                            }
+                            break;
+                        }
+                        case MOD_REGION:
+                        {
+                            Region claim = dm.tryResizeClaim(player, ps.getCurrentSelectedRegion(), vertex, event.getClickedBlock().getLocation());
+                            if(claim != null) {
+                                player.sendMessage(ChatColor.GREEN + "Claim resized. You have " + ps.getClaimBlocks() + " claim blocks remaining.");
+                                ps.setRegionHighlighter(new RegionHighlighter(player, claim));
+                            }
+                            break;
+                        }
+                        case SUBDIVIDE_REGION:
+                        {
+                            Region subdivision = dm.tryCreateSubdivision(player, ps.getCurrentSelectedRegion(), vertex, event.getClickedBlock().getLocation());
+                            if(subdivision != null) {
+                                player.sendMessage(ChatColor.GREEN + "Subdivision created.");
+                                ps.setRegionHighlighter(new RegionHighlighter(player, Collections.singleton(ps.getCurrentSelectedRegion()), null, null, true));
+                            }
+                            break;
+                        }
                     }
                 }
                 event.setCancelled(true);
             }else if(RegionProtection.getClaimViewer().equals(event.getMaterial()))
                 detailClaimAt(player, event.getClickedBlock().getLocation());
-        }else if(Action.RIGHT_CLICK_AIR.equals(event.getAction())) {
+        }else if(Action.RIGHT_CLICK_AIR.equals(event.getAction()) && RegionProtection.getClaimViewer().equals(event.getMaterial())) {
             RayTraceResult result = player.rayTraceBlocks(100);
             if(result == null) {
                 player.sendMessage(ChatColor.RED + "This block is too far away.");
@@ -64,12 +108,15 @@ public class PlayerActionHandler implements Listener {
 
     @EventHandler
     public void onHotbarScroll(PlayerItemHeldEvent event) {
+        PlayerSession ps = RegionProtection.getDataManager().getPlayerSession(event.getPlayer());
         if(RegionProtection.getClaimCreationTool().equals(Utils.stackType(event.getPlayer().getInventory().getItem(event.getNewSlot())))) {
-            PlayerSession ps = RegionProtection.getDataManager().getPlayerSession(event.getPlayer());
             event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + ps.getClaimBlocks() + " more blocks.");
             List<Region> regions = RegionProtection.getDataManager().getRegionsAt(event.getPlayer().getLocation());
             if(regions != null)
                 ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions, null, null, true));
+        }else if(RegionProtection.getClaimCreationTool().equals(Utils.stackType(event.getPlayer().getInventory().getItem(event.getPreviousSlot())))) {
+            ps.setLastClickedBlock(null);
+            ps.setAction(null);
         }
     }
 

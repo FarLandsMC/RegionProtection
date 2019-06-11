@@ -21,7 +21,7 @@ public class FlagContainer {
     }
 
     public boolean isAdminOwned() {
-        return owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0;
+        return owner != null && owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0;
     }
 
     public UUID getOwner() {

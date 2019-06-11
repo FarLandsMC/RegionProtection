@@ -14,12 +14,16 @@ public class PlayerSession implements Serializable {
     private UUID uuid;
     private int claimBlocks;
     private RegionHighlighter currentHighlighter;
+    private PlayerRegionAction action;
+    private Region currentSelectedRegion;
     private Location lastClickedBlock;
 
     public PlayerSession(UUID uuid) {
         this.uuid = uuid;
-        this.claimBlocks = 0;
+        this.claimBlocks = 1000000;
         this.currentHighlighter = null;
+        this.action = null;
+        this.currentSelectedRegion = null;
         this.lastClickedBlock = null;
     }
 
@@ -49,6 +53,22 @@ public class PlayerSession implements Serializable {
         currentHighlighter = highlighter;
         if(highlighter != null)
             Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), currentHighlighter::showBlocks, 1L);
+    }
+
+    public PlayerRegionAction getAction() {
+        return action;
+    }
+
+    public void setAction(PlayerRegionAction action) {
+        this.action = action;
+    }
+
+    public Region getCurrentSelectedRegion() {
+        return currentSelectedRegion;
+    }
+
+    public void setCurrentSelectedRegion(Region currentSelectedRegion) {
+        this.currentSelectedRegion = currentSelectedRegion;
     }
 
     public Location getLastClickedBlock() {
