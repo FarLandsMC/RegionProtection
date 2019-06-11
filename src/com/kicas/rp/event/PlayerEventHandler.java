@@ -2,6 +2,7 @@ package com.kicas.rp.event;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
@@ -16,6 +17,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+
 
 public class PlayerEventHandler implements Listener {
     @EventHandler(priority=EventPriority.LOWEST)
@@ -56,9 +58,9 @@ public class PlayerEventHandler implements Listener {
     
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOWEST)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        Material blockType = Materials.getMaterial(event.getClickedBlock());
         if(event.getClickedBlock() == null)
             return;
+        Material blockType = event.getClickedBlock().getType();
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
         if(flags == null)
             return;
@@ -135,7 +137,36 @@ public class PlayerEventHandler implements Listener {
     }
 
     @EventHandler(priority=EventPriority.LOWEST)
-    public void onPlayerInteractEntity(PlayerInteractEntityEvent event){
-        // TODO: item frame  painting  end crystal  vehicle container  armour stand  flame arrow cauldron tnt  ...
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getRightClicked().getLocation());
+        if(flags == null)
+            return;
+        
+        // Cancel breaking leash hitches and fences for anyone with trust lower than trust
+        if (Entities.isPlaceable(event.getRightClicked().getType())) {
+            // trust
+            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                event.setCancelled(true);
+                return;
+            }
+        }
+        // Cancel entity containers for anyone with trust lower than container
+        if (Entities.isInventoryHolder(event.getRightClicked().getType())) {
+            // trust
+            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
+                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                event.setCancelled(true);
+                return;
+            }
+        }
+        // Cancel feedable entities and trading for anyone with trust lower than access
+        if (Entities.isInteractable(event.getRightClicked().getType())) {
+            // trust
+            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
+                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                event.setCancelled(true);
+            }
+        }
     }
 }

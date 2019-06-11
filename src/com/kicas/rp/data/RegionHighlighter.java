@@ -125,10 +125,11 @@ public class RegionHighlighter {
         // We don't go from the max height down in case the player is inside a cave
         if (replacement.getBlock().getType().isSolid() || replacement.getBlock().isLiquid()) {
             // Replacement is in the ground, so we need to move up
-            while (!replacement.getBlock().getType().isSolid() && !replacement.getBlock().isLiquid()
+            while ((replacement.getBlock().getType().isSolid() || replacement.getBlock().isLiquid())
                     && replacement.getBlockY() < replacement.getWorld().getMaxHeight()) {
                 replacement.setY(replacement.getY() + 1);
             }
+            replacement.setY(replacement.getY() - 1); // make sure it's in the ground and not above it
         } else {
             // Replacement is in the air, so we need to move down
             while (!replacement.getBlock().getType().isSolid() && !replacement.getBlock().isLiquid()
