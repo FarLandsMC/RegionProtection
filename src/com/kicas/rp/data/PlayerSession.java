@@ -20,7 +20,7 @@ public class PlayerSession implements Serializable {
 
     public PlayerSession(UUID uuid) {
         this.uuid = uuid;
-        this.claimBlocks = 1000000;
+        this.claimBlocks = 0;
         this.currentHighlighter = null;
         this.action = null;
         this.currentSelectedRegion = null;
