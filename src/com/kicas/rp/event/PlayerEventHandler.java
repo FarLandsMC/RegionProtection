@@ -71,11 +71,11 @@ public class PlayerEventHandler implements Listener {
                     if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(Materials.getMaterial(event.getClickedBlock()))) {
                         event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
                         event.setCancelled(true);
-                        return;
-                    }
-                    if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+                    }else if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
                         event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                         event.setCancelled(true);
+                    }
+                    if(Material.FIRE.equals(block.getType())) {
                         Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(),
                                 () -> event.getPlayer().sendBlockChange(block.getLocation(), block.getBlockData().clone()), 1L);
                     }
