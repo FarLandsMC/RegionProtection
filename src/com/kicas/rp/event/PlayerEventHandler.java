@@ -4,6 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 import com.kicas.rp.util.Materials;
 import com.kicas.rp.util.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -75,6 +76,8 @@ public class PlayerEventHandler implements Listener {
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
                         event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                         event.setCancelled(true);
+                        Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(),
+                                () -> event.getPlayer().sendBlockChange(block.getLocation(), block.getBlockData().clone()), 1L);
                     }
                 }
                 break;
