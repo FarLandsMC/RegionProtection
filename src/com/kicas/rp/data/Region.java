@@ -7,7 +7,6 @@ import org.bukkit.World;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class Region extends FlagContainer implements Serializable {
@@ -30,7 +29,7 @@ public class Region extends FlagContainer implements Serializable {
     }
 
     public Region(World world) {
-        super(null);
+        super((UUID)null);
         this.name = null;
         this.priority = 0;
         this.world = world;
@@ -115,6 +114,29 @@ public class Region extends FlagContainer implements Serializable {
         return new Pair<>(min.clone(), max.clone());
     }
 
+    public double distanceFromEdge(Location location) {
+        if(contains(location))
+            return 0;
+        location = location.clone();
+        location.setY(0);
+        if(location.getX() < min.getX() && location.getZ() > max.getZ())
+            return location.distance(new Location(min.getWorld(), min.getX(), 0, max.getZ()));
+        if(location.getX() > max.getX() && location.getZ() < min.getZ())
+            return location.distance(new Location(min.getWorld(), max.getX(), 0, min.getZ()));
+        Location min0 = min.clone(), max0 = max.clone();
+        min0.setY(0);
+        max0.setY(0);
+        if(location.getX() < min.getX() && location.getZ() < min.getZ())
+            return location.distance(min0);
+        if(location.getX() > max.getX() && location.getZ() > max.getZ())
+            return location.distance(max0);
+        if(location.getX() > min.getX() && location.getX() < max.getX())
+            return location.getZ() < min.getZ() ? min.getZ() - location.getZ() : location.getZ() - max.getZ();
+        if(location.getZ() > min.getZ() && location.getZ() < max.getZ())
+            return location.getX() < min.getX() ? min.getX() - location.getX() : location.getX() - max.getX();
+        return Double.MAX_VALUE;
+    }
+
     public void setBounds(Pair<Location, Location> bounds) {
         min = bounds.getFirst().clone();
         max = bounds.getSecond().clone();
@@ -152,14 +174,7 @@ public class Region extends FlagContainer implements Serializable {
         encoder.writeInt(max.getBlockX());
         encoder.writeInt(max.getBlockY());
         encoder.writeInt(max.getBlockZ());
-        encoder.writeInt(flags.size());
-        for(Map.Entry<RegionFlag, Object> entry : flags.entrySet()) {
-            encoder.write(entry.getKey().ordinal());
-            if(entry.getKey().isBoolean())
-                encoder.writeBoolean((boolean)entry.getValue());
-            else
-                ((Serializable)entry.getValue()).serialize(encoder);
-        }
+        super.serialize(encoder);
         if(association == null) {
             encoder.writeInt(associatedRegions.size());
             for(Region region : associatedRegions)
@@ -175,21 +190,9 @@ public class Region extends FlagContainer implements Serializable {
             owner = decoder.readUuid();
         min = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
         max = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
-        int len = decoder.readInt();
-        while(len > 0) {
-            RegionFlag flag = RegionFlag.VALUES[decoder.read()];
-            Object meta;
-            if(flag.isBoolean())
-                meta = decoder.readBoolean();
-            else{
-                meta = ReflectionHelper.instantiate(flag.getMetaClass());
-                ((Serializable)meta).deserialize(decoder);
-            }
-            flags.put(flag, meta);
-            -- len;
-        }
+        super.deserialize(decoder);
         if(association == null) {
-            len = decoder.readInt();
+            int len = decoder.readInt();
             while(len > 0) {
                 Region assoc = new Region(this);
                 assoc.deserialize(decoder);

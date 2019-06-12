@@ -9,13 +9,21 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerLeashEntityEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.vehicle.VehicleDamageEvent;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
 
@@ -142,11 +150,12 @@ public class PlayerEventHandler implements Listener {
         if(flags == null)
             return;
         
-        // Cancel breaking leash hitches and fences for anyone with trust lower than trust
-        if (Entities.isPlaceable(event.getRightClicked().getType())) {
+        // Cancel breaking leash hitches
+        if (event.getRightClicked().getType() == EntityType.LEASH_HITCH) {
             // trust
             if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                if(EquipmentSlot.HAND.equals(event.getHand()))
+                    event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                 event.setCancelled(true);
                 return;
             }
@@ -155,7 +164,8 @@ public class PlayerEventHandler implements Listener {
         if (Entities.isInventoryHolder(event.getRightClicked().getType())) {
             // trust
             if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
-                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                if(EquipmentSlot.HAND.equals(event.getHand()))
+                    event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                 event.setCancelled(true);
                 return;
             }
@@ -164,7 +174,88 @@ public class PlayerEventHandler implements Listener {
         if (Entities.isInteractable(event.getRightClicked().getType())) {
             // trust
             if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
-                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                if(EquipmentSlot.HAND.equals(event.getHand()))
+                    event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerManipulateArmorStand(PlayerArmorStandManipulateEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getRightClicked().getLocation());
+        if(flags == null)
+            return;
+
+        if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerLeashEntity(PlayerLeashEntityEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if(flags == null)
+            return;
+
+        if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if(flags == null)
+            return;
+
+        if(event.getDamager() instanceof Player) {
+            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getDamager(), TrustLevel.BUILD, flags)) {
+                event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onVehicleDamaged(VehicleDamageEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getVehicle().getLocation());
+        if(flags == null)
+            return;
+
+        if(event.getAttacker() instanceof Player) {
+            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getAttacker(), TrustLevel.BUILD, flags)) {
+                event.getAttacker().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onVehicleEntered(VehicleEnterEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getVehicle().getLocation());
+        if(flags == null)
+            return;
+
+        if(event.getEntered() instanceof Player) {
+            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getEntered(), TrustLevel.ACCESS, flags)) {
+                event.getEntered().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onHangingEntityBroken(HangingBreakByEntityEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if(flags == null)
+            return;
+
+        if(event.getRemover() instanceof Player) {
+            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getRemover(), TrustLevel.BUILD, flags)) {
+                event.getRemover().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                 event.setCancelled(true);
             }
         }

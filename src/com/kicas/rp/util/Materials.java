@@ -19,7 +19,8 @@ public class Materials {
                 Material.HOPPER, Material.BREWING_STAND, Material.LECTERN, Material.BARREL, Material.CAMPFIRE,
                 Material.COMPOSTER));
         INVENTORY_HOLDERS.addAll(materialsEndingWith("SHULKER_BOX"));
-        PLACEABLES.addAll(Arrays.asList(Material.BONE_MEAL, Material.ARMOR_STAND, Material.END_CRYSTAL, Material.FLINT_AND_STEEL));
+        PLACEABLES.addAll(Arrays.asList(Material.BONE_MEAL, Material.ARMOR_STAND, Material.END_CRYSTAL, Material.FLINT_AND_STEEL,
+                Material.PAINTING, Material.ITEM_FRAME));
         PLACEABLES.addAll(materialsEndingWith("BOAT"));
         PLACEABLES.addAll(materialsEndingWith("MINECART"));
     }

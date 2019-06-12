@@ -10,6 +10,8 @@ public enum RegionFlag {
     DENY_SPAWN(EnumFilter.class),
     DENY_BREAK(EnumFilter.class),
     DENY_PLACE(EnumFilter.class),
+    MOB_GRIEF,
+    TNT_EXPLOSIONS,
     OVERLAP;
 
     public static final RegionFlag[] VALUES = values();
@@ -57,6 +59,8 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(DENY_BREAK, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(DENY_PLACE, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(MOB_GRIEF, false);
+        DEFAULT_VALUES.put(TNT_EXPLOSIONS, false);
         DEFAULT_VALUES.put(OVERLAP, false);
     }
 }

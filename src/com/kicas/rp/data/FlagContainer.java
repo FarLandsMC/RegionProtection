@@ -1,19 +1,29 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.util.Decoder;
+import com.kicas.rp.util.Encoder;
+import com.kicas.rp.util.ReflectionHelper;
+import com.kicas.rp.util.Serializable;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class FlagContainer {
+public class FlagContainer implements Serializable {
     protected final Map<RegionFlag, Object> flags;
     protected UUID owner;
 
     public FlagContainer(UUID owner) {
         this.flags = new HashMap<>();
         this.owner = owner;
+    }
+
+    public FlagContainer(FlagContainer other) {
+        this.flags = new HashMap<>(other.flags);
+        this.owner = other.owner;
     }
 
     public FlagContainer() {
@@ -67,5 +77,34 @@ public class FlagContainer {
 
     public Map<RegionFlag, Object> getFlags() {
         return flags;
+    }
+
+    @Override
+    public void serialize(Encoder encoder) throws IOException {
+        encoder.writeInt(flags.size());
+        for(Map.Entry<RegionFlag, Object> entry : flags.entrySet()) {
+            encoder.write(entry.getKey().ordinal());
+            if(entry.getKey().isBoolean())
+                encoder.writeBoolean((boolean)entry.getValue());
+            else
+                ((Serializable)entry.getValue()).serialize(encoder);
+        }
+    }
+
+    @Override
+    public void deserialize(Decoder decoder) throws IOException {
+        int len = decoder.readInt();
+        while(len > 0) {
+            RegionFlag flag = RegionFlag.VALUES[decoder.read()];
+            Object meta;
+            if(flag.isBoolean())
+                meta = decoder.readBoolean();
+            else{
+                meta = ReflectionHelper.instantiate(flag.getMetaClass());
+                ((Serializable)meta).deserialize(decoder);
+            }
+            flags.put(flag, meta);
+            -- len;
+        }
     }
 }

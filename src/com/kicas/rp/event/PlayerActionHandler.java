@@ -27,8 +27,7 @@ public class PlayerActionHandler implements Listener {
         if((Action.RIGHT_CLICK_BLOCK.equals(event.getAction()) || Action.RIGHT_CLICK_AIR.equals(event.getAction())) &&
                 player.isSneaking() && RegionProtection.getClaimViewer().equals(event.getMaterial())) {
             List<Region> regions = dm.getRegionsInWorld(player.getWorld()).stream()
-                    .filter(region -> Math.min(region.getMin().distanceSquared(player.getLocation()),
-                            region.getMax().distanceSquared(player.getLocation())) < 10000).collect(Collectors.toList());
+                    .filter(region -> region.distanceFromEdge(player.getLocation()) < 100).collect(Collectors.toList());
             player.sendMessage(ChatColor.GOLD + "Found " + regions.size() + " claim" + (regions.size() == 1 ? "" : "s") + " nearby.");
             if(!regions.isEmpty())
                 ps.setRegionHighlighter(new RegionHighlighter(player, regions));
@@ -110,10 +109,11 @@ public class PlayerActionHandler implements Listener {
     public void onHotbarScroll(PlayerItemHeldEvent event) {
         PlayerSession ps = RegionProtection.getDataManager().getPlayerSession(event.getPlayer());
         if(RegionProtection.getClaimCreationTool().equals(Utils.stackType(event.getPlayer().getInventory().getItem(event.getNewSlot())))) {
-            event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + ps.getClaimBlocks() + " more blocks.");
-            List<Region> regions = RegionProtection.getDataManager().getRegionsAt(event.getPlayer().getLocation());
-            if(regions != null)
-                ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions, null, null, true));
+                event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + ps.getClaimBlocks() + " more blocks.");
+            List<Region> regions = RegionProtection.getDataManager().getRegionsInWorld(event.getPlayer().getWorld()).stream()
+                    .filter(region -> region.distanceFromEdge(event.getPlayer().getLocation()) < 100).collect(Collectors.toList());
+            if(!regions.isEmpty())
+                ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions));
         }else if(RegionProtection.getClaimCreationTool().equals(Utils.stackType(event.getPlayer().getInventory().getItem(event.getPreviousSlot())))) {
             ps.setLastClickedBlock(null);
             ps.setAction(null);

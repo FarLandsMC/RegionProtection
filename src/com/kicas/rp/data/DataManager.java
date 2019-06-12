@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 public class DataManager implements Listener {
     private final File rootDir;
-    private final Map<UUID, List<Region>> regions;
+    private final Map<UUID, WorldData> worlds;
     private final Map<UUID, Map<Long, List<Region>>> lookupTable;
     private final Map<UUID, PlayerSession> playerSessions;
 
@@ -28,7 +28,7 @@ public class DataManager implements Listener {
 
     public DataManager(File rootDir) {
         this.rootDir = rootDir;
-        this.regions = new HashMap<>();
+        this.worlds = new HashMap<>();
         this.lookupTable = new HashMap<>();
         this.playerSessions = new HashMap<>();
     }
@@ -40,7 +40,7 @@ public class DataManager implements Listener {
     }
 
     public void associate(Region parent, Region associated) {
-        regions.get(associated.getMin().getWorld().getUID()).remove(associated);
+        worlds.get(associated.getMin().getWorld().getUID()).regions.remove(associated);
         if(associated.getPriority() < parent.getPriority())
             associated.setPriority(parent.getPriority());
         associated.setOwner(parent.getOwner());
@@ -49,17 +49,22 @@ public class DataManager implements Listener {
     }
 
     public List<Region> getRegionsInWorld(World world) {
-        return regions.get(world.getUID());
+        return worlds.get(world.getUID()).regions;
     }
 
     public Region getRegionByName(World world, String name) {
-        return regions.get(world.getUID()).stream().filter(region -> name.equals(region.getName())).findAny().orElse(null);
+        return worlds.get(world.getUID()).regions.stream().filter(region -> name.equals(region.getName())).findAny().orElse(null);
     }
 
     public List<Region> getRegionsAt(Location location) {
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(((long)(location.getBlockX() >> 7)) << 32 |
                 ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL));
         return regions == null ? Collections.emptyList() : regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
+    }
+
+    public boolean crossesRegions(Location from, Location to) {
+        List<Region> fromRegions = getRegionsAt(from), toRegions = getRegionsAt(to);
+        return !toRegions.isEmpty() && !fromRegions.equals(toRegions);
     }
 
     public Region getHighestPriorityRegionAt(Location location) {
@@ -73,16 +78,17 @@ public class DataManager implements Listener {
     }
 
     public FlagContainer getFlagsAt(Location location) {
+        FlagContainer worldFlags = worlds.get(location.getWorld().getUID());
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(((long)(location.getBlockX() >> 7)) << 32 |
                 ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL));
         if(regions == null)
-            return null;
+            return worldFlags.isEmpty() ? null : worldFlags;
         regions = regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
         if(regions.isEmpty())
-            return null;
-        if(regions.size() == 1)
+            return worldFlags.isEmpty() ? null : worldFlags;
+        if(regions.size() == 1 && worldFlags.isEmpty())
             return regions.get(0);
-        FlagContainer flags = new FlagContainer(null);
+        FlagContainer flags = new FlagContainer(worldFlags);
         regions.stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
             region.getFlags().forEach((flag, meta) -> {
                 if(!flags.hasFlag(flag))
@@ -113,7 +119,7 @@ public class DataManager implements Listener {
             return null;
         }
         ps.subtractClaimBlocks((int)area);
-        regions.get(creator.getWorld().getUID()).add(region);
+        worlds.get(creator.getWorld().getUID()).regions.add(region);
         addRegionToLookupTable(region);
         return region;
     }
@@ -198,7 +204,7 @@ public class DataManager implements Listener {
 
     public void load() {
         Bukkit.getWorlds().stream().map(World::getUID).forEach(uuid -> {
-            regions.put(uuid, new ArrayList<>());
+            worlds.put(uuid, new WorldData(uuid));
             lookupTable.put(uuid, new HashMap<>());
         });
 
@@ -211,17 +217,12 @@ public class DataManager implements Listener {
                 int format = decoder.read();
                 if(format != REGION_FORMAT_VERSION)
                     throw new RuntimeException("Could not load regions file since it uses format version " + format + " and is not up to date.");
-                int worldCount = Bukkit.getWorlds().size();
+                int worldCount = decoder.read();
                 while(worldCount > 0) {
-                    World world = Bukkit.getWorld(decoder.readUuid());
-                    int regionCount = decoder.readInt();
-                    while(regionCount > 0) {
-                        Region region = new Region(world);
-                        region.deserialize(decoder);
-                        regions.get(world.getUID()).add(region);
-                        addRegionToLookupTable(region);
-                        -- regionCount;
-                    }
+                    WorldData wd = new WorldData(null);
+                    wd.deserialize(decoder);
+                    wd.regions.forEach(this::addRegionToLookupTable);
+                    worlds.put(wd.worldUid, wd);
                     -- worldCount;
                 }
             }
@@ -262,12 +263,9 @@ public class DataManager implements Listener {
                 regionsFile.createNewFile();
             Encoder encoder = new Encoder(new FileOutputStream(regionsFile));
             encoder.write(REGION_FORMAT_VERSION);
-            for(Map.Entry<UUID, List<Region>> world : regions.entrySet()) {
-                encoder.writeUuid(world.getKey());
-                encoder.writeInt(world.getValue().size());
-                for(Region region : world.getValue())
-                    region.serialize(encoder);
-            }
+            encoder.write(worlds.size());
+            for(WorldData wd : worlds.values())
+                wd.serialize(encoder);
         }catch(IOException ex) {
             RegionProtection.error("Failed to save regions file: " + ex.getMessage());
             ex.printStackTrace();
@@ -300,5 +298,39 @@ public class DataManager implements Listener {
             }
         }
         region.getAssociatedRegions().forEach(this::addRegionToLookupTable);
+    }
+
+    private static class WorldData extends FlagContainer {
+        UUID worldUid;
+        final List<Region> regions;
+
+        WorldData(UUID uuid) {
+            super((UUID)null);
+            this.worldUid = uuid;
+            this.regions = new ArrayList<>();
+        }
+
+        @Override
+        public void serialize(Encoder encoder) throws IOException {
+            encoder.writeUuid(worldUid);
+            super.serialize(encoder);
+            encoder.writeInt(regions.size());
+            for(Region region : regions)
+                region.serialize(encoder);
+        }
+
+        @Override
+        public void deserialize(Decoder decoder) throws IOException {
+            worldUid = decoder.readUuid();
+            super.deserialize(decoder);
+            World world = Bukkit.getWorld(worldUid);
+            int len = decoder.readInt();
+            while(len > 0) {
+                Region region = new Region(world);
+                region.deserialize(decoder);
+                regions.add(region);
+                -- len;
+            }
+        }
     }
 }

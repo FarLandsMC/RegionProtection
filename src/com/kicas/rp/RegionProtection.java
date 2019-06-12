@@ -3,8 +3,10 @@ package com.kicas.rp;
 import com.kicas.rp.command.CommandHandler;
 import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.RegionFlag;
+import com.kicas.rp.event.EntityEventHandler;
 import com.kicas.rp.event.PlayerActionHandler;
 import com.kicas.rp.event.PlayerEventHandler;
+import com.kicas.rp.event.WorldEventHandler;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -36,6 +38,8 @@ public class RegionProtection extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(dataManager, this);
         Bukkit.getPluginManager().registerEvents(new PlayerActionHandler(), this);
         Bukkit.getPluginManager().registerEvents(new PlayerEventHandler(), this);
+        Bukkit.getPluginManager().registerEvents(new EntityEventHandler(), this);
+        Bukkit.getPluginManager().registerEvents(new WorldEventHandler(), this);
     }
 
     @Override
