@@ -14,6 +14,9 @@ import org.bukkit.event.server.ServerCommandEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Custom command handler for the region protection plugin.
+ */
 public class CommandHandler implements Listener {
     private final List<Command> commands;
 
@@ -21,6 +24,10 @@ public class CommandHandler implements Listener {
         this.commands = new ArrayList<>();
     }
 
+    /**
+     * Called when the plugin is enabled. Injects the command instances into the NMS system and registers them to the
+     * custom handler as well.
+     */
     public void registerCommands() {
 
     }
@@ -30,37 +37,48 @@ public class CommandHandler implements Listener {
         ((CraftServer) Bukkit.getServer()).getCommandMap().register("regionprotection", command);
     }
 
+    /**
+     * Attempts to match the given input to a command and run it with the given sender. This method will return whether
+     * or not the event pertaining to the given command should be cancelled, not necessarily if the command was
+     * successfully run.
+     * @param sender the command sender.
+     * @param fullCommand the full command, including arguments.
+     * @return true if the event pertaining to this command should be cancelled, false otherwise.
+     */
     public boolean handleCommand(CommandSender sender, String fullCommand) {
-        String command = fullCommand.substring(fullCommand.startsWith("/") ? 1 : 0, Utils.indexOfDefault(fullCommand.indexOf(' '), fullCommand.length())).trim();
-        String[] args = fullCommand.contains(" ") ? fullCommand.substring(fullCommand.indexOf(' ') + 1).split(" ") : new String[0];
+        String command = fullCommand.substring(fullCommand.startsWith("/") ? 1 : 0,
+                Utils.indexOfDefault(fullCommand.indexOf(' '), fullCommand.length())).trim();
+        String[] args = fullCommand.contains(" ") ? fullCommand.substring(fullCommand.indexOf(' ') + 1).split(" ")
+                : new String[0];
         Command c = commands.stream().filter(cmd -> cmd.matches(command)).findAny().orElse(null);
+
+        // Invalid command
         if(c == null)
             return false;
+
+        // Permission bypass
         if(fullCommand.startsWith("/regionprotection:"))
             return true;
+
+        // Lacking permission
         if(c.isOpOnly() && !sender.isOp()) {
             sender.sendMessage(ChatColor.RED + "You must be an administrator to use this command.");
             return true;
         }
+
+        // Run the command
         c.execute(sender, command, args);
+
         return true;
     }
 
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
-        if(event.getMessage().startsWith("/regionprotection:")) {
-            event.setCancelled(true);
-            return;
-        }
         event.setCancelled(handleCommand(event.getPlayer(), event.getMessage()));
     }
 
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onServerCommand(ServerCommandEvent event) {
-        if(event.getCommand().startsWith("/regionprotection:")) {
-            event.setCancelled(true);
-            return;
-        }
         event.setCancelled(handleCommand(event.getSender(), event.getCommand()));
     }
 }

@@ -240,15 +240,17 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Attempts to modify the size of a given claim. This method does not check to ensure that the provided player has
-     * permission to modify the size of the claim, this check should be performed outside of this method. The two given
-     * locations are the original location and new location of any vertex of the claim. The following checks are done to
-     * see if the claim can be resized:
+     * Attempts to modify the size of a given claim, which can be a sub-claim. This method does not check to ensure that
+     * the provided player has permission to modify the size of the claim, this check should be performed outside of
+     * this method. The two given locations are the original location and new location of any vertex of the claim. The
+     * following checks are done to a claim which has no parent:
      * <ul>
      *     <li>Collisions with regions that do not allow overlap (excluding child regions)</li>
      *     <li>The player not having enough claim blocks</li>
      *     <li>The new claim size is smaller than the minimum claim area</li>
+     *     <li>Any children are no longer fully contained within the parent region</li>
      * </ul>
+     * The only check performed to a subdivision is to ensure it is still completely contained within the parent claim.
      * If any of these checks fail, then the player will be notified with a message and null will be returned. Upon
      * successful resizing of the claim, the player will gain or lose claim blocks depending on the change in area of
      * the claim and the claim will be returned after its resizing.
@@ -273,26 +275,51 @@ public class DataManager implements Listener {
             return null;
         }
 
-        // Check claim blocks
-        PlayerSession ps = playerSessions.get(owner.getUniqueId());
-        long areaDiff = claim.area() - oldArea;
-        if(areaDiff > ps.getClaimBlocks()) {
-            claim.setBounds(bounds);
-            owner.sendMessage(ChatColor.RED + "You need " + (areaDiff - ps.getClaimBlocks()) +
-                    " more claim blocks to resize this claim.");
-            return null;
-        }
+        // Regular claims
+        if(!claim.hasParent()) {
+            // Check claim blocks
+            PlayerSession ps = playerSessions.get(owner.getUniqueId());
+            long areaDiff = claim.area() - oldArea;
+            if(areaDiff > ps.getClaimBlocks()) {
+                claim.setBounds(bounds);
+                owner.sendMessage(ChatColor.RED + "You need " + (areaDiff - ps.getClaimBlocks()) +
+                        " more claim blocks to resize this claim.");
+                return null;
+            }
 
-        // Check to make sure it's at least the minimum area
-        if(claim.area() < RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) {
-            claim.setBounds(bounds);
-            owner.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at least " +
-                    RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
-            return null;
-        }
+            // Check to make sure it's at least the minimum area
+            if(claim.area() < RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) {
+                claim.setBounds(bounds);
+                owner.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at least " +
+                        RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
+                return null;
+            }
 
-        // Modify claim blocks
-        ps.subtractClaimBlocks((int)areaDiff);
+            // Check to make sure all subdivisions are still within the parent region
+            List<Region> exclaves = new LinkedList<>();
+            claim.getChildren().stream().filter(region -> !claim.contains(region)).forEach(exclaves::add);
+            if(!exclaves.isEmpty()) {
+                claim.setBounds(bounds);
+                owner.sendMessage(ChatColor.RED + "You cannot resize your claim here since some subdivisions are not " +
+                        "completely within the parent region.");
+                playerSessions.get(owner.getUniqueId()).setRegionHighlighter(new RegionHighlighter(owner, exclaves,
+                        Material.GLOWSTONE, Material.NETHERRACK, false));
+                return null;
+            }
+
+            // Modify claim blocks
+            ps.subtractClaimBlocks((int)areaDiff);
+        }else{ // Subdivisions
+            // Check to make sure the subdivision is still completely within the parent claim
+            if(!claim.getParent().contains(claim)) {
+                claim.setBounds(bounds);
+                owner.sendMessage(ChatColor.RED + "You cannot resize this subdivision here since it exits the parent " +
+                        "claim.");
+                playerSessions.get(owner.getUniqueId()).setRegionHighlighter(new RegionHighlighter(owner,
+                        claim.getParent()));
+                return null;
+            }
+        }
 
         // Remove the old claim from the lookup table
         for(int x = bounds.getFirst().getBlockX() >> 7;x <= bounds.getSecond().getBlockX() >> 7;++ x) {
@@ -345,14 +372,8 @@ public class DataManager implements Listener {
         }
 
         // Check for collisions with other subdivisions
-        List<Region> collisions = new LinkedList<>();
-        claim.getChildren().stream().filter(r -> r.overlaps(region)).forEach(collisions::add);
-        if(!collisions.isEmpty()) {
-            creator.sendMessage(ChatColor.RED + "This subdivision overlaps with other subdivisions.");
-            playerSessions.get(creator.getUniqueId()).setRegionHighlighter(new RegionHighlighter(creator, collisions,
-                    Material.GLOWSTONE, Material.NETHERRACK, false));
+        if(!checkCollisions(creator, region))
             return null;
-        }
 
         // Register the subdivision
         claim.getChildren().add(region);
@@ -371,6 +392,7 @@ public class DataManager implements Listener {
             for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
                 List<Region> regions = lookupTable.get(region.getWorld().getUID())
                         .get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL));
+                // Ignore associations to prevent conflict with subdivisions
                 regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.overlaps(region) &&
                         !r.equals(region) && !r.isAssociated(region)).forEach(collisions::add);
             }

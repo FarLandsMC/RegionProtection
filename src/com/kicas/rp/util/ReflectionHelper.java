@@ -7,7 +7,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Provides utilities to interact with Java classes and Java's reflection API. All methods return null upon failure
+ * rather than throwing exceptions. This class does not respect access modifiers.
+ */
 public final class ReflectionHelper {
+    // Wrapper to primitive
     private static final Map<Class<?>, Class<?>> W2P = new HashMap<>();
 
     static {
@@ -31,8 +36,13 @@ public final class ReflectionHelper {
 
     private ReflectionHelper() { }
 
-    public static boolean isNullable(Class<?> clazz) {
-        return !clazz.isPrimitive();
+    /**
+     * Return whether or not an object of the given type can be null.
+     * @param type the type.
+     * @return true if the given type can be null, false otherwise.
+     */
+    public static boolean isNullable(Class<?> type) {
+        return !type.isPrimitive();
     }
 
     public static Number numericCast(Class<?> newType, Number target) {
@@ -52,6 +62,13 @@ public final class ReflectionHelper {
             return target.byteValue();
     }
 
+    /**
+     * Safely casts the given object to the given type, and returning null if the cast could not be completed.
+     * @param newType the new type.
+     * @param target the target object.
+     * @param <T> the new type.
+     * @return the casted object, or null if the cast could not be completed.
+     */
     public static <T> T safeCast(Class<T> newType, Object target) {
         if(newType.isAssignableFrom(target.getClass()))
             return newType.cast(target);
@@ -60,48 +77,24 @@ public final class ReflectionHelper {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T[] arrayCast(T[] dest, Object[] target) {
-        if(dest.length != target.length)
-            return null;
-        for(int i = 0;i < dest.length;++ i)
-            dest[i] = safeCast((Class<T>)dest.getClass().getComponentType(), target[i]);
-        return dest;
-    }
-
-    public static Object[] union(Object[] a, Object[] b) {
-        Set<Object> temp = new HashSet<>();
-        temp.addAll(Arrays.asList(a));
-        temp.addAll(Arrays.asList(b));
-        temp.remove(null); // Remove the single null element if there is one
-        return temp.toArray();
-    }
-
-    @SuppressWarnings("unchecked")
     public static <T extends Annotation> T getAnnotation(Class<T> annotationClass, Object target) {
-        Method gdecla = getMethod("getDeclaredAnnotation", target.getClass(), Class.class),
-                ga = getMethod("getAnnotation", target.getClass(), Class.class);
-        if(gdecla == null || ga == null)
-            return null;
-        T a = (T)invoke(ga, target, annotationClass);
-        return a == null ? (T)invoke(gdecla, target, annotationClass) : a;
+        // Check both declared annotations and regular annotations
+        T a = target.getClass().getAnnotation(annotationClass);
+        return a == null ? target.getClass().getDeclaredAnnotation(annotationClass) : a;
     }
 
     public static Method getMethod(String methodName, Class<?> clazz, Class<?>... parameterTypes) {
-        return getByParameterTypesAndName(methodName, getMethods(clazz), parameterTypes);
+        return getByParameterTypesAndName(methodName, Arrays.asList(clazz.getMethods()), parameterTypes);
     }
 
-    public static List<Method> getMethods(Class<?> clazz) {
-        Object[] methods = union(clazz.getDeclaredMethods(), clazz.getMethods());
-        return Arrays.asList(arrayCast(new Method[methods.length], methods));
+    public static <T extends Annotation> List<Pair<Method, T>> getMethodsAnnotatedWith(Class<T> annotationType,
+                                                                                       Class<?> clazz) {
+        return Arrays.stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(annotationType))
+                .map(m -> new Pair<>(m, m.getAnnotation(annotationType))).collect(Collectors.toList());
     }
 
-    public static <T extends Annotation> List<Pair<Method, T>> getMethodsAnnotatedWith(Class<?> type, Class<T> clazz) {
-        return getMethods(type).stream().filter(m -> m.isAnnotationPresent(clazz)).map(m -> new Pair<>(m, m.getAnnotation(clazz)))
-                .collect(Collectors.toList());
-    }
-
-    public static <T extends Annotation> Pair<Method, T> getAnnotatedMethod(Class<?> type, Class<T> clazz) {
-        List<Pair<Method, T>> methods = getMethodsAnnotatedWith(type, clazz);
+    public static <T extends Annotation> Pair<Method, T> getAnnotatedMethod(Class<T> annotationType, Class<?> clazz) {
+        List<Pair<Method, T>> methods = getMethodsAnnotatedWith(annotationType, clazz);
         return methods.isEmpty() ? null : methods.get(0);
     }
 
@@ -129,14 +122,13 @@ public final class ReflectionHelper {
 
     @SuppressWarnings("unchecked")
     public static <T> Constructor<T> getLowestParamCountConstructor(Class<T> clazz) {
-        return Stream.of(union(clazz.getDeclaredConstructors(), clazz.getConstructors())).map(c -> (Constructor<T>)c)
+        return Stream.of(clazz.getConstructors()).map(c -> (Constructor<T>)c)
                 .min(Comparator.comparingInt(Constructor::getParameterCount)).orElse(null);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> List<Constructor<T>> getConstructors(Class<T> clazz) {
-        return Stream.of(union(clazz.getDeclaredConstructors(), clazz.getConstructors())).map(c -> (Constructor<T>)c)
-                .collect(Collectors.toList());
+        return Stream.of(clazz.getConstructors()).map(c -> (Constructor<T>)c).collect(Collectors.toList());
     }
 
     public static <T> T instantiate(Class<T> clazz, Object... parameters) {
@@ -219,11 +211,6 @@ public final class ReflectionHelper {
         }
     }
 
-    public static Field[] getFields(Class<?> clazz) {
-        Object[] fields = union(clazz.getDeclaredFields(), clazz.getFields());
-        return arrayCast(new Field[fields.length], fields);
-    }
-
     public static Object getFieldValue(String fieldName, Class<?> clazz, Object target) {
         return getFieldValue(getFieldObject(fieldName, clazz), target);
     }
@@ -257,7 +244,8 @@ public final class ReflectionHelper {
         return true;
     }
 
-    private static <T extends Executable> T getByParameterTypesAndName(String name, List<T> options, Class<?>[] parameterTypes) {
+    private static <T extends Executable> T getByParameterTypesAndName(String name, List<T> options,
+                                                                       Class<?>[] parameterTypes) {
         outer:
         for(T option : options) {
             if(!Objects.equals(option.getName(), name))

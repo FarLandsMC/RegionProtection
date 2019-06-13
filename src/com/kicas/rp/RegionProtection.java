@@ -15,6 +15,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
 
+/**
+ * This is the main plugin class for the Region Protection plugin. All non-utility features of the plugin can be
+ * accessed through this class.
+ */
 public class RegionProtection extends JavaPlugin {
     private final CommandHandler commandHandler;
     private final DataManager dataManager;
@@ -63,7 +67,7 @@ public class RegionProtection extends JavaPlugin {
         return instance.claimCreationTool;
     }
 
-    public static Material getClaimViewer() {
+    public static Material getClaimViewerTool() {
         return instance.claimViewer;
     }
 
@@ -84,17 +88,21 @@ public class RegionProtection extends JavaPlugin {
         config.options().copyDefaults(true);
         saveConfig();
 
+        // Convert the text input to the enum values
         claimCreationTool = Utils.safeValueOf(Material::valueOf, config.getString("general.claim-creation-item"));
         if(claimCreationTool == null) {
-            log("Invalid material found in config under general.claim-creation-item: " + config.getString("general.claim-creation-item"));
+            log("Invalid material found in config under general.claim-creation-item: " +
+                    config.getString("general.claim-creation-item"));
             claimCreationTool = Material.GOLDEN_SHOVEL;
         }
         claimViewer = Utils.safeValueOf(Material::valueOf, config.getString("general.claim-viewer"));
         if(claimViewer == null) {
-            log("Invalid material found in config under general.claim-viewer: " + config.getString("general.claim-viewer"));
+            log("Invalid material found in config under general.claim-viewer: " +
+                    config.getString("general.claim-viewer"));
             claimViewer = Material.STICK;
         }
 
+        // Register default region flag values
         RegionFlag.registerDefaults(config);
     }
 }

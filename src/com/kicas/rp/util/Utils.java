@@ -1,30 +1,35 @@
 package com.kicas.rp.util;
 
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
-
 import java.util.function.Function;
 
+/**
+ * Contains various unrelated utility functions.
+ */
 public final class Utils {
     private Utils() { }
 
-    public static Material stackType(ItemStack stack) {
-        return stack == null ? Material.AIR : stack.getType();
-    }
-
-    public static ItemStack heldItem(Player player, EquipmentSlot slot) {
-        return EquipmentSlot.HAND.equals(slot) ? player.getInventory().getItemInMainHand() : player.getInventory().getItemInOffHand();
-    }
-
+    /**
+     * Returns the given index if it is not equal to negative one, otherwise it returns the default value.
+     * @param index the index.
+     * @param def the default value.
+     * @return the given index if it is not equal to negative one, otherwise it returns the default value.
+     */
     public static int indexOfDefault(int index, int def) {
         return index == -1 ? def : index;
     }
 
-    public static <T> T safeValueOf(Function<String, T> valueOf, String name) {
+    /**
+     * Returns the value returned by the given function with the given input, or null if the function throws an
+     * exception.
+     * @param valueOf the value-of function.
+     * @param input the input.
+     * @param <T> the return type.
+     * @return the value returned by the given function with the given input, or null if the function throws an
+     * exception.
+     */
+    public static <T> T safeValueOf(Function<String, T> valueOf, String input) {
         try {
-            return valueOf.apply(name);
+            return valueOf.apply(input);
         }catch(Throwable t) {
             return null;
         }
