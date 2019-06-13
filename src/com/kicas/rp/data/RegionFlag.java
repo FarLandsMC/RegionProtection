@@ -5,13 +5,16 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * All of the flags which can be set for a specific region.
+ */
 public enum RegionFlag {
     TRUST(false, TrustMeta.class),
     DENY_SPAWN(EnumFilter.class),
     DENY_BREAK(EnumFilter.class),
     DENY_PLACE(EnumFilter.class),
     MOB_GRIEF,
-    TNT_EXPLOSIONS,
+    TNT_EXPLOSIONS(false),
     OVERLAP;
 
     public static final RegionFlag[] VALUES = values();
@@ -54,6 +57,7 @@ public enum RegionFlag {
         return (T)DEFAULT_VALUES.get(this);
     }
 
+    // Called when the plugin is enabled
     public static void registerDefaults(FileConfiguration config) {
         DEFAULT_VALUES.put(TRUST, TrustMeta.EMPTY_TRUST_META);
         DEFAULT_VALUES.put(DENY_SPAWN, EnumFilter.EMPTY_FILTER);

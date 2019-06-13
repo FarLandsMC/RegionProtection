@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Acts as a general container for region flags. All flag containers have an owner which is stored as a UUID. If the
+ * most significant bits and least significant bits of the UUID are all 0, then the container is considered admin owned.
+ */
 public class FlagContainer implements Serializable {
     protected final Map<RegionFlag, Object> flags;
     protected UUID owner;
@@ -21,11 +25,9 @@ public class FlagContainer implements Serializable {
         this.owner = owner;
     }
 
-    public FlagContainer(FlagContainer other) {
-        this.flags = new HashMap<>(other.flags);
-        this.owner = other.owner;
-    }
-
+    /**
+     * Constructs a flag container that is admin owned.
+     */
     public FlagContainer() {
         this(new UUID(0, 0));
     }
@@ -38,10 +40,19 @@ public class FlagContainer implements Serializable {
         return owner;
     }
 
+    /**
+     * Returns the name of the owner of this container.
+     * @return the name of the owner of this container, or "an administrator" if this container is admin owned.
+     */
     public String getOwnerName() {
         return isAdminOwned() ? "an administrator" : Bukkit.getOfflinePlayer(owner).getName();
     }
 
+    /**
+     * Returns whether or not the given player is an owner of this container. If this container is admin owned, then
+     * @param player the player.
+     * @return true if this player is an owner, false otherwise.
+     */
     public boolean isOwner(Player player) {
         return isAdminOwned() ? player.isOp() : owner.equals(player.getUniqueId());
     }
@@ -50,14 +61,29 @@ public class FlagContainer implements Serializable {
         owner = uuid;
     }
 
+    /**
+     * Returns whether or not this container is empty.
+     * @return true if this container has no explicitly set flags, false otherwise.
+     */
     public boolean isEmpty() {
         return flags.isEmpty();
     }
 
+    /**
+     * Returns whether or not this container has an explicit setting for the given flag.
+     * @param flag the flag.
+     * @return true if this container has an explicit setting for the given flag, false otherwise.
+     */
     public boolean hasFlag(RegionFlag flag) {
         return flags.containsKey(flag);
     }
 
+    /**
+     * Returns the value of this flag, with true being that it is allowed and false dictating that it is not. Note this
+     * method does not check whether the given flag's metadata type is boolean.
+     * @param flag the flag.
+     * @return true if this flag is allowed according to this container, false otherwise.
+     */
     public boolean isAllowed(RegionFlag flag) {
         return flags.containsKey(flag) ? (boolean)flags.get(flag) : flag.getDefaultValue();
     }
@@ -77,6 +103,15 @@ public class FlagContainer implements Serializable {
 
     public Map<RegionFlag, Object> getFlags() {
         return flags;
+    }
+
+    /**
+     * Sets this container's flags by copying the specified map's contents into this container's flag map.
+     * @param flags the new flags.
+     */
+    public void setFlags(Map<RegionFlag, Object> flags) {
+        this.flags.clear();
+        this.flags.putAll(flags);
     }
 
     @Override

@@ -50,7 +50,7 @@ public class PlayerActionHandler implements Listener {
                         player.sendMessage(ChatColor.GOLD + "Claim corner set. Select another corner to create your claim.");
                     }else{
                         if(regions.get(0).isCorner(ps.getLastClickedBlock())) {
-                            ps.setAction(PlayerRegionAction.MOD_REGION);
+                            ps.setAction(PlayerRegionAction.RESIZE_REGION);
                             ps.setCurrentSelectedRegion(regions.get(0));
                             player.sendMessage(ChatColor.GOLD + "Claim corner selected. Select another block to resize the claim.");
                         }else{
@@ -72,7 +72,7 @@ public class PlayerActionHandler implements Listener {
                             }
                             break;
                         }
-                        case MOD_REGION:
+                        case RESIZE_REGION:
                         {
                             Region claim = dm.tryResizeClaim(player, ps.getCurrentSelectedRegion(), vertex, event.getClickedBlock().getLocation());
                             if(claim != null) {

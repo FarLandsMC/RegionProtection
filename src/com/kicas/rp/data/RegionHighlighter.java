@@ -12,19 +12,25 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Highlights a region or collection of regions client-side for a certain player.
+ */
 public class RegionHighlighter {
     private final Player player;
+    // Store the original blocks for reversion
     private final Map<Location, BlockData> original;
     private final Map<Location, Material> changes;
+    // Task ID of the delayed task to revert the client-side changes
     private int removalTaskId;
     private boolean complete;
 
-    public RegionHighlighter(Player player, Collection<Region> regions, Material lightSource, Material block, boolean includeAssociations) {
+    public RegionHighlighter(Player player, Collection<Region> regions, Material lightSource, Material block,
+                             boolean includeChildren) {
         this.player = player;
         this.original = new HashMap<>();
         this.changes = new HashMap<>();
         this.complete = false;
-        initBlocks(regions, lightSource, block, includeAssociations);
+        initBlocks(regions, lightSource, block, includeChildren);
     }
 
     public RegionHighlighter(Player player, Collection<Region> regions) {
@@ -39,6 +45,9 @@ public class RegionHighlighter {
         this(player, Collections.singleton(region), null, null, false);
     }
 
+    /**
+     * Cancles the automatic removal task and removes the client-side changes if the player is online.
+     */
     public void remove() {
         if(player.isOnline()) {
             original.forEach((loc, data) -> {
@@ -46,6 +55,7 @@ public class RegionHighlighter {
                     player.sendBlockChange(loc, data);
             });
         }
+
         Bukkit.getScheduler().cancelTask(removalTaskId);
     }
 
@@ -53,42 +63,62 @@ public class RegionHighlighter {
         return complete;
     }
 
-    private void initBlocks(Collection<Region> regions, Material lightSource, Material block, boolean includeAssociations) {
+    // Initialize the changes and save the original blocks. If the light source or block is null, the default materials
+    // will be used.
+    private void initBlocks(Collection<Region> regions, Material lightSource, Material block, boolean includeChildren) {
+        // Highest priority first
         regions.stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
-            Material ls = lightSource == null ? (region.hasAssociation() ? Material.SEA_LANTERN : Material.GLOWSTONE) : lightSource;
-            Material bk = block == null ? (region.hasAssociation() ? Material.IRON_BLOCK : Material.GOLD_BLOCK) : block;
-            addChange(region.getMin(), ls);
-            addChange(region.getMin().clone().add(1, 0, 0), bk);
-            addChange(region.getMin().clone().add(0, 0, 1), bk);
-            addChange(region.getMax(), ls);
-            addChange(region.getMax().clone().subtract(1, 0, 0), bk);
-            addChange(region.getMax().clone().subtract(0, 0, 1), bk);
-            Location vertex = new Location(region.getMin().getWorld(), region.getMin().getX(), 0, region.getMax().getZ());
-            addChange(vertex, ls);
-            addChange(vertex.clone().add(1, 0, 0), bk);
-            addChange(vertex.clone().subtract(0, 0, 1), bk);
+            // Resolve the light source and block if they're not provided
+            Material ls = lightSource == null ? (region.hasParent() ? Material.SEA_LANTERN : Material.GLOWSTONE)
+                    : lightSource;
+            Material bk = block == null ? (region.hasParent() ? Material.IRON_BLOCK : Material.GOLD_BLOCK)
+                    : block;
+
+            // Corners
+            putChange(region.getMin(), ls);
+            putChange(region.getMin().clone().add(1, 0, 0), bk);
+            putChange(region.getMin().clone().add(0, 0, 1), bk);
+
+            putChange(region.getMax(), ls);
+            putChange(region.getMax().clone().subtract(1, 0, 0), bk);
+            putChange(region.getMax().clone().subtract(0, 0, 1), bk);
+
+            Location vertex = new Location(region.getMin().getWorld(), region.getMin().getX(), 0,
+                    region.getMax().getZ());
+            putChange(vertex, ls);
+            putChange(vertex.clone().add(1, 0, 0), bk);
+            putChange(vertex.clone().subtract(0, 0, 1), bk);
+
             vertex = new Location(region.getMin().getWorld(), region.getMax().getX(), 0, region.getMin().getZ());
-            addChange(vertex, ls);
-            addChange(vertex.clone().subtract(1, 0, 0), bk);
-            addChange(vertex.clone().add(0, 0, 1), bk);
+            putChange(vertex, ls);
+            putChange(vertex.clone().subtract(1, 0, 0), bk);
+            putChange(vertex.clone().add(0, 0, 1), bk);
+
+            // Sides
             for(int i = region.getMin().getBlockX() + 10;i < region.getMax().getBlockX() - 5;i += 10) {
-                addChange(new Location(region.getMin().getWorld(), i, 0, region.getMin().getZ()), bk);
-                addChange(new Location(region.getMin().getWorld(), i, 0, region.getMax().getZ()), bk);
+                putChange(new Location(region.getMin().getWorld(), i, 0, region.getMin().getZ()), bk);
+                putChange(new Location(region.getMin().getWorld(), i, 0, region.getMax().getZ()), bk);
             }
+
             for(int i = region.getMin().getBlockZ() + 10;i < region.getMax().getBlockZ() - 5;i += 10) {
-                addChange(new Location(region.getMin().getWorld(), region.getMin().getX(), 0, i), bk);
-                addChange(new Location(region.getMin().getWorld(), region.getMax().getX(), 0, i), bk);
+                putChange(new Location(region.getMin().getWorld(), region.getMin().getX(), 0, i), bk);
+                putChange(new Location(region.getMin().getWorld(), region.getMax().getX(), 0, i), bk);
             }
-            if(includeAssociations)
-                initBlocks(region.getAssociatedRegions(), lightSource, block, includeAssociations);
+
+            if(includeChildren)
+                initBlocks(region.getChildren(), lightSource, block, includeChildren);
         });
     }
 
+    /**
+     * Sends the client-side changes to the player this object was initialized with.
+     */
     public void showBlocks() {
         changes.forEach((loc, mat) -> {
             if(loc.getChunk().isLoaded())
                 player.sendBlockChange(loc, mat.createBlockData());
         });
+
         removalTaskId = Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), () -> {
             if(player.isOnline()) {
                 original.forEach((loc, data) -> {
@@ -104,7 +134,8 @@ public class RegionHighlighter {
         complete = true;
     }
 
-    private void addChange(Location location, Material replacement) {
+    // Adds or overwrites the change for the given location and also stores the original data if it's not already stored
+    private void putChange(Location location, Material replacement) {
         location = findReplacementLocation(location.clone());
         if(!original.containsKey(location))
             original.put(location, location.getBlock().getBlockData());
@@ -137,6 +168,7 @@ public class RegionHighlighter {
                 replacement.setY(replacement.getY() - 1);
             }
         }
+
         return replacement;
     }
 }

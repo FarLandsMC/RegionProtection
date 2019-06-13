@@ -10,9 +10,13 @@ import org.bukkit.Location;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Stores transient and persistent data for a given player.
+ */
 public class PlayerSession implements Serializable {
     private UUID uuid;
     private int claimBlocks;
+    // All of the following can be null
     private RegionHighlighter currentHighlighter;
     private PlayerRegionAction action;
     private Region currentSelectedRegion;
@@ -47,6 +51,11 @@ public class PlayerSession implements Serializable {
         claimBlocks -= amount;
     }
 
+    /**
+     * Removes the current highlighter and replaces it with the new, given highlighter. If the given highlighter is not
+     * null, then its blocks are shown to the player.
+     * @param highlighter the region highlighter.
+     */
     public void setRegionHighlighter(RegionHighlighter highlighter) {
         if(currentHighlighter != null && !currentHighlighter.isComplete())
             currentHighlighter.remove();

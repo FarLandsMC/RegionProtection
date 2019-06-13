@@ -16,14 +16,14 @@ public abstract class Command extends org.bukkit.command.Command {
         super(name, description, usage, Arrays.asList(aliases));
     }
 
-    protected abstract boolean execute(CommandSender sender, String[] args) throws Exception;
+    protected abstract boolean executeUnsafe(CommandSender sender, String alias, String[] args) throws Exception;
 
     @Override
-    public boolean execute(CommandSender sender, String s, String[] args) {
+    public boolean execute(CommandSender sender, String alias, String[] args) {
         try {
             Bukkit.getScheduler().runTask(RegionProtection.getInstance(), () -> {
                 try {
-                    if(!execute(sender, args))
+                    if(!executeUnsafe(sender, alias, args))
                         showUsage(sender);
                 }catch(TextUtils.SyntaxException ex) {
                     sender.sendMessage(ChatColor.RED + ex.getMessage());
