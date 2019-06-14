@@ -18,6 +18,7 @@ public class Materials {
     // Some useful collections of Materials
     private static final List<Material> INVENTORY_HOLDERS = new ArrayList<>();
     private static final List<Material> USABLES = new ArrayList<>();
+    private static final List<Material> CORALS = new ArrayList<>();
 
     // Initialize categories
     static {
@@ -31,6 +32,8 @@ public class Materials {
                 Material.FLINT_AND_STEEL, Material.PAINTING, Material.ITEM_FRAME));
         USABLES.addAll(materialsEndingWith("BOAT"));
         USABLES.addAll(materialsEndingWith("MINECART"));
+        Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
+                .forEach(c -> CORALS.addAll(materialsEndingWith(c)));
     }
 
     /**
@@ -76,7 +79,17 @@ public class Materials {
     public static boolean isUsable(Material material) {
         return USABLES.contains(material);
     }
-
+    
+    /**
+     * Returns whether or not the given material is a type of coral, dead or alive.
+     *
+     * @param material the material
+     * @return true if the material is a type of coral, false otherwise.
+     */
+    public static boolean isCoral(Material material) {
+        return CORALS.contains(material);
+    }
+    
     /**
      * Returns whether or not the given material is sensitive to a player standing on it.
      *

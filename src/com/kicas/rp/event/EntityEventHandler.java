@@ -2,6 +2,7 @@ package com.kicas.rp.event;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -20,7 +21,7 @@ public class EntityEventHandler implements Listener {
      * on fire.
      * @param event the event.
      */
-    @EventHandler(ignoreCancelled=true, priority= EventPriority.LOW)
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         DataManager dm = RegionProtection.getDataManager();
         FlagContainer flags = dm.getFlagsAt(event.getBlock().getLocation());
@@ -30,27 +31,26 @@ public class EntityEventHandler implements Listener {
         if((event.getEntityType() == EntityType.ARROW || event.getEntityType() == EntityType.SMALL_FIREBALL)) {
             ProjectileSource shooter = ((Arrow)event.getEntity()).getShooter();
             if(shooter instanceof Player) { // For players check trust
-                if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)shooter, TrustLevel.BUILD, flags))
-                    event.setCancelled(true);
+                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)shooter, TrustLevel.BUILD, flags));
             }else if(shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
-                if(dm.crossesRegions(((BlockProjectileSource)shooter).getBlock().getLocation(),
-                        event.getBlock().getLocation())) {
-                    event.setCancelled(true);
-                }
+                event.setCancelled(dm.crossesRegions(((BlockProjectileSource)shooter).getBlock().getLocation(),
+                            event.getBlock().getLocation()));
             }
             return;
         }
 
         // Prevent enderman grief
-        if(!flags.isAllowed(RegionFlag.MOB_GRIEF) && event.getEntityType() == EntityType.ENDERMAN)
+        if (event.getEntityType() == EntityType.ENDERMAN && !flags.isAllowed(RegionFlag.ENDERMAN_BLOCK_DAMAGE))
             event.setCancelled(true);
+        else
+            event.setCancelled(!flags.isAllowed(RegionFlag.MOB_GRIEF));
     }
 
     /**
      * Prevent entity explosions (including the explosion of the primed TNT entity) from damaging claims.
      * @param event the event.
      */
-    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onEntityExplosion(EntityExplodeEvent event) {
         if(EntityType.PRIMED_TNT.equals(event.getEntityType())) {
             // Prevent the TNT from exploding at all if tnt explosions are turned off

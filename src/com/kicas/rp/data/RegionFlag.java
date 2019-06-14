@@ -27,7 +27,11 @@ public enum RegionFlag {
     BED_ENTER,
     ENDERMAN_BLOCK_DAMAGE,
     WATER_FLOW,
-    LAVA_FLOW;
+    LAVA_FLOW,
+    SNOW_MELT,
+    ICE_MELT,
+    CORAL_DEATH,
+    LEAF_DECAY;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
