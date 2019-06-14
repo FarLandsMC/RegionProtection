@@ -53,23 +53,29 @@ public class EntityEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onEntityExplosion(EntityExplodeEvent event) {
         if(EntityType.PRIMED_TNT.equals(event.getEntityType())) {
-            // Individual block checks are required since the TNT could have been launched
+            // Prevent the TNT from exploding at all if tnt explosions are turned off
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
+            if(!flags.isAllowed(RegionFlag.TNT_EXPLOSIONS)) {
+                event.setCancelled(true);
+                return;
+            }
 
+            // Individual block checks are required since the TNT could have been launched
             Entity igniter = ((TNTPrimed)event.getEntity()).getSource();
             if(igniter instanceof Player) {
                 // Trust check for player igniters
                 event.blockList().removeIf(block -> {
-                    FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
-                    return flags != null && !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)igniter,
-                            TrustLevel.BUILD, flags);
-                });
-            }else{
-                // If the igniter is unknown do a generic TNT explosion flag check
-                event.blockList().removeIf(block -> {
-                    FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
-                    return flags != null && !flags.isAllowed(RegionFlag.TNT_EXPLOSIONS);
+                    FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
+                    return flags0 != null && !flags0.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)igniter,
+                            TrustLevel.BUILD, flags0);
                 });
             }
+
+            // Just to make sure no damage is done on the border of a region
+            event.blockList().removeIf(block -> {
+                FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
+                return flags0 != null && !flags0.isAllowed(RegionFlag.TNT_EXPLOSIONS);
+            });
         }else{
             // Prevent explosions caused by other entities besides TNT
             event.blockList().removeIf(block -> {

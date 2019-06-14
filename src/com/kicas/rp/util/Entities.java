@@ -31,11 +31,13 @@ public class Entities {
     private static final List<EntityType> AGGERABLES = Arrays.asList(EntityType.POLAR_BEAR, EntityType.IRON_GOLEM,
             EntityType.PIG_ZOMBIE, EntityType.WOLF, EntityType.SNOWMAN);
 
-    private Entities() { }
+    private Entities() {
+    }
 
     /**
      * Returns whether or not the specified entity type is an inventory holder, meaning it can store items after its
      * inventory is closed.
+     *
      * @param entityType the entity type.
      * @return true if the given entity type is an inventory holder, false otherwise.
      */
@@ -46,6 +48,7 @@ public class Entities {
     /**
      * Returns whether or not the given entity type can be right clicked causing some state change. This does not
      * include entities which are considered to be inventory holders.
+     *
      * @param entityType the entity type.
      * @return true if the given entity type is interactable, false otherwise.
      */
@@ -57,12 +60,13 @@ public class Entities {
      * Returns whether or not the given entity is hostile towards the given player. If the given entity is always
      * hostile towards players then true is returned, otherwise if the entity has to be provoked then trust is only
      * returned if the given entity is currently targeting the given player.
+     *
      * @param player the player.
      * @param entity the entity.
      * @return true if the given entity is hostile towards the given player, false otherwise.
      */
     public static boolean isHostile(Player player, Entity entity) {
         return HOSTILES.contains(entity.getType()) ||
-                (AGGERABLES.contains(entity.getType()) && player.equals(((Mob)entity).getTarget()));
+                (AGGERABLES.contains(entity.getType()) && player.equals(((Mob) entity).getTarget()));
     }
 }

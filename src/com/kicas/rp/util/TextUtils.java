@@ -22,8 +22,9 @@ public class TextUtils {
 
     /**
      * Parses the given input text and substitutes in the given values and sends the result to the given command sender.
+     *
      * @param sender the recipient of the formatted message.
-     * @param input the input text.
+     * @param input  the input text.
      * @param values the values to substitute in.
      */
     public static void sendFormatted(CommandSender sender, String input, Object... values) {
@@ -33,7 +34,8 @@ public class TextUtils {
     /**
      * Parses the given input text and substitutes in the given values and retunrs the result as an array of base
      * components.
-     * @param input the input text.
+     *
+     * @param input  the input text.
      * @param values the values to substitute in.
      * @return the parsed input text as an array of base components.
      */
@@ -43,6 +45,7 @@ public class TextUtils {
 
     /**
      * Parses the given input text and retunrs the result as an array of base components.
+     *
      * @param input the input text.
      * @return the parsed input text as an array of base components.
      */
@@ -52,28 +55,28 @@ public class TextUtils {
 
     // Insert values into the raw inpuit
     public static String insertValues(String raw, Object... values) {
-        if(values.length == 0)
+        if (values.length == 0)
             return raw;
 
         StringBuilder sb = new StringBuilder(raw.length());
         char[] chars = raw.toCharArray();
         char cur, next;
 
-        for(int i = 0;i < chars.length;++ i) {
+        for (int i = 0; i < chars.length; ++i) {
             cur = chars[i];
             next = i < chars.length - 1 ? chars[i + 1] : '\0';
 
             // Ignore escaped characters
-            if(cur == '\\' && next == VALUE_MARKER) {
+            if (cur == '\\' && next == VALUE_MARKER) {
                 sb.append(VALUE_MARKER);
-                ++ i;
-            }else if(cur == VALUE_MARKER) { // Insert a value
+                ++i;
+            } else if (cur == VALUE_MARKER) { // Insert a value
                 // Use hex for more indices
                 int index = Character.digit(next, 16);
-                if(index < values.length)
+                if (index < values.length)
                     sb.append(values[index]);
-                ++ i;
-            }else // Just append the next character
+                ++i;
+            } else // Just append the next character
                 sb.append(cur);
         }
 
@@ -92,51 +95,50 @@ public class TextUtils {
         char[] chars = input.toCharArray();
         char cur, next;
 
-        for(int i = 0;i < chars.length;++ i) {
+        for (int i = 0; i < chars.length; ++i) {
             cur = chars[i];
             next = i < chars.length - 1 ? chars[i + 1] : '\0';
 
             // Escape special characters
-            if(cur == '\\' && (next == COLOR_CHAR || next == FUNCTION_CHAR || next == SECTION_START)) {
+            if (cur == '\\' && (next == COLOR_CHAR || next == FUNCTION_CHAR || next == SECTION_START)) {
                 component.append(next);
-                ++ i;
+                ++i;
                 continue;
             }
 
-            switch(cur) {
+            switch (cur) {
                 // Update the format colors in this expression, causes the creation of a new component
-                case COLOR_CHAR:
-                {
+                case COLOR_CHAR: {
                     // Finish off the current component if it was started
-                    if(component.length() > 0) {
+                    if (component.length() > 0) {
                         expr.add(parseComponent(format, component.toString()));
                         component.setLength(0);
                     }
 
                     // Get the color arguments
                     Pair<String, Integer> args = getEnclosed(i + 1, input);
-                    if(args.getFirst() == null)
+                    if (args.getFirst() == null)
                         throw new SyntaxException("Bracket mismatch", i, input);
 
                     // Move the character index to the end of the arguments
                     i = args.getSecond() - 1;
 
                     // Parse the color arguments
-                    for(String colorText : args.getFirst().split(",")) {
+                    for (String colorText : args.getFirst().split(",")) {
                         // This removes formats
                         boolean negated = colorText.startsWith("!");
                         ChatColor color = Utils.safeValueOf(ChatColor::valueOf, (negated ? colorText.substring(1)
                                 : colorText).toUpperCase());
 
-                        if(color == null)
+                        if (color == null)
                             throw new SyntaxException("Invalid color code: " + colorText);
 
-                        if(color.isFormat()) {
-                            if(negated)
+                        if (color.isFormat()) {
+                            if (negated)
                                 format.getSecond().remove(color);
-                            else if(!format.getSecond().contains(color))
+                            else if (!format.getSecond().contains(color))
                                 format.getSecond().add(color);
-                        }else
+                        } else
                             format.setFirst(color);
                     }
 
@@ -144,17 +146,16 @@ public class TextUtils {
                 }
 
                 // Start a new expression
-                case SECTION_START:
-                {
+                case SECTION_START: {
                     // Finish off the current component if it was started
-                    if(component.length() > 0) {
+                    if (component.length() > 0) {
                         expr.add(parseComponent(format, component.toString()));
                         component.setLength(0);
                     }
 
                     // Get the expression text
                     Pair<String, Integer> section = getEnclosed(i, input);
-                    if(section.getFirst() == null)
+                    if (section.getFirst() == null)
                         throw new SyntaxException("Bracket mismatch", i, input);
 
                     // Move the character index to the end of the expression
@@ -172,11 +173,10 @@ public class TextUtils {
                 }
 
                 // Functions
-                case FUNCTION_CHAR:
-                {
+                case FUNCTION_CHAR: {
                     // Get the args
                     Pair<String, Integer> rawArgs = getEnclosed(i + 1, input);
-                    if(rawArgs.getFirst() == null)
+                    if (rawArgs.getFirst() == null)
                         throw new SyntaxException("Bracket mismatch", i, input);
                     List<String> args = new ArrayList<>();
 
@@ -184,18 +184,26 @@ public class TextUtils {
                     StringBuilder currentArg = new StringBuilder();
                     char[] cs = rawArgs.getFirst().toCharArray();
                     int depthCurly = 0, depthRound = 0;
-                    for(char c : cs) {
+                    for (char c : cs) {
                         // We're in the outtermost scope and the delimiter was reached
-                        if(depthCurly == 0 && depthRound == 0 && c == ',') {
+                        if (depthCurly == 0 && depthRound == 0 && c == ',') {
                             args.add(currentArg.toString());
                             currentArg.setLength(0);
-                        }else{
+                        } else {
                             // Update scope values
                             switch (c) {
-                                case '(': ++ depthRound; break;
-                                case '{': ++ depthCurly; break;
-                                case ')': -- depthRound; break;
-                                case '}': -- depthCurly; break;
+                                case '(':
+                                    ++depthRound;
+                                    break;
+                                case '{':
+                                    ++depthCurly;
+                                    break;
+                                case ')':
+                                    --depthRound;
+                                    break;
+                                case '}':
+                                    --depthCurly;
+                                    break;
                             }
 
                             currentArg.append(c);
@@ -203,7 +211,7 @@ public class TextUtils {
                     }
 
                     // Check for syntax errors
-                    if(depthCurly > 0 || depthRound > 0)
+                    if (depthCurly > 0 || depthRound > 0)
                         throw new SyntaxException("Bracket mismatch in function arguments", i, input);
 
                     // Add the last argument
@@ -213,13 +221,13 @@ public class TextUtils {
                     i = rawArgs.getSecond() - 1;
 
                     // Finish off the current component if it was started and we're not influecting a word
-                    if(!"inflect".equalsIgnoreCase(args.get(0)) && component.length() > 0) {
+                    if (!"inflect".equalsIgnoreCase(args.get(0)) && component.length() > 0) {
                         expr.add(parseComponent(format, component.toString()));
                         component.setLength(0);
                     }
 
-                    if("link".equalsIgnoreCase(args.get(0))) { // Args: link, text
-                        if(args.size() < 3)
+                    if ("link".equalsIgnoreCase(args.get(0))) { // Args: link, text
+                        if (args.size() < 3)
                             throw new SyntaxException("Link function usage: $(link,url,text)");
 
                         // Parse the text
@@ -230,12 +238,12 @@ public class TextUtils {
                         );
 
                         // Apply the link
-                        for(BaseComponent bc : text)
+                        for (BaseComponent bc : text)
                             bc.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, args.get(1)));
 
                         expr.addAll(Arrays.asList(text));
-                    }else if("hover".equalsIgnoreCase(args.get(0))) { // Args: hover text, base text
-                        if(args.size() < 3)
+                    } else if ("hover".equalsIgnoreCase(args.get(0))) { // Args: hover text, base text
+                        if (args.size() < 3)
                             throw new SyntaxException("Hover function usage: $(hover,hoverText,text)");
 
                         // Parse both texts
@@ -251,12 +259,12 @@ public class TextUtils {
                         );
 
                         // Apply the hover text
-                        for(BaseComponent bc : text)
+                        for (BaseComponent bc : text)
                             bc.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover));
 
                         expr.addAll(Arrays.asList(text));
-                    }else if("inflect".equalsIgnoreCase(args.get(0))) { // Args: value index, word
-                        if(args.size() < 4)
+                    } else if ("inflect".equalsIgnoreCase(args.get(0))) { // Args: value index, word
+                        if (args.size() < 4)
                             throw new SyntaxException("Conjugate function usage: $(inflect,noun|verb,argIndex,word)");
 
                         // Whether or not we're inflecting a noun or verb
@@ -266,40 +274,40 @@ public class TextUtils {
                         int index;
                         try {
                             index = Integer.parseInt(args.get(2));
-                        }catch(NumberFormatException ex) {
+                        } catch (NumberFormatException ex) {
                             throw new SyntaxException("Invalid index: " + args.get(2));
                         }
 
                         // Check the index and value
-                        if(index > values.length || index < 0)
+                        if (index > values.length || index < 0)
                             throw new SyntaxException("Index is out of bounds: " + index);
-                        if(!(values[index] instanceof Number))
+                        if (!(values[index] instanceof Number))
                             throw new SyntaxException("The value at the index provided is not a number.");
 
                         // Apply the "s" if needed
                         component.append(args.get(3));
-                        int count = ((Number)values[index]).intValue();
-                        if((noun && count != 1) || (!noun && count == 1))
+                        int count = ((Number) values[index]).intValue();
+                        if ((noun && count != 1) || (!noun && count == 1))
                             component.append('s');
-                    }else if("command".equalsIgnoreCase(args.get(0))) { // Args: command, text
-                        if(args.size() < 3)
+                    } else if ("command".equalsIgnoreCase(args.get(0))) { // Args: command, text
+                        if (args.size() < 3)
                             throw new SyntaxException("Command function usage: $(command,command,text)");
 
                         // Parse the text
                         BaseComponent[] text = parseExpression(
                                 new Pair<>(format.getFirst(),
-                                new ArrayList<>(format.getSecond())),
+                                        new ArrayList<>(format.getSecond())),
                                 args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst()
                                         : args.get(2), values
                         );
 
                         // Apply the command
-                        for(BaseComponent bc : text)
+                        for (BaseComponent bc : text)
                             bc.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, args.get(1)));
 
                         expr.addAll(Arrays.asList(text));
-                    }else if("hovercmd".equalsIgnoreCase(args.get(0))) { // Args: command, hover text, base text
-                        if(args.size() < 4)
+                    } else if ("hovercmd".equalsIgnoreCase(args.get(0))) { // Args: command, hover text, base text
+                        if (args.size() < 4)
                             throw new SyntaxException("Hover-command function usage: " +
                                     "$(hovercmd,command,hoverText,text)");
 
@@ -316,14 +324,14 @@ public class TextUtils {
                         );
 
                         // Apply the command and hover text
-                        for(BaseComponent bc : text) {
+                        for (BaseComponent bc : text) {
                             bc.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, args.get(1)));
                             bc.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover));
                         }
 
                         expr.addAll(Arrays.asList(text));
-                    }else if("hoverlink".equalsIgnoreCase(args.get(0))) { // Args: link, hover text, base text
-                        if(args.size() < 4)
+                    } else if ("hoverlink".equalsIgnoreCase(args.get(0))) { // Args: link, hover text, base text
+                        if (args.size() < 4)
                             throw new SyntaxException("Hover-link function usage: $(hoverlink,url,hoverText,text)");
 
                         // Parse both texts
@@ -339,13 +347,13 @@ public class TextUtils {
                         );
 
                         // Apply the link and hover text
-                        for(BaseComponent bc : text) {
+                        for (BaseComponent bc : text) {
                             bc.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, args.get(1)));
                             bc.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover));
                         }
 
                         expr.addAll(Arrays.asList(text));
-                    }else
+                    } else
                         throw new SyntaxException("Invalid function: " + args.get(0));
 
                     continue;
@@ -359,7 +367,7 @@ public class TextUtils {
         }
 
         // Get the last component
-        if(component.length() > 0)
+        if (component.length() > 0)
             expr.add(parseComponent(format, component.toString()));
 
         return expr.toArray(new BaseComponent[0]);
@@ -392,14 +400,14 @@ public class TextUtils {
     private static Pair<String, Integer> getEnclosed(int start, String string) {
         boolean curved = string.charAt(start) == '('; // ()s or {}s
         int depth = 1, i = start + 1;
-        while(depth > 0) { // Exits when there are no pairs of open brackets
-            if(i == string.length()) // Avoid index out of bound errors
+        while (depth > 0) { // Exits when there are no pairs of open brackets
+            if (i == string.length()) // Avoid index out of bound errors
                 return new Pair<>(null, -1);
             char c = string.charAt(i++);
-            if(c == (curved ? ')' : '}')) // We've closed off a pair
-                -- depth;
-            else if(c == (curved ? '(' : '{')) // We've started a pair
-                ++ depth;
+            if (c == (curved ? ')' : '}')) // We've closed off a pair
+                --depth;
+            else if (c == (curved ? '(' : '{')) // We've started a pair
+                ++depth;
         }
         // Return the stuff inside the brackets, and the index of the char after the last bracket
         return new Pair<>(string.substring(start + 1, i - 1), i);

@@ -12,6 +12,7 @@ import java.io.IOException;
 public interface Serializable {
     /**
      * Serializes any information necessary through the given encoder.
+     *
      * @param encoder the encoder.
      * @throws IOException if an I/O error occurs.
      */
@@ -19,6 +20,7 @@ public interface Serializable {
 
     /**
      * Deserializes any necessary information through the given decoder.
+     *
      * @param decoder the decoder.
      * @throws IOException if an I/O error occurs.
      */

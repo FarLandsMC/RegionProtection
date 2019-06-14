@@ -20,7 +20,7 @@ public final class Pair<A, B> {
      * Constructs a new instance of <code>Pair</code> with the two values stored
      * in the pair.
      *
-     * @param first the first value.
+     * @param first  the first value.
      * @param second the second value.
      */
     public Pair(A first, B second) {
@@ -90,11 +90,11 @@ public final class Pair<A, B> {
      */
     @Override
     public boolean equals(Object object) {
-        if(this == object)
+        if (this == object)
             return true;
-        if(object == null || !Pair.class.equals(object.getClass()))
+        if (object == null || !Pair.class.equals(object.getClass()))
             return false;
-        Pair pair = (Pair)object;
+        Pair pair = (Pair) object;
         return Objects.equals(first, pair.first) && Objects.equals(second, pair.second);
     }
 

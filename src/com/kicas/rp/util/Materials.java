@@ -32,9 +32,10 @@ public class Materials {
         USABLES.addAll(materialsEndingWith("BOAT"));
         USABLES.addAll(materialsEndingWith("MINECART"));
     }
-    
+
     /**
      * Collect a group of Materials that have similar endings.
+     *
      * @param with End of Material names that should be collected.
      * @return a List of Materials which all end with the value passed in.
      */
@@ -44,7 +45,8 @@ public class Materials {
 
     /**
      * Collect a group of Materials that have similar endings ignoring certain Materials
-     * @param with end of Material names that should be collected.
+     *
+     * @param with   end of Material names that should be collected.
      * @param except a List of Materials that should be ignored when collecting similar Materials
      * @return a List of Materials which all end with the value passed in minus exception Materials.
      */
@@ -57,6 +59,7 @@ public class Materials {
     /**
      * Returns whether or not the specified material is an inventory holder, meaning it can store items after its
      * inventory is closed.
+     *
      * @param material the material.
      * @return true if the given material is an inventory holder, false otherwise.
      */
@@ -66,6 +69,7 @@ public class Materials {
 
     /**
      * Returns whether or not the given material is usable, and if its usage causes a state change.
+     *
      * @param material the material
      * @return true if the material is usable, false otherwise.
      */
@@ -75,6 +79,7 @@ public class Materials {
 
     /**
      * Returns whether or not the given material is sensitive to a player standing on it.
+     *
      * @param material the material.
      * @return true if the given material is sensitive to a player standing on it, false otherwise.
      */
@@ -85,6 +90,7 @@ public class Materials {
 
     /**
      * Returns whether or not the given material could change when being interacted with (right clicked) by a player.
+     *
      * @param material the material.
      * @return true if the material could change when being interacted with, false otherwise.
      */
@@ -94,20 +100,21 @@ public class Materials {
 
     /**
      * Returns whether or not the given material changes when the given tool is used on it.
+     *
      * @param material the material.
-     * @param tool the tool.
+     * @param tool     the tool.
      * @return true if the given material changes when the given tool is used on it, false otherwise.
      */
     public static boolean changesOnUse(Material material, Material tool) {
-        if(Material.CAKE.equals(material) || (Material.END_PORTAL_FRAME.equals(material) &&
+        if (Material.CAKE.equals(material) || (Material.END_PORTAL_FRAME.equals(material) &&
                 Material.ENDER_EYE.equals(tool))) {
             return true;
         }
 
-        if(tool.name().endsWith("AXE"))
+        if (tool.name().endsWith("AXE"))
             return material.name().endsWith("LOG");
 
-        if(tool.name().endsWith("HOE"))
+        if (tool.name().endsWith("HOE"))
             return material == Material.GRASS_BLOCK || material == Material.DIRT || material == Material.GRASS_PATH;
 
         return tool.name().endsWith("SHOVEL") && material == Material.GRASS_BLOCK;
@@ -115,8 +122,8 @@ public class Materials {
 
     public static boolean hasRecipe(Material material) {
         Iterator<Recipe> itr = Bukkit.getServer().recipeIterator();
-        while(itr.hasNext()) {
-            if(itr.next().getResult().getType() == material)
+        while (itr.hasNext()) {
+            if (itr.next().getResult().getType() == material)
                 return true;
         }
         return false;
@@ -124,6 +131,7 @@ public class Materials {
 
     /**
      * Returns the material type of the given block, or AIR if the block is null.
+     *
      * @param block input block
      * @return the material type of the given block.
      */
@@ -133,6 +141,7 @@ public class Materials {
 
     /**
      * Returns the type of material in the given item stack, or AIR if the stack is null.
+     *
      * @param stack the item stack.
      * @return the type of material in the given item stack.
      */
@@ -142,8 +151,9 @@ public class Materials {
 
     /**
      * Returns the item the player is holding in the given hand.
+     *
      * @param player the player.
-     * @param hand the hand.
+     * @param hand   the hand.
      * @return the item the player is holding in the given hand.
      */
     public static ItemStack heldItem(Player player, EquipmentSlot hand) {

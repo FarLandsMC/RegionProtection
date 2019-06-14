@@ -15,7 +15,19 @@ public enum RegionFlag {
     DENY_PLACE(EnumFilter.class),
     MOB_GRIEF,
     TNT_EXPLOSIONS(false),
-    OVERLAP;
+    OVERLAP,
+    // TODO: Implement flags below this comment
+    INVINCIBLE,
+    GREETING,
+    HOSTILE_DAMAGE, // Allow players to damage hostiles
+    ANIMAL_DAMAGE, // Allow players to damage animals
+    POTION_SPLASH,
+    CHEST_ACCESS, // Just chests, trapped chests, and ender chests
+    PVP,
+    BED_ENTER,
+    ENDERMAN_BLOCK_DAMAGE,
+    WATER_FLOW,
+    LAVA_FLOW;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
