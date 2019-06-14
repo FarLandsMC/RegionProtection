@@ -1,15 +1,14 @@
 package com.kicas.rp.util;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -112,6 +111,15 @@ public class Materials {
             return material == Material.GRASS_BLOCK || material == Material.DIRT || material == Material.GRASS_PATH;
 
         return tool.name().endsWith("SHOVEL") && material == Material.GRASS_BLOCK;
+    }
+
+    public static boolean hasRecipe(Material material) {
+        Iterator<Recipe> itr = Bukkit.getServer().recipeIterator();
+        while(itr.hasNext()) {
+            if(itr.next().getResult().getType() == material)
+                return true;
+        }
+        return false;
     }
 
     /**

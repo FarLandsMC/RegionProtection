@@ -96,9 +96,34 @@ public class FlagContainer implements Serializable {
         flags.put(flag, meta);
     }
 
+    public void deleteFlag(RegionFlag flag) {
+        flags.remove(flag);
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T getFlagMeta(RegionFlag flag) {
         return flags.containsKey(flag) ? (T)flags.get(flag) : flag.getDefaultValue();
+    }
+
+    /**
+     * Returns the metadata associated with this flag if it is explicitly defined in this flag container, otherwise new
+     * flag metadata is created according to the default value of the flag if it is a boolean, or the default
+     * constructor of the flag's metadata type. This new metadata is explicitly set as that flag's metadata in this
+     * container and is returned.
+     * @param flag the flag.
+     * @param <T> the metadata type.
+     * @return the metadata associated with the given flag, or new metadata if the flag's metadata is not explicitly
+     * defined.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getAndCreateFlagMeta(RegionFlag flag) {
+        if(flags.containsKey(flag))
+            return (T)flags.get(flag);
+        else{
+            Object meta = flag.isBoolean() ? flag.getDefaultValue() : ReflectionHelper.instantiate(flag.getMetaClass());
+            flags.put(flag, meta);
+            return (T)meta;
+        }
     }
 
     public Map<RegionFlag, Object> getFlags() {

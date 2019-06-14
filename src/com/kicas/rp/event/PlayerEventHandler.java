@@ -74,6 +74,12 @@ public class PlayerEventHandler implements Listener {
         if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
             event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
             event.setCancelled(true);
+        }else if(flags instanceof Region && !flags.isAdminOwned()) {
+            // Expand the lower border of the claim if a crafted block is placed
+            if(Materials.hasRecipe(event.getBlock().getType()) && event.getBlock().getLocation().getBlockY() <
+                    ((Region)flags).getMin().getBlockY()) {
+                ((Region)flags).getMin().setY(event.getBlock().getY());
+            }
         }
     }
 
@@ -187,9 +193,9 @@ public class PlayerEventHandler implements Listener {
             case PHYSICAL:
                 if(Materials.isPressureSensitive(blockType)) {
                     // Turtle eggs also fall under block breaking
-                    if(blockType == Material.TURTLE_EGG && !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
+                    if(blockType == Material.TURTLE_EGG && (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
                             .isAllowed(Material.TURTLE_EGG) || !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST)
-                            .hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+                            .hasTrust(event.getPlayer(), TrustLevel.BUILD, flags))) {
                         event.setCancelled(true);
                         return;
                     }

@@ -5,13 +5,10 @@ import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * The metadata class for the trust region flag.
@@ -30,6 +27,15 @@ public class TrustMeta implements Serializable {
     }
 
     /**
+     * Returns whether or not this trust meta is empty.
+     * @return true if the trust meta has no explicitly defined trust levels for players and if the public has no trust
+     * as well, false otherwise.
+     */
+    public boolean isEmpty() {
+        return trustData.isEmpty() && publicTrustLevel == TrustLevel.NONE;
+    }
+
+    /**
      * Returns whether or not the given player has the specified level of trust for the given flag container. If the
      * player's trust level is explicitly defined in this object, then that value is used otherwise it defaults to the
      * public trust level. If the specified player is the owner of the container, then true is always returned.
@@ -45,19 +51,19 @@ public class TrustMeta implements Serializable {
 
     /**
      * Explicitly defines the given player's trust level.
-     * @param player the player.
+     * @param uuid the player's UUID.
      * @param trust the trust level.
      */
-    public void trust(Player player, TrustLevel trust) {
-        trustData.put(player.getUniqueId(), trust);
+    public void trust(UUID uuid, TrustLevel trust) {
+        trustData.put(uuid, trust);
     }
 
     /**
      * Removes all trust levels from the given player.
-     * @param player the player.
+     * @param uuid the player'd UUID.
      */
-    public void untrust(Player player) {
-        trustData.remove(player.getUniqueId());
+    public void untrust(UUID uuid) {
+        trustData.remove(uuid);
     }
 
     /**
@@ -66,6 +72,32 @@ public class TrustMeta implements Serializable {
      */
     public void trustPublic(TrustLevel trust) {
         publicTrustLevel = trust;
+    }
+
+    /**
+     * Returns a mapping of every trust level to a string containing a comma separated list of the players with that
+     * trust level.
+     * @return the trust list as described above.
+     */
+    public Map<TrustLevel, String> getTrustList() {
+        Map<TrustLevel, String> list = new HashMap<>();
+
+        // Skip the NONE trust level
+        for(int i = 1;i < TrustLevel.VALUES.length;++ i)
+            list.put(TrustLevel.VALUES[i], "");
+
+        if(publicTrustLevel != TrustLevel.NONE)
+            list.put(publicTrustLevel, "public");
+
+        trustData.forEach((uuid, trust) -> {
+            String name = Bukkit.getOfflinePlayer(uuid).getName();
+            if(name != null) {
+                String current = list.get(trust);
+                list.put(trust, current.isEmpty() ? name : current + ", " + name);
+            }
+        });
+
+        return list;
     }
 
     @Override
@@ -97,7 +129,6 @@ public class TrustMeta implements Serializable {
      * @param string the string to parse.
      * @return the trust meta derived from
      */
-    @SuppressWarnings("deprecation")
     public static TrustMeta fromString(String string) {
         // Trim off any excess whitespace and check for an empty string, resulting in an empty trust meta
         string = string.trim();
@@ -126,11 +157,10 @@ public class TrustMeta implements Serializable {
             for(String player : players.split(",")) {
                 if("public".equals(player))
                     meta.trustPublic(level);
-                // This is the only check that appears to work to validate a username
-                OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-                if(Bukkit.getOfflinePlayer(op.getUniqueId()).getName() == null)
+                UUID uuid = Utils.uuidForUsername(player);
+                if(uuid == null)
                     throw new IllegalArgumentException("Invalid player name: " + player);
-                meta.trustData.put(op.getUniqueId(), level);
+                meta.trustData.put(uuid, level);
             }
         }
 

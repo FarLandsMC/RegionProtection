@@ -19,7 +19,7 @@ public abstract class Command extends org.bukkit.command.Command {
         super(name, description, usage, Arrays.asList(aliases));
     }
 
-    // Used so that command execution can be wrapped
+    // Used so that command execution can be wrapped, returns true if the command usage should NOT be shown
     protected abstract boolean executeUnsafe(CommandSender sender, String alias, String[] args) throws Exception;
 
     /**

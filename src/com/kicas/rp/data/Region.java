@@ -3,6 +3,7 @@ package com.kicas.rp.data;
 import com.kicas.rp.util.*;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.BlockFace;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -135,6 +136,29 @@ public class Region extends FlagContainer implements Serializable {
         return max.getBlockX() >= other.getMin().getBlockX() && min.getBlockX() <= other.max.getBlockX() &&
                 max.getBlockY() >= other.getMin().getBlockY() && min.getBlockY() <= other.max.getBlockY() &&
                 max.getBlockZ() >= other.getMin().getBlockZ() && min.getBlockZ() <= other.max.getBlockZ();
+    }
+
+    public void expand(BlockFace direction, int amount) {
+        switch(direction) {
+            case UP:
+                max.setY(max.getY() + amount);
+                break;
+            case DOWN:
+                min.setY(min.getY() - amount);
+                break;
+            case NORTH:
+                min.setZ(min.getZ() - amount);
+                break;
+            case SOUTH:
+                max.setZ(max.getZ() + amount);
+                break;
+            case EAST:
+                max.setX(max.getX() + amount);
+                break;
+            case WEST:
+                min.setX(min.getX() - amount);
+                break;
+        }
     }
 
     /**

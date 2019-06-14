@@ -66,11 +66,12 @@ public class PlayerActionHandler implements Listener {
                                 "claim.");
                     }else{ // Modify the region at the clicked location
                         // Permissions check
-                        /*if(regions.stream().anyMatch(region -> !region.isOwner(player))) {
+                        if(!region.isOwner(player)) {
                             player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
+                            ps.setLastClickedBlock(null);
                             event.setCancelled(true);
                             return;
-                        }*/
+                        }
 
                         // Clicking a corner will trigger a resizing action
                         if(region.isCorner(ps.getLastClickedBlock())) {

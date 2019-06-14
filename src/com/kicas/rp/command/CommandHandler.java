@@ -29,12 +29,13 @@ public class CommandHandler implements Listener {
      * custom handler as well.
      */
     public void registerCommands() {
-
+        registerCommand(new CommandTrust());
+        registerCommand(new CommandTrustList());
     }
 
     private void registerCommand(Command command) {
         commands.add(command);
-        ((CraftServer) Bukkit.getServer()).getCommandMap().register("regionprotection", command);
+        ((CraftServer)Bukkit.getServer()).getCommandMap().register("regionprotection", command);
     }
 
     /**
