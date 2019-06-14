@@ -93,10 +93,6 @@ public class CommandTrust extends Command {
             }
         }
 
-        // Delete the trust meta if it's empty
-        if(trustMeta.isEmpty())
-            claim.deleteFlag(RegionFlag.TRUST);
-
         return true;
     }
 }

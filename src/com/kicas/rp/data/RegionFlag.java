@@ -59,7 +59,7 @@ public enum RegionFlag {
 
     // Called when the plugin is enabled
     public static void registerDefaults(FileConfiguration config) {
-        DEFAULT_VALUES.put(TRUST, TrustMeta.EMPTY_TRUST_META);
+        DEFAULT_VALUES.put(TRUST, TrustMeta.FULL_TRUST_META);
         DEFAULT_VALUES.put(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(DENY_BREAK, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(DENY_PLACE, EnumFilter.EMPTY_FILTER);

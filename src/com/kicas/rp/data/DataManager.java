@@ -231,8 +231,11 @@ public class DataManager implements Listener {
             return null;
         }
 
-        // Modify claim blocks and register the claim
+        // Modify claim blocks
         ps.subtractClaimBlocks((int)area);
+        // The default is full-trust, so make sure no one has trust
+        region.setFlag(RegionFlag.TRUST, TrustMeta.EMPTY_TRUST_META);
+        // Register the claim
         worlds.get(creator.getWorld().getUID()).regions.add(region);
         addRegionToLookupTable(region);
 

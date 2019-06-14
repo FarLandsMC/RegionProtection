@@ -18,7 +18,8 @@ public class TrustMeta implements Serializable {
     private final Map<UUID, TrustLevel> trustData;
     private TrustLevel publicTrustLevel;
 
-    // Default value
+    // Default values
+    public static final TrustMeta FULL_TRUST_META = new TrustMeta(TrustLevel.BUILD);
     public static final TrustMeta EMPTY_TRUST_META = new TrustMeta();
 
     public TrustMeta() {
@@ -26,13 +27,10 @@ public class TrustMeta implements Serializable {
         this.publicTrustLevel = TrustLevel.NONE;
     }
 
-    /**
-     * Returns whether or not this trust meta is empty.
-     * @return true if the trust meta has no explicitly defined trust levels for players and if the public has no trust
-     * as well, false otherwise.
-     */
-    public boolean isEmpty() {
-        return trustData.isEmpty() && publicTrustLevel == TrustLevel.NONE;
+    // Just used for the FULL_TRUST_META field
+    private TrustMeta(TrustLevel publicTrustLevel) {
+        this.trustData = new HashMap<>();
+        this.publicTrustLevel = publicTrustLevel;
     }
 
     /**
