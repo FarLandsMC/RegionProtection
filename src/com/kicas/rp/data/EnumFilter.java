@@ -34,17 +34,25 @@ public class EnumFilter implements Serializable {
     
     @Override
     public void serialize(Encoder encoder) throws IOException {
-        encoder.write(isWhitelist ? 1 : 0);
-        encoder.writeArray(filter);
+        encoder.writeBoolean(isWhitelist);
+        encoder.writeArray(filter, Integer.class);
     }
     
     @Override
     public void deserialize(Decoder decoder) throws IOException {
-        isWhitelist = decoder.read() == 1;
+        isWhitelist = decoder.readBoolean();
         filter.addAll(decoder.readArrayAsList(Integer.class));
     }
 
-    public static EnumFilter fromString(String string, Class<? extends Enum<?>> clazz) {
+    @SuppressWarnings("unchecked")
+    public <E extends Enum<E>> String toString(Class<E> clazz) {
+        String base = isWhitelist ? "*" : "";
+        Enum<E>[] values = (Enum<E>[])ReflectionHelper.invoke("values", clazz, null);
+        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*,") + String.join(", ", filter.stream().map(ordinal ->
+                (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal])).toArray(String[]::new));
+    }
+
+    public static <E extends Enum<E>> EnumFilter fromString(String string, Class<E> clazz) {
         // * = all
         boolean isWhitelist = string.contains("*");
         EnumFilter ef = new EnumFilter(isWhitelist);
@@ -52,8 +60,10 @@ public class EnumFilter implements Serializable {
             element = element.trim();
             // Ignore negation depending on the filter type (! = negation)
             if(!"*".equals(element) && isWhitelist == element.startsWith("!")) {
-                Enum e = Utils.safeValueOf(str -> (Enum)ReflectionHelper.invoke("valueOf", clazz, null, str),
-                        isWhitelist ? element.substring(1) : element);
+                // Convert the element into the actual enum name
+                String name = isWhitelist ? element.substring(1) : element;
+
+                Enum e = Utils.valueOfFormattedName(name, clazz);
                 if(e == null)
                     throw new IllegalArgumentException("Invalid argument: " + element);
                 ef.filter.add(e.ordinal());

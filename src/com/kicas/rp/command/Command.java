@@ -6,10 +6,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents the superclass for custom Region Protection commands.
@@ -31,9 +35,16 @@ public abstract class Command extends org.bukkit.command.Command {
      */
     @Override
     public boolean execute(CommandSender sender, String alias, String[] args) {
+        // Lacking permission
+        if(isOpOnly() && !sender.isOp()) {
+            sender.sendMessage(ChatColor.RED + "You must be an administrator to use this command.");
+            return true;
+        }
+
+        // Run the command
         Bukkit.getScheduler().runTask(RegionProtection.getInstance(), () -> {
             try {
-                if(!executeUnsafe(sender, alias, args))
+                if(!executeUnsafe(sender, alias.startsWith("regionprotection:") ? alias.substring(17) : alias, args))
                     showUsage(sender);
             }catch(TextUtils.SyntaxException ex) {
                 sender.sendMessage(ChatColor.RED + ex.getMessage());
@@ -41,6 +52,7 @@ public abstract class Command extends org.bukkit.command.Command {
                 throw new RuntimeException(ex);
             }
         });
+
         return true;
     }
 
@@ -73,5 +85,38 @@ public abstract class Command extends org.bukkit.command.Command {
 
     protected void showUsage(CommandSender sender) {
         sender.sendMessage("Usage: " + getUsage());
+    }
+
+    /**
+     * Returns a list of the currently online players whose name starts with the given partial name.
+     * @param partialName the partial name.
+     * @return a list of the currently online players whose name starts with the given partial name.
+     */
+    public static List<String> getOnlinePlayers(String partialName) {
+        return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                .filter(name -> name.toLowerCase().startsWith(partialName.toLowerCase())).collect(Collectors.toList());
+    }
+
+    /**
+     * Joins all the arguments after the argument at the given index with the given delimiter.
+     * @param index the index.
+     * @param delim the delimiter.
+     * @param args the arguments.
+     * @return the result of joining the argument after the given index with the given delimiter.
+     */
+    public static String joinArgsBeyond(int index, String delim, String[] args) {
+        ++ index;
+        String[] data = new String[args.length - index];
+        System.arraycopy(args, index, data, 0, data.length);
+        return String.join(delim, data);
+    }
+
+    public static List<String> filterStartingWith(String prefix, Stream<String> stream) {
+        return stream.filter(s -> s != null && s.toLowerCase().startsWith(prefix.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    public static List<String> filterStartingWith(String prefix, Collection<String> strings) {
+        return filterStartingWith(prefix, strings.stream());
     }
 }

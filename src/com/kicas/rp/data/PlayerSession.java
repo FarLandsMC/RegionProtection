@@ -15,10 +15,11 @@ import java.util.UUID;
  */
 public class PlayerSession implements Serializable {
     private UUID uuid;
-    private int claimBlocks;
+    private double claimBlocks;
     // All of the following can be null
     private RegionHighlighter currentHighlighter;
     private PlayerRegionAction action;
+    private boolean isInAdminRegionMode;
     private Region currentSelectedRegion;
     private Location lastClickedBlock;
 
@@ -27,6 +28,7 @@ public class PlayerSession implements Serializable {
         this.claimBlocks = 0;
         this.currentHighlighter = null;
         this.action = null;
+        this.isInAdminRegionMode = false;
         this.currentSelectedRegion = null;
         this.lastClickedBlock = null;
     }
@@ -40,10 +42,10 @@ public class PlayerSession implements Serializable {
     }
 
     public int getClaimBlocks() {
-        return claimBlocks;
+        return (int)claimBlocks;
     }
 
-    public void addClaimBlocks(int amount) {
+    public void addClaimBlocks(double amount) {
         claimBlocks += amount;
     }
 
@@ -72,6 +74,14 @@ public class PlayerSession implements Serializable {
         this.action = action;
     }
 
+    public boolean isInAdminRegionMode() {
+        return isInAdminRegionMode;
+    }
+
+    public void setInAdminRegionMode(boolean inAdminRegionMode) {
+        isInAdminRegionMode = inAdminRegionMode;
+    }
+
     public Region getCurrentSelectedRegion() {
         return currentSelectedRegion;
     }
@@ -91,7 +101,7 @@ public class PlayerSession implements Serializable {
     @Override
     public void serialize(Encoder encoder) throws IOException {
         encoder.writeUuid(uuid);
-        encoder.writeInt(claimBlocks);
+        encoder.writeInt((int)claimBlocks);
     }
 
     @Override

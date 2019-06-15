@@ -73,11 +73,27 @@ public class TrustMeta implements Serializable {
     }
 
     /**
+     * Returns a mapping of every trust level to a list of the UUIDs with that trust level.
+     * @return the trust list as described above.
+     */
+    public Map<TrustLevel, List<UUID>> getTrustList() {
+        Map<TrustLevel, List<UUID>> list = new HashMap<>();
+
+        // Skip the NONE trust level
+        for(int i = 1;i < TrustLevel.VALUES.length;++ i)
+            list.put(TrustLevel.VALUES[i], new LinkedList<>());
+
+        trustData.forEach((uuid, trust) -> list.get(trust).add(uuid));
+
+        return list;
+    }
+
+    /**
      * Returns a mapping of every trust level to a string containing a comma separated list of the players with that
      * trust level.
      * @return the trust list as described above.
      */
-    public Map<TrustLevel, String> getTrustList() {
+    public Map<TrustLevel, String> getFormattedTrustList() {
         Map<TrustLevel, String> list = new HashMap<>();
 
         // Skip the NONE trust level
@@ -116,6 +132,21 @@ public class TrustMeta implements Serializable {
             trustData.put(decoder.readUuid(), TrustLevel.VALUES[decoder.read()]);
             -- len;
         }
+    }
+
+    @Override
+    public String toString() {
+        if(trustData.isEmpty()) {
+            if(publicTrustLevel == TrustLevel.NONE)
+                return "[No Trust]";
+            else if(publicTrustLevel == TrustLevel.BUILD)
+                return "[Full Trust]";
+        }
+
+        return getFormattedTrustList().entrySet().stream().filter(entry -> !entry.getValue().isEmpty())
+                .sorted(Comparator.comparingInt(entry -> entry.getKey().ordinal()))
+                .map(entry -> Utils.capitalize(entry.getKey().name()) + ": " + entry.getValue() + "\n")
+                .reduce("", String::concat);
     }
 
     /**

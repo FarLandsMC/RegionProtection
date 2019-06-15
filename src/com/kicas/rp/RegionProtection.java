@@ -3,17 +3,23 @@ package com.kicas.rp;
 import com.kicas.rp.command.CommandHandler;
 import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.RegionFlag;
+import com.kicas.rp.data.TrustLevel;
+import com.kicas.rp.data.TrustMeta;
 import com.kicas.rp.event.EntityEventHandler;
-import com.kicas.rp.event.PlayerActionHandler;
+import com.kicas.rp.event.RegionToolHandler;
 import com.kicas.rp.event.PlayerEventHandler;
 import com.kicas.rp.event.WorldEventHandler;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * This is the main plugin class for the Region Protection plugin. All non-utility features of the plugin can be
@@ -23,6 +29,7 @@ public class RegionProtection extends JavaPlugin {
     private final CommandHandler commandHandler;
     private final DataManager dataManager;
     private Material claimCreationTool, claimViewer;
+    private double claimBlocksGainedPerMinute;
 
     private static RegionProtection instance;
 
@@ -40,10 +47,51 @@ public class RegionProtection extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(commandHandler, this);
         Bukkit.getPluginManager().registerEvents(dataManager, this);
-        Bukkit.getPluginManager().registerEvents(new PlayerActionHandler(), this);
+        Bukkit.getPluginManager().registerEvents(new RegionToolHandler(), this);
         Bukkit.getPluginManager().registerEvents(new PlayerEventHandler(), this);
         Bukkit.getPluginManager().registerEvents(new EntityEventHandler(), this);
         Bukkit.getPluginManager().registerEvents(new WorldEventHandler(), this);
+
+        // Automatic claim block gaining
+        if(claimBlocksGainedPerMinute > 0) {
+            Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+                Bukkit.getOnlinePlayers().stream().map(dataManager::getPlayerSession)
+                        .forEach(ps -> ps.addClaimBlocks(claimBlocksGainedPerMinute));
+            }, 0L, 60L * 20L);
+        }
+
+        // Expire claims if they are older then the time given in the config (in days). The age of a claim is determined
+        // by subtracting the last login time of the most recently active trustee with at least container trust from the
+        // current time.
+        final long claimExpirationTime = getConfig().getInt("general.claim-expiration-time") * 24L * 60L * 60L * 1000L;
+        if(claimExpirationTime > 0) {
+            Bukkit.getWorlds().forEach(world -> {
+                dataManager.getRegionsInWorld(world).stream().filter(region -> {
+                    // Obviously exempt admin regions
+                    if(region.isAdminOwned())
+                        return false;
+
+                    // Find the most recent login
+                    Map<TrustLevel, List<UUID>> trustList = region.<TrustMeta>getFlagMeta(RegionFlag.TRUST)
+                            .getTrustList();
+                    long mostRecentLogin = 0;
+                    for(Map.Entry<TrustLevel, List<UUID>> entry : trustList.entrySet()) {
+                        // Trust check
+                        if(!entry.getKey().isAtLeast(TrustLevel.CONTAINER))
+                            continue;
+
+                        for(UUID uuid : entry.getValue()) {
+                            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+                            if(offlinePlayer.getLastPlayed() > mostRecentLogin)
+                                mostRecentLogin = offlinePlayer.getLastPlayed();
+                        }
+                    }
+
+                    // Perform the check
+                    return (System.currentTimeMillis() - mostRecentLogin) > claimExpirationTime;
+                }).forEach(region -> dataManager.deleteRegion(null, region, true));
+            });
+        }
     }
 
     @Override
@@ -82,13 +130,37 @@ public class RegionProtection extends JavaPlugin {
 
     private void initConfig() {
         FileConfiguration config = getConfig();
+
         config.addDefault("general.claim-creation-item", Material.GOLDEN_SHOVEL.name());
         config.addDefault("general.claim-viewer", Material.STICK.name());
         config.addDefault("general.minimum-claim-size", 100);
+        config.addDefault("general.claim-blocks-gained-per-hour", 512);
+        config.addDefault("general.claim-expiration-time", 60);
+
+        config.addDefault("player.invincible", false);
+        config.addDefault("player.hostile-damage", true);
+        config.addDefault("player.animal-damage", false);
+        config.addDefault("player.potion-splash", true);
+        config.addDefault("player.chest-access", true);
+        config.addDefault("player.pvp", false);
+        config.addDefault("player.bed-enter", true);
+
+        config.addDefault("entity.mob-grief", false);
+        config.addDefault("entity.enderman-block-damage", false);
+
+        config.addDefault("world.tnt-explosions", false);
+        config.addDefault("world.overlap", false);
+        config.addDefault("world.water-flow", true);
+        config.addDefault("world.lava-flow", true);
+        config.addDefault("world.snow-change", true);
+        config.addDefault("world.ice-change", true);
+        config.addDefault("world.coral-death", true);
+        config.addDefault("world.leaf-decay", true);
+
         config.options().copyDefaults(true);
         saveConfig();
 
-        // Convert the text input to the enum values
+        // Convert some of the config values into usable types
         claimCreationTool = Utils.safeValueOf(Material::valueOf, config.getString("general.claim-creation-item"));
         if(claimCreationTool == null) {
             log("Invalid material found in config under general.claim-creation-item: " +
@@ -101,6 +173,7 @@ public class RegionProtection extends JavaPlugin {
                     config.getString("general.claim-viewer"));
             claimViewer = Material.STICK;
         }
+        claimBlocksGainedPerMinute = (double)config.getInt("general.claim-blocks-gained-per-hour") / 60.0;
 
         // Register default region flag values
         RegionFlag.registerDefaults(config);

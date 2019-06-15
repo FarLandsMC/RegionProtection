@@ -42,7 +42,7 @@ public class CommandTrustList extends Command {
             return true;
         }
 
-        Map<TrustLevel, String> trustList = trustMeta.getTrustList();
+        Map<TrustLevel, String> trustList = trustMeta.getFormattedTrustList();
         TextUtils.sendFormatted(sender, "&(gold){&(aqua)Access:} %0\n{&(green)Container:} %1\n{&(yellow)Build:} %2\n" +
                 "{&(blue)Management:} %3", trustList.get(TrustLevel.ACCESS), trustList.get(TrustLevel.CONTAINER),
                 trustList.get(TrustLevel.BUILD), trustList.get(TrustLevel.MANAGEMENT));

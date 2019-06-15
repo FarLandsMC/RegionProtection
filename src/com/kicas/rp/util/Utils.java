@@ -14,6 +14,34 @@ public final class Utils {
     }
 
     /**
+     * Unformats the given name according to how it was formatted in the formattedName method of this class, and get the
+     * enumeration value corresponding to that name. If an enumeration constant could not be found with the unformatted
+     * name, then null is returned.
+     *
+     * @param name the formatted name.
+     * @param clazz the enum class.
+     * @param <E> the enum type.
+     * @return the enumeration constant corresponding to the given formatted name in the given class, or null if no such
+     * constant could be found.
+     */
+    @SuppressWarnings("unchecked")
+    public static <E extends Enum<E>> E valueOfFormattedName(String name, Class<E> clazz) {
+        return (E)safeValueOf(enumName -> ReflectionHelper.invoke("valueOf", clazz, null, enumName),
+                name.replaceAll("\\-", "_").toUpperCase());
+    }
+
+    /**
+     * Converts the given enumeration element's name (which should be all capitalized with underscores) and replaces the
+     * underscores with hyphens and converts the string to lower case.
+     *
+     * @param e the enumeration element.
+     * @return the formatted name of the given element as defined above.
+     */
+    public static String formattedName(Enum e) {
+        return e.name().replaceAll("_", "-").toLowerCase();
+    }
+
+    /**
      * Capitalizes each word in the provided string. A word is defined as a cluster of characters separated on either
      * side by spaces or the end or beginning of a string.
      *

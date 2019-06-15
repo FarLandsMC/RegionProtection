@@ -37,6 +37,11 @@ public class Region extends FlagContainer implements Serializable {
         this.children = new ArrayList<>();
     }
 
+    // Create an admin region
+    public Region(Location min, Location max) {
+        this(null, 0, new UUID(0, 0), min, max, null);
+    }
+
     // For deserialization
     public Region(World world) {
         super(null);
@@ -63,6 +68,10 @@ public class Region extends FlagContainer implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getPriority() {

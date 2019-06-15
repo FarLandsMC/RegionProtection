@@ -8,9 +8,12 @@ import com.kicas.rp.data.TrustMeta;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -94,5 +97,11 @@ public class CommandTrust extends Command {
         }
 
         return true;
+    }
+
+    @Override
+    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
+            throws IllegalArgumentException {
+        return args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList();
     }
 }

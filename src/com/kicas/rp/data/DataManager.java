@@ -243,6 +243,74 @@ public class DataManager implements Listener {
     }
 
     /**
+     * Simply creates an administrator-owned region with the given vertices. This method checks to ensure that there is
+     * no overlap with other regions that do not allow overlap. This method does not register the region, this should be
+     * done in the tryRegisterRegion method.
+     * @param creator the creator of the region.
+     * @param vertex1 the first vertex.
+     * @param vertex2 the second vertex.
+     * @return the region, or null if the region could not be created.
+     */
+    public Region tryCreateAdminRegion(Player creator, Location vertex1, Location vertex2) {
+        // Convert the given verticies into a minimum and maximum vertex
+        Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
+                Math.min(vertex1.getY(), vertex2.getY()), Math.min(vertex1.getZ(), vertex2.getZ()));
+        Location max = new Location(vertex1.getWorld(), Math.max(vertex1.getX(), vertex2.getX()),
+                Math.max(vertex1.getY(), vertex2.getY()), Math.max(vertex1.getZ(), vertex2.getZ()));
+
+        // Create the region
+        Region region = new Region(min, max);
+
+        // checkCollisions sends an error message to the creator
+        if(!checkCollisions(creator, region))
+            return null;
+
+        return region;
+    }
+
+    /**
+     * Registers a given region with the given parameters and adds it to the region list and lookup table. If the given
+     * region should not be assigned to a parent region then the given parent name should be null. If the given parent
+     * name is not null and the name is valid, then the given region will be associated to the region with the given
+     * parent name according to the associate method in this class. Upon failure to register the region, the given
+     * creator will be notified with an error message and null will be returned.
+     * @param creator the creator of the region.
+     * @param region the region to register.
+     * @param name the name of the region.
+     * @param priority the priority of the region.
+     * @param parentName the name of the parent of the region, or null if the region should not have a parent.
+     * @return true if the registration was successful, false otherwise.
+     */
+    public boolean tryRegisterRegion(Player creator, Region region, String name, int priority, String parentName) {
+        // Make sure the name is free
+        if(getRegionByName(region.getWorld(), name) != null) {
+            creator.sendMessage(ChatColor.RED + "A region with that name already exists.");
+            return false;
+        }
+
+        // Do most of the registration
+        region.setName(name);
+        region.setPriority(priority);
+        addRegionToLookupTable(region);
+
+        // Adding it to the region list is only needed if it's not a child region
+        if(parentName == null)
+            worlds.get(region.getWorld().getUID()).regions.add(region);
+        else{ // Have the parent region manage this region
+            // Check to make sure the name is valid
+            Region parent = getRegionByName(region.getWorld(), parentName);
+            if(parent == null) {
+                creator.sendMessage(ChatColor.RED + "Could not find a region with name \n" + parentName + "\".");
+                return false;
+            }
+
+            associate(parent, region);
+        }
+
+        return true;
+    }
+
+    /**
      * Attempts to modify the size of a given claim, which can be a sub-claim. This method does not check to ensure that
      * the provided player has permission to modify the size of the claim, this check should be performed outside of
      * this method. The two given locations are the original location and new location of any vertex of the claim. The
@@ -254,16 +322,16 @@ public class DataManager implements Listener {
      *     <li>Any children are no longer fully contained within the parent region</li>
      * </ul>
      * The only check performed to a subdivision is to ensure it is still completely contained within the parent claim.
-     * If any of these checks fail, then the player will be notified with a message and null will be returned. Upon
+     * If any of these checks fail, then the player will be notified with a message and false will be returned. Upon
      * successful resizing of the claim, the player will gain or lose claim blocks depending on the change in area of
-     * the claim and the claim will be returned after its resizing.
+     * the claim and true will be returned.
      * @param owner the owner of the claim.
      * @param claim the claim to resize.
      * @param originalVertex the original vertex of the claim.
      * @param newVertex the new location of the vertex.
-     * @return the resized claim, or null if the claim could not be resized.
+     * @return true if the resizing was successful, false otherwise.
      */
-    public Region tryResizeClaim(Player owner, Region claim, Location originalVertex, Location newVertex) {
+    public boolean tryResizeClaim(Player owner, Region claim, Location originalVertex, Location newVertex) {
         long oldArea = claim.area();
 
         // Copy the old values for reversion upon failure
@@ -275,7 +343,7 @@ public class DataManager implements Listener {
         // checkCollisions sends the error message to the player
         if(!checkCollisions(owner, claim)) {
             claim.setBounds(bounds);
-            return null;
+            return false;
         }
 
         // Regular claims
@@ -287,7 +355,7 @@ public class DataManager implements Listener {
                 claim.setBounds(bounds);
                 owner.sendMessage(ChatColor.RED + "You need " + (areaDiff - ps.getClaimBlocks()) +
                         " more claim blocks to resize this claim.");
-                return null;
+                return false;
             }
 
             // Check to make sure it's at least the minimum area
@@ -295,7 +363,7 @@ public class DataManager implements Listener {
                 claim.setBounds(bounds);
                 owner.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at least " +
                         RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
-                return null;
+                return false;
             }
 
             // Check to make sure all subdivisions are still within the parent region
@@ -307,7 +375,7 @@ public class DataManager implements Listener {
                         "completely within the parent region.");
                 playerSessions.get(owner.getUniqueId()).setRegionHighlighter(new RegionHighlighter(owner, exclaves,
                         Material.GLOWSTONE, Material.NETHERRACK, false));
-                return null;
+                return false;
             }
 
             // Modify claim blocks
@@ -320,14 +388,14 @@ public class DataManager implements Listener {
                         "claim.");
                 playerSessions.get(owner.getUniqueId()).setRegionHighlighter(new RegionHighlighter(owner,
                         claim.getParent()));
-                return null;
+                return false;
             }
         }
 
         // Remove the old claim from the lookup table
         for(int x = bounds.getFirst().getBlockX() >> 7;x <= bounds.getSecond().getBlockX() >> 7;++ x) {
             for(int z = bounds.getFirst().getBlockZ() >> 7;z <= bounds.getSecond().getBlockZ() >> 7;++ z) {
-                lookupTable.get(bounds.getFirst().getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL))
+                lookupTable.get(claim.getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL))
                         .remove(claim);
             }
         }
@@ -335,7 +403,7 @@ public class DataManager implements Listener {
         // Re-add the claim to the lookup table
         addRegionToLookupTable(claim);
 
-        return claim;
+        return true;
     }
 
     /**
@@ -385,6 +453,39 @@ public class DataManager implements Listener {
         return region;
     }
 
+    /**
+     * Deletes the given region. This will remove the region from the list and the lookup table, and the same operation
+     * will be performed on all the regions children if includeChildren is set to true.
+     * @param player the player deleting the region.
+     * @param region the region.
+     * @param includeChildren whether or not to delete the regions children as well.
+     * @return true if the region was successfully deleted, false otherwise.
+     */
+    public boolean deleteRegion(Player player, Region region, boolean includeChildren) {
+        if(!region.getChildren().isEmpty()) {
+            if(includeChildren)
+                region.getChildren().forEach(child -> deleteRegion(player, child, false));
+            else{
+                player.sendMessage(ChatColor.RED + "This region has sub-regions which must be removed first.");
+                return false;
+            }
+        }
+
+        // Remove the region from the list
+        if(!region.hasParent())
+            worlds.get(region.getWorld().getUID()).regions.remove(region);
+
+        // Remove the region from the lookup table
+        for(int x = region.getMin().getBlockX() >> 7;x <= region.getMax().getBlockX() >> 7;++ x) {
+            for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
+                lookupTable.get(region.getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL))
+                        .remove(region);
+            }
+        }
+
+        return true;
+    }
+
     // Checks for collisions between the given region and other non-child claims that do not permis overlap
     // The given owner will be notified if overlap is detected and those regions will be highlighted
     // Returns true if no collisions were present
@@ -395,9 +496,11 @@ public class DataManager implements Listener {
             for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
                 List<Region> regions = lookupTable.get(region.getWorld().getUID())
                         .get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL));
-                // Ignore associations to prevent conflict with subdivisions
-                regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.overlaps(region) &&
-                        !r.equals(region) && !r.isAssociated(region)).forEach(collisions::add);
+                if(regions != null) {
+                    // Ignore associations to prevent conflict with subdivisions
+                    regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.overlaps(region) &&
+                            !r.equals(region) && !r.isAssociated(region)).forEach(collisions::add);
+                }
             }
         }
 

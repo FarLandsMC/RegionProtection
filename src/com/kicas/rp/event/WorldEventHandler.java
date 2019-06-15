@@ -64,10 +64,10 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onBlockFade(BlockFadeEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if (!flags.isAllowed(RegionFlag.ICE_MELT) &&
+        if (!flags.isAllowed(RegionFlag.ICE_CHANGE) &&
                 (event.getBlock().getType() == Material.ICE || event.getBlock().getType() == Material.FROSTED_ICE))
             event.setCancelled(true);
-        else if (!flags.isAllowed(RegionFlag.SNOW_MELT) && event.getBlock().getType() == Material.SNOW)
+        else if (!flags.isAllowed(RegionFlag.SNOW_CHANGE) && event.getBlock().getType() == Material.SNOW)
             event.setCancelled(true);
         // 2DO: prevent fire decay
         else if (!flags.isAllowed(RegionFlag.CORAL_DEATH) && Materials.isCoral(event.getBlock().getType()))

@@ -273,13 +273,13 @@ public class Encoder implements Flushable, Closeable {
      * Writes an array of the specified type to the output stream using uncompressed, default methods for the encoding.
      *
      * @param a the array.
+     * @param componentType the component type of the array.
      * @throws IOException if an I/O error occurs.
      */
-    public void writeArray(Object[] a) throws IOException {
+    public void writeArray(Object[] a, Class<?> componentType) throws IOException {
         writeInt(a.length);
         if (a.length == 0)
             return;
-        Class<?> componentType = a.getClass().getComponentType();
         if (byte.class.equals(componentType) || Byte.class.equals(componentType)) {
             for (Object ele : a)
                 out.write((byte) ele);
@@ -322,12 +322,12 @@ public class Encoder implements Flushable, Closeable {
      * Writes a collection to the output stream as an array using uncompressed, default methods for the encoding.
      *
      * @param c   the collection.
+     * @param componentType the component type of the collection.
      * @param <T> the type of data being encoded.
      * @throws IOException if an I/O error occurs.
      */
-    public <T> void writeArray(Collection<T> c) throws IOException {
-        writeInt(c.size());
-        writeArray(c.toArray());
+    public <T> void writeArray(Collection<T> c, Class<T> componentType) throws IOException {
+        writeArray(c.toArray(), componentType);
     }
 
     /**

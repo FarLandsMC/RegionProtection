@@ -2,7 +2,6 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
 import org.bukkit.event.EventHandler;
@@ -29,6 +28,9 @@ public class CommandHandler implements Listener {
      * custom handler as well.
      */
     public void registerCommands() {
+        // Alphabetical order
+        registerCommand(new CommandAdminRegion());
+        registerCommand(new CommandRegion());
         registerCommand(new CommandTrust());
         registerCommand(new CommandTrustList());
     }
@@ -56,16 +58,6 @@ public class CommandHandler implements Listener {
         // Invalid command
         if(c == null)
             return false;
-
-        // Permission bypass
-        if(fullCommand.startsWith("/regionprotection:"))
-            return true;
-
-        // Lacking permission
-        if(c.isOpOnly() && !sender.isOp()) {
-            sender.sendMessage(ChatColor.RED + "You must be an administrator to use this command.");
-            return true;
-        }
 
         // Run the command
         c.execute(sender, command, args);
