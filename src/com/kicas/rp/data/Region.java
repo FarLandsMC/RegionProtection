@@ -1,13 +1,15 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.util.*;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
-import org.bukkit.block.BlockFace;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -147,29 +149,6 @@ public class Region extends FlagContainer implements Serializable {
                 max.getBlockZ() >= other.getMin().getBlockZ() && min.getBlockZ() <= other.max.getBlockZ();
     }
 
-    public void expand(BlockFace direction, int amount) {
-        switch(direction) {
-            case UP:
-                max.setY(max.getY() + amount);
-                break;
-            case DOWN:
-                min.setY(min.getY() - amount);
-                break;
-            case NORTH:
-                min.setZ(min.getZ() - amount);
-                break;
-            case SOUTH:
-                max.setZ(max.getZ() + amount);
-                break;
-            case EAST:
-                max.setX(max.getX() + amount);
-                break;
-            case WEST:
-                min.setX(min.getX() - amount);
-                break;
-        }
-    }
-
     /**
      * Returns whether or not the given location is a corner of this region on the x-z plane excluding y values.
      * @param loc the location.
@@ -280,6 +259,41 @@ public class Region extends FlagContainer implements Serializable {
      */
     public long area() {
         return (long)(max.getBlockX() - min.getBlockX()) * (long)(max.getBlockZ() - min.getBlockZ());
+    }
+
+    /**
+     * Returns whether or not the time since the last login of a trustee with at least container trust is greater than
+     * the given time in milliseconds. Admin owned claims will always return false when then method is called.
+     * @param expirationTime the expiration time.
+     * @return true if the condition specified above is met.
+     */
+    public boolean hasExpired(long expirationTime) {
+        // Obviously exempt admin regions
+        if (isAdminOwned())
+            return false;
+
+        // Find the most recent login
+        Map<TrustLevel, List<UUID>> trustList = this.<TrustMeta>getFlagMeta(RegionFlag.TRUST).getTrustList();
+        long mostRecentLogin = 0;
+        for (Map.Entry<TrustLevel, List<UUID>> entry : trustList.entrySet()) {
+            // Trust check
+            if (!entry.getKey().isAtLeast(TrustLevel.CONTAINER))
+                continue;
+
+            for (UUID uuid : entry.getValue()) {
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+                if (offlinePlayer.getLastPlayed() > mostRecentLogin)
+                    mostRecentLogin = offlinePlayer.getLastPlayed();
+            }
+        }
+
+        // Don't forget the owner
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
+        if (offlinePlayer.getLastPlayed() > mostRecentLogin)
+            mostRecentLogin = offlinePlayer.getLastPlayed();
+
+        // Perform the check
+        return (System.currentTimeMillis() - mostRecentLogin) > expirationTime;
     }
 
     /**

@@ -48,7 +48,7 @@ public class DataManager implements Listener {
      * @param event the event.
      */
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public synchronized void onPlayerJoin(PlayerJoinEvent event) {
         if(!playerSessions.containsKey(event.getPlayer().getUniqueId()))
             playerSessions.put(event.getPlayer().getUniqueId(), new PlayerSession(event.getPlayer().getUniqueId()));
     }
@@ -59,7 +59,7 @@ public class DataManager implements Listener {
      * @param parent the parent region.
      * @param child the child region.
      */
-    public void associate(Region parent, Region child) {
+    public synchronized void associate(Region parent, Region child) {
         worlds.get(child.getWorld().getUID()).regions.remove(child);
         if(child.getPriority() < parent.getPriority())
             child.setPriority(parent.getPriority());
@@ -85,7 +85,7 @@ public class DataManager implements Listener {
      * @param name the name of the region.
      * @return the region with the given name in the given world, or null if it could not be found.
      */
-    public Region getRegionByName(World world, String name) {
+    public synchronized Region getRegionByName(World world, String name) {
         return worlds.get(world.getUID()).regions.stream().filter(region -> name.equals(region.getName()))
                 .findAny().orElse(null);
     }
@@ -95,7 +95,7 @@ public class DataManager implements Listener {
      * @param location the location.
      * @return a list of regions that contain the specified location.
      */
-    public List<Region> getRegionsAt(Location location) {
+    public synchronized List<Region> getRegionsAt(Location location) {
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
                 ((long)(location.getBlockX() >> 7)) << 32 |
                 ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL)
@@ -112,7 +112,7 @@ public class DataManager implements Listener {
      * @param to the destination location.
      * @return true, if there is a conflict of flags, false otherwise.
      */
-    public boolean crossesRegions(Location from, Location to) {
+    public synchronized boolean crossesRegions(Location from, Location to) {
         List<Region> fromRegions = getRegionsAt(from), toRegions = getRegionsAt(to);
         return !toRegions.isEmpty() && toRegions.stream().anyMatch(region -> !fromRegions.contains(region));
     }
@@ -122,7 +122,7 @@ public class DataManager implements Listener {
      * @param location the location.
      * @return the highest priority region at the given location.
      */
-    public Region getHighestPriorityRegionAt(Location location) {
+    public synchronized Region getHighestPriorityRegionAt(Location location) {
         List<Region> regions = getRegionsAt(location);
         return regions.isEmpty() ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority))
                 .orElse(null);
@@ -133,7 +133,7 @@ public class DataManager implements Listener {
      * @param location the location.
      * @return a list of unassociated regions at the given location.
      */
-    public List<Region> getUnassociatedRegionsAt(Location location) {
+    public synchronized List<Region> getUnassociatedRegionsAt(Location location) {
         List<Region> regions = getRegionsAt(location);
         return regions.stream().filter(region -> !region.hasParent()).collect(Collectors.toList());
     }
@@ -143,7 +143,7 @@ public class DataManager implements Listener {
      * @param location the location.
      * @return the fkags at the specified location, or null if no flags are present.
      */
-    public FlagContainer getFlagsAt(Location location) {
+    public synchronized FlagContainer getFlagsAt(Location location) {
         FlagContainer worldFlags = worlds.get(location.getWorld().getUID());
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
                 ((long)(location.getBlockX() >> 7)) << 32 |
@@ -201,7 +201,7 @@ public class DataManager implements Listener {
      * @param vertex2 the second claim vertex.
      * @return the claim, or null if the claim could not be created.
      */
-    public Region tryCreateClaim(Player creator, Location vertex1, Location vertex2) {
+    public synchronized Region tryCreateClaim(Player creator, Location vertex1, Location vertex2) {
         // Convert the given verticies into a minimum and maximum vertex
         Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()), 63,
                 Math.min(vertex1.getZ(), vertex2.getZ()));
@@ -281,7 +281,8 @@ public class DataManager implements Listener {
      * @param parentName the name of the parent of the region, or null if the region should not have a parent.
      * @return true if the registration was successful, false otherwise.
      */
-    public boolean tryRegisterRegion(Player creator, Region region, String name, int priority, String parentName) {
+    public synchronized boolean tryRegisterRegion(Player creator, Region region, String name, int priority,
+                                                  String parentName) {
         // Make sure the name is free
         if(getRegionByName(region.getWorld(), name) != null) {
             creator.sendMessage(ChatColor.RED + "A region with that name already exists.");
@@ -331,7 +332,8 @@ public class DataManager implements Listener {
      * @param newVertex the new location of the vertex.
      * @return true if the resizing was successful, false otherwise.
      */
-    public boolean tryResizeClaim(Player owner, Region claim, Location originalVertex, Location newVertex) {
+    public synchronized boolean tryResizeClaim(Player owner, Region claim, Location originalVertex,
+                                               Location newVertex) {
         long oldArea = claim.area();
 
         // Copy the old values for reversion upon failure
@@ -426,7 +428,7 @@ public class DataManager implements Listener {
      * @param vertex2 the second vertex of the subdivision.
      * @return the subdivision, or null if the subdivision could not be created.
      */
-    public Region tryCreateSubdivision(Player creator, Region claim, Location vertex1, Location vertex2) {
+    public synchronized Region tryCreateSubdivision(Player creator, Region claim, Location vertex1, Location vertex2) {
         // Convert the given verticies into a minimum and maximum vertex
         Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
                 claim.getMin().getBlockY(), Math.min(vertex1.getZ(), vertex2.getZ()));
@@ -461,7 +463,7 @@ public class DataManager implements Listener {
      * @param includeChildren whether or not to delete the regions children as well.
      * @return true if the region was successfully deleted, false otherwise.
      */
-    public boolean deleteRegion(Player player, Region region, boolean includeChildren) {
+    public synchronized boolean deleteRegion(Player player, Region region, boolean includeChildren) {
         if(!region.getChildren().isEmpty()) {
             if(includeChildren)
                 region.getChildren().forEach(child -> deleteRegion(player, child, false));
@@ -519,7 +521,7 @@ public class DataManager implements Listener {
      * @param player the player.
      * @return a player session for the given player.
      */
-    public PlayerSession getPlayerSession(Player player) {
+    public synchronized PlayerSession getPlayerSession(Player player) {
         return playerSessions.get(player.getUniqueId());
     }
 

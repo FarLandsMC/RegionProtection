@@ -8,6 +8,10 @@ import net.md_5.bungee.api.chat.BaseComponent;
 
 import java.io.IOException;
 
+/**
+ * Represents metadata for flags that contain formatted in-game tesxt. The format stored follows that which is parsed by
+ * the TextUtils utility.
+ */
 public class TextMeta implements Serializable {
     private String text;
     private BaseComponent[] formatted;

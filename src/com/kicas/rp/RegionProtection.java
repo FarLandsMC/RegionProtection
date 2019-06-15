@@ -3,8 +3,6 @@ package com.kicas.rp;
 import com.kicas.rp.command.CommandHandler;
 import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.RegionFlag;
-import com.kicas.rp.data.TrustLevel;
-import com.kicas.rp.data.TrustMeta;
 import com.kicas.rp.event.EntityEventHandler;
 import com.kicas.rp.event.RegionToolHandler;
 import com.kicas.rp.event.PlayerEventHandler;
@@ -12,14 +10,10 @@ import com.kicas.rp.event.WorldEventHandler;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * This is the main plugin class for the Region Protection plugin. All non-utility features of the plugin can be
@@ -64,33 +58,14 @@ public class RegionProtection extends JavaPlugin {
         // by subtracting the last login time of the most recently active trustee with at least container trust from the
         // current time.
         final long claimExpirationTime = getConfig().getInt("general.claim-expiration-time") * 24L * 60L * 60L * 1000L;
-        if(claimExpirationTime > 0) {
-            Bukkit.getWorlds().forEach(world -> {
-                dataManager.getRegionsInWorld(world).stream().filter(region -> {
-                    // Obviously exempt admin regions
-                    if(region.isAdminOwned())
-                        return false;
-
-                    // Find the most recent login
-                    Map<TrustLevel, List<UUID>> trustList = region.<TrustMeta>getFlagMeta(RegionFlag.TRUST)
-                            .getTrustList();
-                    long mostRecentLogin = 0;
-                    for(Map.Entry<TrustLevel, List<UUID>> entry : trustList.entrySet()) {
-                        // Trust check
-                        if(!entry.getKey().isAtLeast(TrustLevel.CONTAINER))
-                            continue;
-
-                        for(UUID uuid : entry.getValue()) {
-                            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
-                            if(offlinePlayer.getLastPlayed() > mostRecentLogin)
-                                mostRecentLogin = offlinePlayer.getLastPlayed();
-                        }
-                    }
-
-                    // Perform the check
-                    return (System.currentTimeMillis() - mostRecentLogin) > claimExpirationTime;
-                }).forEach(region -> dataManager.deleteRegion(null, region, true));
-            });
+        if(claimExpirationTime > 0 && !getConfig().getBoolean("general.enable-claim-stealing")) {
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                Bukkit.getWorlds().forEach(world -> {
+                    dataManager.getRegionsInWorld(world).stream().filter(region ->
+                            region.hasExpired(claimExpirationTime)).forEach(region ->
+                            dataManager.deleteRegion(null, region, true));
+                });
+            }, 100L);
         }
     }
 
@@ -136,6 +111,7 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("general.minimum-claim-size", 100);
         config.addDefault("general.claim-blocks-gained-per-hour", 512);
         config.addDefault("general.claim-expiration-time", 60);
+        config.addDefault("general.enable-claim-stealing", false);
 
         config.addDefault("player.invincible", false);
         config.addDefault("player.hostile-damage", true);
