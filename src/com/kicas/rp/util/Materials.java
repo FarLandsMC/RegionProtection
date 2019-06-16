@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
+import static org.bukkit.Material.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,14 +23,11 @@ public class Materials {
 
     // Initialize categories
     static {
-        INVENTORY_HOLDERS.addAll(Arrays.asList(Material.FURNACE, Material.BLAST_FURNACE, Material.SMOKER,
-                Material.JUKEBOX, Material.CHEST, Material.TRAPPED_CHEST, Material.DROPPER, Material.DISPENSER,
-                Material.HOPPER, Material.BREWING_STAND, Material.LECTERN, Material.BARREL, Material.CAMPFIRE,
-                Material.COMPOSTER));
+        INVENTORY_HOLDERS.addAll(Arrays.asList(FURNACE, BLAST_FURNACE, SMOKER, JUKEBOX, CHEST, TRAPPED_CHEST, DROPPER,
+                DISPENSER, HOPPER, BREWING_STAND, LECTERN, BARREL, CAMPFIRE, COMPOSTER));
         INVENTORY_HOLDERS.addAll(materialsEndingWith("SHULKER_BOX"));
 
-        USABLES.addAll(Arrays.asList(Material.BONE_MEAL, Material.ARMOR_STAND, Material.END_CRYSTAL,
-                Material.FLINT_AND_STEEL, Material.PAINTING, Material.ITEM_FRAME));
+        USABLES.addAll(Arrays.asList(BONE_MEAL,  ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, PAINTING, ITEM_FRAME));
         USABLES.addAll(materialsEndingWith("BOAT"));
         USABLES.addAll(materialsEndingWith("MINECART"));
         Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
@@ -97,7 +95,7 @@ public class Materials {
      * @return true if the given material is sensitive to a player standing on it, false otherwise.
      */
     public static boolean isPressureSensitive(Material material) {
-        return material == Material.TURTLE_EGG || material == Material.TRIPWIRE ||
+        return material == TURTLE_EGG || material == TRIPWIRE ||
                 material.name().endsWith("PRESSURE_PLATE");
     }
 
@@ -108,7 +106,7 @@ public class Materials {
      * @return true if the material could change when being interacted with, false otherwise.
      */
     public static boolean changesOnInteraction(Material material) {
-        return material.isInteractable() && !Material.CRAFTING_TABLE.equals(material);
+        return material.isInteractable() && !CRAFTING_TABLE.equals(material);
     }
 
     /**
@@ -119,18 +117,16 @@ public class Materials {
      * @return true if the given material changes when the given tool is used on it, false otherwise.
      */
     public static boolean changesOnUse(Material material, Material tool) {
-        if (Material.CAKE.equals(material) || (Material.END_PORTAL_FRAME.equals(material) &&
-                Material.ENDER_EYE.equals(tool))) {
+        if (CAKE.equals(material) || (END_PORTAL_FRAME.equals(material) && ENDER_EYE.equals(tool)))
             return true;
-        }
 
         if (tool.name().endsWith("AXE"))
             return material.name().endsWith("LOG");
 
         if (tool.name().endsWith("HOE"))
-            return material == Material.GRASS_BLOCK || material == Material.DIRT || material == Material.GRASS_PATH;
+            return material == GRASS_BLOCK || material == DIRT || material == GRASS_PATH;
 
-        return tool.name().endsWith("SHOVEL") && material == Material.GRASS_BLOCK;
+        return tool.name().endsWith("SHOVEL") && material == GRASS_BLOCK;
     }
 
     public static boolean hasRecipe(Material material) {
@@ -149,7 +145,7 @@ public class Materials {
      * @return the material type of the given block.
      */
     public static Material blockType(Block block) {
-        return block == null ? Material.AIR : block.getType();
+        return block == null ? AIR : block.getType();
     }
 
     /**
@@ -159,7 +155,7 @@ public class Materials {
      * @return the type of material in the given item stack.
      */
     public static Material stackType(ItemStack stack) {
-        return stack == null ? Material.AIR : stack.getType();
+        return stack == null ? AIR : stack.getType();
     }
 
     /**

@@ -4,6 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import static org.bukkit.entity.EntityType.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,24 +13,17 @@ import java.util.List;
  * Helps to categorize entities.
  */
 public class Entities {
-    private static final List<EntityType> INVENTORY_HOLDERS = Arrays.asList(EntityType.MINECART_CHEST,
-            EntityType.MINECART_FURNACE, EntityType.MINECART_HOPPER, EntityType.HORSE, EntityType.MULE,
-            EntityType.SKELETON_HORSE, EntityType.ARMOR_STAND, EntityType.ITEM_FRAME, EntityType.LLAMA,
-            EntityType.TRADER_LLAMA, EntityType.DONKEY, EntityType.ZOMBIE_HORSE);
-    private static final List<EntityType> INTERACTABLES = Arrays.asList(EntityType.SHEEP, EntityType.COW,
-            EntityType.MUSHROOM_COW, EntityType.VILLAGER, EntityType.WANDERING_TRADER, EntityType.TURTLE,
-            EntityType.CHICKEN, EntityType.CAT, EntityType.FOX, EntityType.OCELOT, EntityType.PANDA, EntityType.PARROT,
-            EntityType.PIG, EntityType.RABBIT, EntityType.WOLF);
-    private static final List<EntityType> HOSTILES = Arrays.asList(EntityType.WITHER_SKELETON, EntityType.WITHER,
-            EntityType.SILVERFISH, EntityType.ENDERMAN, EntityType.CAVE_SPIDER, EntityType.SPIDER,
-            EntityType.VINDICATOR, EntityType.WITCH, EntityType.SLIME, EntityType.CREEPER, EntityType.BLAZE,
-            EntityType.ZOMBIE, EntityType.SKELETON, EntityType.DROWNED, EntityType.ELDER_GUARDIAN,
-            EntityType.ENDER_DRAGON, EntityType.ENDERMITE, EntityType.EVOKER, EntityType.GHAST, EntityType.GIANT,
-            EntityType.GUARDIAN, EntityType.HUSK, EntityType.ILLUSIONER, EntityType.MAGMA_CUBE, EntityType.PHANTOM,
-            EntityType.PILLAGER, EntityType.RAVAGER, EntityType.SHULKER, EntityType.STRAY, EntityType.VEX,
-            EntityType.ZOMBIE_VILLAGER);
-    private static final List<EntityType> AGGERABLES = Arrays.asList(EntityType.POLAR_BEAR, EntityType.IRON_GOLEM,
-            EntityType.PIG_ZOMBIE, EntityType.WOLF, EntityType.SNOWMAN);
+    private static final List<EntityType> INVENTORY_HOLDERS = Arrays.asList(MINECART_CHEST, MINECART_FURNACE,
+            MINECART_HOPPER, HORSE, MULE, SKELETON_HORSE, ARMOR_STAND, ITEM_FRAME, LLAMA, TRADER_LLAMA, DONKEY, ZOMBIE_HORSE);
+    private static final List<EntityType> INTERACTABLES = Arrays.asList(SHEEP, COW, MUSHROOM_COW, VILLAGER,
+            WANDERING_TRADER, TURTLE, CHICKEN, CAT, FOX, OCELOT, PANDA, PARROT, PIG, RABBIT, WOLF);
+    private static final List<EntityType> HOSTILES = Arrays.asList(WITHER_SKELETON, WITHER, SILVERFISH, ENDERMAN,
+            CAVE_SPIDER, SPIDER, VINDICATOR, WITCH, SLIME, CREEPER, BLAZE, ZOMBIE, SKELETON, DROWNED, ELDER_GUARDIAN,
+            ENDER_DRAGON, ENDERMITE, EVOKER, GHAST, GIANT, GUARDIAN, HUSK, ILLUSIONER, MAGMA_CUBE, PHANTOM, PILLAGER,
+            RAVAGER, SHULKER, STRAY, VEX, ZOMBIE_VILLAGER);
+    private static final List<EntityType> AGGERABLES = Arrays.asList(POLAR_BEAR, IRON_GOLEM, PIG_ZOMBIE, WOLF, SNOWMAN);
+    private static final List<EntityType> PASSIVES = Arrays.asList(CAT, CHICKEN, COW, DONKEY, DOLPHIN, FOX, HORSE,
+            LLAMA, MUSHROOM_COW, MULE, OCELOT, PANDA, PARROT, PIG, RABBIT, SHEEP, TURTLE, TRADER_LLAMA, VILLAGER);
 
     private Entities() {
     }
@@ -68,5 +62,20 @@ public class Entities {
     public static boolean isHostile(Player player, Entity entity) {
         return HOSTILES.contains(entity.getType()) ||
                 (AGGERABLES.contains(entity.getType()) && player.equals(((Mob) entity).getTarget()));
+    }
+    
+    /**
+     * Returns whether or not the given entity is passive towards the given player. If the given entity is always
+     * passive towards players then true is returned, otherwise if the entity has to be provoked then trust is only
+     * returned if the given entity is not currently targeting the given player.
+     * (can't !isHostile() because of paintings etc)
+     *
+     * @param player the player.
+     * @param entity the entity.
+     * @return true if the given entity is passive towards the given player, false otherwise.
+     */
+    public static boolean isPassive(Player player, Entity entity) {
+        return PASSIVES.contains(entity.getType()) ||
+                (AGGERABLES.contains(entity.getType()) && !player.equals(((Mob) entity).getTarget()));
     }
 }

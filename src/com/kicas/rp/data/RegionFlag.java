@@ -16,9 +16,8 @@ public enum RegionFlag {
     MOB_GRIEF,
     TNT_EXPLOSIONS(false),
     OVERLAP,
-    // TODO: Implement flags below this comment
     INVINCIBLE,
-    GREETING(TextMeta.class),
+    GREETING(TextMeta.class), // TODO: Implement greeting flag
     HOSTILE_DAMAGE, // Allow players to damage hostiles
     ANIMAL_DAMAGE, // Allow players to damage animals
     POTION_SPLASH,

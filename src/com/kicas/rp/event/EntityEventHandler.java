@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 
@@ -82,6 +83,21 @@ public class EntityEventHandler implements Listener {
                 FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
                 return flags != null && !flags.isAllowed(RegionFlag.MOB_GRIEF);
             });
+        }
+    }
+    
+    /**
+     * Prevent splash potions from splashing. (effect from outside a border may slip in)
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onPotionSplash(PotionSplashEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if (flags == null)
+            return;
+        if (!flags.isAllowed(RegionFlag.POTION_SPLASH)) {
+            event.setCancelled(true);
+            event.getEntity().remove();
         }
     }
 }

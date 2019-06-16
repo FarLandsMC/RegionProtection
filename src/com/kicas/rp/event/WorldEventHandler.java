@@ -55,12 +55,20 @@ public class WorldEventHandler implements Listener {
                 .crossesRegions(event.getBlock().getLocation(), block.getLocation())));
     }
     
+    /**
+     * Handles creature spawn flag restrictions.
+     * @param event the event.
+     */
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         event.setCancelled(!RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation())
                 .<EnumFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType()));
     }
     
+    /**
+     * Handles ice and snow melting or forming.
+     * @param event the event.
+     */
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onBlockFade(BlockFadeEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
@@ -74,6 +82,10 @@ public class WorldEventHandler implements Listener {
             event.setCancelled(true);
     }
     
+    /**
+     * Handles leaf decay.
+     * @param event the event.
+     */
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onLeafDecay(LeavesDecayEvent event) {
         event.setCancelled(!RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation())

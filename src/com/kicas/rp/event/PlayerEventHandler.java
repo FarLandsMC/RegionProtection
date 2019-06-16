@@ -4,6 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -16,9 +17,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
@@ -147,18 +151,23 @@ public class PlayerEventHandler implements Listener {
             // Handle every block related right-click interaction
             case RIGHT_CLICK_BLOCK:
             {
-                Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
 
+                if (event.getClickedBlock().getType().name().endsWith("CHEST") && !flags.isAllowed(RegionFlag.CHEST_ACCESS)) {
+                    event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
+                    event.setCancelled(true);
+                    return;
+                }
+    
+                Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
+                
                 // Handle the placing of entities and other items as well as other changes that happen when the player's
                 // held item is used on the clicked block.
-                if(Materials.isUsable(Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()))) ||
-                        Materials.changesOnUse(blockType, heldItem)) {
-                    // Requires build trust
+                if(Materials.isUsable(heldItem) || Materials.changesOnUse(blockType, heldItem)) {
+                    // Build trust
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-                        if(EquipmentSlot.HAND.equals(event.getHand())) {
-                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " +
-                                    flags.getOwnerName() + ".");
-                        }
+                        if(EquipmentSlot.HAND.equals(event.getHand()))
+                            event.getPlayer().sendMessage(ChatColor.RED +
+                                    "This belongs to " + flags.getOwnerName() + ".");
                         event.setCancelled(true);
                         return;
                     }
@@ -169,18 +178,20 @@ public class PlayerEventHandler implements Listener {
                     // Container trust
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                            event.getPlayer().sendMessage(ChatColor.RED +
+                                    "This belongs to " + flags.getOwnerName() + ".");
                         event.setCancelled(true);
                         return;
                     }
                 }
 
-                // Handle "doors", redstone inputs and bed entry
+                // Handle "doors", redstone inputs
                 if(Materials.changesOnInteraction(blockType)) {
                     // Access trust
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                            event.getPlayer().sendMessage(ChatColor.RED +
+                                    "This belongs to " + flags.getOwnerName() + ".");
                         event.setCancelled(true);
                         return;
                     }
@@ -304,13 +315,29 @@ public class PlayerEventHandler implements Listener {
             return;
 
         // Only check trust for non-hostile entities
-        if(event.getDamager() instanceof Player && Entities.isHostile((Player)event.getDamager(), event.getEntity())) {
-            // Build trust
-            if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getDamager(), TrustLevel.BUILD, flags)) {
-                event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-                event.setCancelled(true);
+        if(event.getDamager() instanceof Player) {
+            if (Entities.isHostile((Player) event.getDamager(), event.getEntity())) {
+                if(!flags.isAllowed(RegionFlag.HOSTILE_DAMAGE)) {
+                    event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
+                    event.setCancelled(true);
+                    return;
+                }
+                
+                // Build trust
+                if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(), TrustLevel.BUILD, flags)) {
+                    event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                    event.setCancelled(true);
+                }
+            } else if (Entities.isPassive((Player) event.getDamager(), event.getEntity())) {
+                if(!flags.isAllowed(RegionFlag.ANIMAL_DAMAGE)) {
+                    event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
+                    event.setCancelled(true);
+                    
+                }
             }
+            return;
         }
+        event.setCancelled(event.getEntity() instanceof Player && !flags.isAllowed(RegionFlag.PVP));
     }
 
     /**
@@ -368,6 +395,52 @@ public class PlayerEventHandler implements Listener {
                 event.getRemover().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                 event.setCancelled(true);
             }
+        }
+    }
+    
+    /**
+     * Handles player damage for Invincible flag.
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onPlayerDamage(EntityDamageEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if(flags == null)
+            return;
+        event.setCancelled(event.getEntity() instanceof Player && flags.isAllowed(RegionFlag.INVINCIBLE));
+    }
+    
+    /**
+     * Handles player hunger for Invincible flag.
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onPlayerHunger(FoodLevelChangeEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if(flags == null)
+            return;
+        event.setCancelled(event.getEntity() instanceof Player && flags.isAllowed(RegionFlag.INVINCIBLE));
+    }
+    
+    /**
+     * Handles players attempting to enter a bed (requires access trust).
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onPlayerBedEnter(PlayerBedEnterEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBed().getLocation());
+        if (flags == null)
+            return;
+        
+        if (!flags.isAllowed(RegionFlag.BED_ENTER)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+            event.setCancelled(true);
+            return;
+        }
+        
+        if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
         }
     }
 }
