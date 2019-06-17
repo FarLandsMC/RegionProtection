@@ -4,6 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.EnumFilter;
 import com.kicas.rp.data.FlagContainer;
 import com.kicas.rp.data.RegionFlag;
+import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
 import org.bukkit.Material;
@@ -26,12 +27,15 @@ public class WorldEventHandler implements Listener {
         if(RegionProtection.getDataManager().crossesRegions(event.getBlock().getLocation(),
                 event.getToBlock().getLocation()))
             event.setCancelled(true);
-        else if (Material.WATER == event.getBlock().getType() &&
-                RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation()).hasFlag(RegionFlag.WATER_FLOW))
-            event.setCancelled(true);
-        else
-            event.setCancelled(Material.LAVA == event.getBlock().getType() &&
-                RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation()).hasFlag(RegionFlag.LAVA_FLOW));
+        else {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+
+            if (Material.WATER == event.getBlock().getType()) {
+                event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.WATER_FLOW));
+            } else {
+                event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.LAVA_FLOW));
+            }
+        }
     }
 
     /**
@@ -61,8 +65,9 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
-        event.setCancelled(!RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation())
-                .<EnumFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType()));
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        event.setCancelled(flags != null && !Entities.isArtificialSpawn(event.getSpawnReason()) &&
+                !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType()));
     }
     
     /**
@@ -72,6 +77,9 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onBlockFade(BlockFadeEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        if(flags == null)
+            return;
+
         if (!flags.isAllowed(RegionFlag.ICE_CHANGE) &&
                 (event.getBlock().getType() == Material.ICE || event.getBlock().getType() == Material.FROSTED_ICE))
             event.setCancelled(true);
@@ -88,7 +96,7 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onLeafDecay(LeavesDecayEvent event) {
-        event.setCancelled(!RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation())
-                .isAllowed(RegionFlag.LEAF_DECAY));
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.LEAF_DECAY));
     }
 }

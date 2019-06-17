@@ -26,6 +26,8 @@ import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
+import java.util.Objects;
+
 /**
  * Handle events caused by players.
  */
@@ -402,9 +404,8 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerDamage(EntityDamageEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if(flags == null)
-            return;
-        event.setCancelled(event.getEntity() instanceof Player && flags.isAllowed(RegionFlag.INVINCIBLE));
+        event.setCancelled(event.getEntity() instanceof Player && flags != null &&
+                flags.isAllowed(RegionFlag.INVINCIBLE));
     }
     
     /**
@@ -414,9 +415,8 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerHunger(FoodLevelChangeEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if(flags == null)
-            return;
-        event.setCancelled(event.getEntity() instanceof Player && flags.isAllowed(RegionFlag.INVINCIBLE));
+        event.setCancelled(event.getEntity() instanceof Player && flags != null &&
+                flags.isAllowed(RegionFlag.INVINCIBLE));
     }
     
     /**
@@ -450,7 +450,7 @@ public class PlayerEventHandler implements Listener {
         FlagContainer fromFlags = RegionProtection.getDataManager().getFlagsAt(event.getFrom());
         FlagContainer toFlags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
 
-        if(!fromFlags.equals(toFlags) && toFlags.hasFlag(RegionFlag.GREETING))
+        if(!Objects.equals(fromFlags, toFlags) && toFlags != null && toFlags.hasFlag(RegionFlag.GREETING))
             event.getPlayer().spigot().sendMessage(toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).getFormatted());
     }
 }
