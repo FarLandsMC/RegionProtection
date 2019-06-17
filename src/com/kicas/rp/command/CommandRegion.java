@@ -192,39 +192,8 @@ public class CommandRegion extends Command {
                     return true;
                 }
 
-                // Perform the size modification
-                switch(face) {
-                    case UP:
-                        region.getMax().add(0, amount, 0);
-                        break;
-
-                    case DOWN:
-                        region.getMin().subtract(0, amount, 0);
-                        break;
-
-                    case NORTH:
-                        region.getMin().subtract(0, 0, amount);
-                        break;
-
-                    case SOUTH:
-                        region.getMax().add(0, 0, amount);
-                        break;
-
-                    case EAST:
-                        region.getMax().add(amount, 0, 0);
-                        break;
-
-                    case WEST:
-                        region.getMin().subtract(amount, 0, 0);
-                        break;
-
-                    default:
-                        sender.sendMessage(ChatColor.RED + "Invalid direction: " + args[3] + ". Please only use the " +
-                                "four cardinal directions as well as up and down.");
-                        return true;
-                }
-
-                sender.sendMessage(ChatColor.GREEN + "Successfully adjusted region " + args[1]);
+                if(RegionProtection.getDataManager().tryExpandRegion((Player)sender, region, face, amount))
+                    sender.sendMessage(ChatColor.GREEN + "Successfully adjusted region " + args[1]);
             }
         }else if("delete".equals(args[0])) { // Delete a region
             boolean includeChildren = args.length == 3 && "true".equalsIgnoreCase(args[2]);
@@ -273,7 +242,9 @@ public class CommandRegion extends Command {
             }else if(args.length == 4) { // Suggest flag values
                 RegionFlag flag = Utils.valueOfFormattedName(args[2], RegionFlag.class);
                 switch(flag) {
-                    case TRUST: // Too complex, not worth giving suggestions when the trust command exists
+                    // Too complex, not worth giving suggestions for
+                    case TRUST:
+                    case GREETING:
                         return Collections.emptyList();
 
                     case DENY_SPAWN: // Give suggestions following the enum filter format (entities)

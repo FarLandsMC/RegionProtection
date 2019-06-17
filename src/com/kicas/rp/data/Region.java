@@ -129,6 +129,16 @@ public class Region extends FlagContainer implements Serializable {
     }
 
     /**
+     * Returns whether or not the given location is within this region ignoring any restriction in the y-axis.
+     * @param loc the location.
+     * @return true if the given location is in this region ignoring the y-axis, false otherwise.
+     */
+    public boolean containsIgnoreY(Location loc) {
+        return loc.getX() >= min.getX() && loc.getZ() >= min.getZ() && loc.getX() <= max.getX() &&
+                loc.getZ() <= max.getZ();
+    }
+
+    /**
      * Returns whether or not the given region is completely within this region in 3D space.
      * @param region the region.
      * @return true if the given region is completely within this region, false otherwise.
@@ -246,6 +256,14 @@ public class Region extends FlagContainer implements Serializable {
 
         // Handle the extraneous case where the player moves the vertex so far that the relative location of the vertex
         // to the other four changes, changing the min and max
+        reevaluateBounds();
+    }
+
+    /**
+     * Re-evaluates the minimum and maximum locations of the region. This method should be called if the region could
+     * have been contorted to such an extent that the original minimum or maximum location is not anymore.
+     */
+    public void reevaluateBounds() {
         Location oldMin = min.clone();
         min.setX(Math.min(min.getX(), max.getX()));
         min.setZ(Math.min(min.getZ(), max.getZ()));

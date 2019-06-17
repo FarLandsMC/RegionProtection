@@ -128,7 +128,7 @@ public class RegionToolHandler implements Listener {
                         case RESIZE_REGION:
                         {
                             Region claim = ps.getCurrentSelectedRegion();
-                            if(!dm.tryResizeClaim(player, claim, vertex, clickedLocation)) {
+                            if(dm.tryResizeClaim(player, claim, vertex, clickedLocation)) {
                                 // Don't tell them how many claim blocks they have if they were resizing a subdivision
                                 player.sendMessage(ChatColor.GREEN + "Claim resized." + (claim.hasParent() ? ""
                                         : " You have " + ps.getClaimBlocks() + " claim blocks remaining."));

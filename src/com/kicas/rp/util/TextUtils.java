@@ -32,7 +32,7 @@ public class TextUtils {
     }
 
     /**
-     * Parses the given input text and substitutes in the given values and retunrs the result as an array of base
+     * Parses the given input text and substitutes in the given values and returns the result as an array of base
      * components.
      *
      * @param input  the input text.
@@ -44,7 +44,7 @@ public class TextUtils {
     }
 
     /**
-     * Parses the given input text and retunrs the result as an array of base components.
+     * Parses the given input text and returns the result as an array of base components.
      *
      * @param input the input text.
      * @return the parsed input text as an array of base components.

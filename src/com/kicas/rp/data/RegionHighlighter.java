@@ -4,7 +4,7 @@ import com.kicas.rp.RegionProtection;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.data.BlockData;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
@@ -18,7 +18,6 @@ import java.util.Map;
 public class RegionHighlighter {
     private final Player player;
     // Store the original blocks for reversion
-    private final Map<Location, BlockData> original;
     private final Map<Location, Material> changes;
     // Task ID of the delayed task to revert the client-side changes
     private int removalTaskId;
@@ -27,7 +26,6 @@ public class RegionHighlighter {
     public RegionHighlighter(Player player, Collection<Region> regions, Material lightSource, Material block,
                              boolean includeChildren) {
         this.player = player;
-        this.original = new HashMap<>();
         this.changes = new HashMap<>();
         this.complete = false;
         initBlocks(regions, lightSource, block, includeChildren);
@@ -50,9 +48,12 @@ public class RegionHighlighter {
      */
     public void remove() {
         if(player.isOnline()) {
-            original.forEach((loc, data) -> {
-                if(loc.getChunk().isLoaded())
-                    player.sendBlockChange(loc, data);
+            changes.keySet().forEach(loc -> {
+                if(loc.getChunk().isLoaded()) {
+                    Block block = loc.getBlock();
+                    if(block != null)
+                        player.sendBlockChange(loc, block.getBlockData());
+                }
             });
         }
 
@@ -121,9 +122,12 @@ public class RegionHighlighter {
 
         removalTaskId = Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), () -> {
             if(player.isOnline()) {
-                original.forEach((loc, data) -> {
-                    if(loc.getChunk().isLoaded())
-                        player.sendBlockChange(loc, data);
+                changes.keySet().forEach(loc -> {
+                    if(loc.getChunk().isLoaded()) {
+                        Block block = loc.getBlock();
+                        if(block != null)
+                            player.sendBlockChange(loc, block.getBlockData());
+                    }
                 });
             }
             setComplete();
@@ -137,8 +141,6 @@ public class RegionHighlighter {
     // Adds or overwrites the change for the given location and also stores the original data if it's not already stored
     private void putChange(Location location, Material replacement) {
         location = findReplacementLocation(location.clone());
-        if(!original.containsKey(location))
-            original.put(location, location.getBlock().getBlockData());
         changes.put(location, replacement);
     }
     

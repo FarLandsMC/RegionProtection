@@ -1,40 +1,33 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.util.Decoder;
-import com.kicas.rp.util.Encoder;
-import com.kicas.rp.util.Serializable;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
-import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Stores transient and persistent data for a given player.
+ * Stores transient data for a given player.
  */
-public class PlayerSession implements Serializable {
+public class PlayerSession {
     private UUID uuid;
     private double claimBlocks;
+    private boolean isInAdminRegionMode;
+    private boolean isIgnoringTrust;
     // All of the following can be null
     private RegionHighlighter currentHighlighter;
     private PlayerRegionAction action;
-    private boolean isInAdminRegionMode;
     private Region currentSelectedRegion;
     private Location lastClickedBlock;
 
-    public PlayerSession(UUID uuid) {
+    public PlayerSession(UUID uuid, int claimBlocks) {
         this.uuid = uuid;
-        this.claimBlocks = 0;
+        this.claimBlocks = claimBlocks;
         this.currentHighlighter = null;
         this.action = null;
         this.isInAdminRegionMode = false;
         this.currentSelectedRegion = null;
         this.lastClickedBlock = null;
-    }
-
-    public PlayerSession() {
-        this(null);
     }
 
     public UUID getUuid() {
@@ -82,6 +75,14 @@ public class PlayerSession implements Serializable {
         isInAdminRegionMode = inAdminRegionMode;
     }
 
+    public boolean isIgnoringTrust() {
+        return isIgnoringTrust;
+    }
+
+    public void setIgnoringTrust(boolean ignoringTrust) {
+        isIgnoringTrust = ignoringTrust;
+    }
+
     public Region getCurrentSelectedRegion() {
         return currentSelectedRegion;
     }
@@ -96,17 +97,5 @@ public class PlayerSession implements Serializable {
 
     public void setLastClickedBlock(Location lastClickedBlock) {
         this.lastClickedBlock = lastClickedBlock;
-    }
-
-    @Override
-    public void serialize(Encoder encoder) throws IOException {
-        encoder.writeUuid(uuid);
-        encoder.writeInt((int)claimBlocks);
-    }
-
-    @Override
-    public void deserialize(Decoder decoder) throws IOException {
-        uuid = decoder.readUuid();
-        claimBlocks = decoder.readInt();
     }
 }
