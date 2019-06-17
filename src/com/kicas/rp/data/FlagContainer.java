@@ -167,4 +167,16 @@ public class FlagContainer implements Serializable {
             -- len;
         }
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if(other == this)
+            return true;
+
+        if(!(other instanceof FlagContainer))
+            return false;
+
+        FlagContainer flags = (FlagContainer)other;
+        return owner.equals(flags.owner) && this.flags.equals(flags.flags);
+    }
 }

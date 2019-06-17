@@ -149,6 +149,18 @@ public class TrustMeta implements Serializable {
                 .reduce("", String::concat);
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if(other == this)
+            return true;
+
+        if(!(other instanceof TrustMeta))
+            return false;
+
+        TrustMeta tm = (TrustMeta)other;
+        return trustData.equals(tm.trustData) && publicTrustLevel.equals(tm.publicTrustLevel);
+    }
+
     /**
      * Creates a trust meta based on the given string. The format for a trust meta is as follows: for an individual
      * trust level, the name of the trust level should be follwed by a colon, then a comma separated list of the players

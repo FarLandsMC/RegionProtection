@@ -21,10 +21,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
-import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -442,5 +439,18 @@ public class PlayerEventHandler implements Listener {
             event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
         }
+    }
+
+    /**
+     * Handles greetings.
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onPlayerMove(PlayerMoveEvent event) {
+        FlagContainer fromFlags = RegionProtection.getDataManager().getFlagsAt(event.getFrom());
+        FlagContainer toFlags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
+
+        if(!fromFlags.equals(toFlags) && toFlags.hasFlag(RegionFlag.GREETING))
+            event.getPlayer().spigot().sendMessage(toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).getFormatted());
     }
 }

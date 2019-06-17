@@ -52,4 +52,16 @@ public class TextMeta implements Serializable {
     public String toString() {
         return text;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if(other == this)
+            return true;
+
+        if(!(other instanceof TextMeta))
+            return false;
+
+        TextMeta tm = (TextMeta)other;
+        return text.equals(tm.text);
+    }
 }

@@ -13,14 +13,14 @@ public enum RegionFlag {
     DENY_SPAWN(EnumFilter.class),
     DENY_BREAK(EnumFilter.class),
     DENY_PLACE(EnumFilter.class),
-    MOB_GRIEF,
+    MOB_GRIEF, // Any form of damage caused by non-player, hostile mobs
     TNT_EXPLOSIONS(false),
-    OVERLAP,
+    OVERLAP, // Regions containing the same locations
     INVINCIBLE,
-    GREETING(TextMeta.class), // TODO: Implement greeting flag
+    GREETING(TextMeta.class),
     HOSTILE_DAMAGE, // Allow players to damage hostiles
     ANIMAL_DAMAGE, // Allow players to damage animals
-    POTION_SPLASH,
+    POTION_SPLASH, // The actual splash part
     CHEST_ACCESS, // Just chests, trapped chests, and ender chests
     PVP,
     BED_ENTER,

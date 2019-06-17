@@ -71,9 +71,9 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Returns all the regions in a given world.
+     * Returns all the regions in a given world without a parent.
      * @param world the world.
-     * @return all the regions in a given world.
+     * @return all the regions in a given world without a parent.
      */
     public List<Region> getRegionsInWorld(World world) {
         return worlds.get(world.getUID()).regions;
@@ -129,11 +129,11 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Returns a list of unassociated (non-child, and therefore low priority regions) regions at the given location.
+     * Returns a list of the regions at the given location which do not have a parent.
      * @param location the location.
-     * @return a list of unassociated regions at the given location.
+     * @return a list of the regions at the given location which do not have a parent.
      */
-    public synchronized List<Region> getUnassociatedRegionsAt(Location location) {
+    public synchronized List<Region> getParentRegionsAt(Location location) {
         List<Region> regions = getRegionsAt(location);
         return regions.stream().filter(region -> !region.hasParent()).collect(Collectors.toList());
     }
@@ -463,12 +463,12 @@ public class DataManager implements Listener {
      * @param includeChildren whether or not to delete the regions children as well.
      * @return true if the region was successfully deleted, false otherwise.
      */
-    public synchronized boolean deleteRegion(Player player, Region region, boolean includeChildren) {
+    public synchronized boolean tryDeleteRegion(Player player, Region region, boolean includeChildren) {
         if(!region.getChildren().isEmpty()) {
             if(includeChildren)
-                region.getChildren().forEach(child -> deleteRegion(player, child, false));
+                region.getChildren().forEach(child -> tryDeleteRegion(player, child, false));
             else{
-                player.sendMessage(ChatColor.RED + "This region has sub-regions which must be removed first.");
+                player.sendMessage(ChatColor.RED + "This region has subdivisions which must be removed first.");
                 return false;
             }
         }

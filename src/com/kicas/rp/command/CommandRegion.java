@@ -28,7 +28,7 @@ public class CommandRegion extends Command {
             "east", "west");
 
     CommandRegion() {
-        super("region", "Modify a region.", "/region <flag|create|expand|retract|delete> <name> [args...]");
+        super("region", "Modify a region.", "/region <flag|create|expand|retract|delete> <name> [args...]", "rg");
     }
 
     @Override
@@ -229,7 +229,7 @@ public class CommandRegion extends Command {
         }else if("delete".equals(args[0])) { // Delete a region
             boolean includeChildren = args.length == 3 && "true".equalsIgnoreCase(args[2]);
             // This can fail if includeChildren is false and the region has children
-            if(RegionProtection.getDataManager().deleteRegion((Player)sender, region, includeChildren)) {
+            if(RegionProtection.getDataManager().tryDeleteRegion((Player)sender, region, includeChildren)) {
                 sender.sendMessage(ChatColor.GREEN + "Deleted region " + args[1] + (includeChildren
                         ? " and all child regions." : "."));
             }

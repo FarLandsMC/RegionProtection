@@ -52,6 +52,18 @@ public class EnumFilter implements Serializable {
                 (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal])).toArray(String[]::new));
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if(other == this)
+            return true;
+
+        if(!(other instanceof EnumFilter))
+            return false;
+
+        EnumFilter ef = (EnumFilter)other;
+        return filter.equals(ef.filter) && isWhitelist == ef.isWhitelist;
+    }
+
     public static <E extends Enum<E>> EnumFilter fromString(String string, Class<E> clazz) {
         // * = all
         boolean isWhitelist = string.contains("*");

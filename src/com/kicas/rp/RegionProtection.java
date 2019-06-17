@@ -63,7 +63,7 @@ public class RegionProtection extends JavaPlugin {
                 Bukkit.getWorlds().forEach(world -> {
                     dataManager.getRegionsInWorld(world).stream().filter(region ->
                             region.hasExpired(claimExpirationTime)).forEach(region ->
-                            dataManager.deleteRegion(null, region, true));
+                            dataManager.tryDeleteRegion(null, region, true));
                 });
             }, 100L);
         }
