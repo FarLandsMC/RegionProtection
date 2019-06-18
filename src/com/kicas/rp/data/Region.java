@@ -276,7 +276,7 @@ public class Region extends FlagContainer implements Serializable {
      * @return the area of this region.
      */
     public long area() {
-        return (long)(max.getBlockX() - min.getBlockX()) * (long)(max.getBlockZ() - min.getBlockZ());
+        return (long)(1 + max.getBlockX() - min.getBlockX()) * (long)(1 + max.getBlockZ() - min.getBlockZ());
     }
 
     /**
