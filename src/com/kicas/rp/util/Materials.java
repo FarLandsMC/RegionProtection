@@ -3,7 +3,8 @@ package com.kicas.rp.util;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
+import org.bukkit.entity.minecart.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -27,7 +28,7 @@ public class Materials {
                 DISPENSER, HOPPER, BREWING_STAND, LECTERN, BARREL, CAMPFIRE, COMPOSTER));
         INVENTORY_HOLDERS.addAll(materialsEndingWith("SHULKER_BOX"));
 
-        USABLES.addAll(Arrays.asList(BONE_MEAL,  ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, PAINTING, ITEM_FRAME));
+        USABLES.addAll(Arrays.asList(BONE_MEAL, ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, PAINTING, ITEM_FRAME));
         USABLES.addAll(materialsEndingWith("BOAT"));
         USABLES.addAll(materialsEndingWith("MINECART"));
         Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
@@ -136,6 +137,44 @@ public class Materials {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Gets the material associated with the given entity. This includes all boat types, minecart types, paintings, item
+     * frames, and leash hitches. If the given entity does not have an associated material, then AIR is returned.
+     * @param entity the entity.
+     * @return the material associated with the given entity, or AIR if not material is associated.
+     */
+    public static Material forEntity(Entity entity) {
+        if(entity instanceof Boat) {
+            switch(((Boat)entity).getWoodType()) {
+                case GENERIC:
+                    return Material.OAK_BOAT;
+                case REDWOOD:
+                    return Material.SPRUCE_BOAT;
+                default:
+                    return Material.valueOf(((Boat)entity).getWoodType().name() + "_BOAT");
+            }
+        }else if(entity instanceof CommandMinecart)
+            return Material.COMMAND_BLOCK_MINECART;
+        else if(entity instanceof StorageMinecart)
+            return Material.CHEST_MINECART;
+        else if(entity instanceof ExplosiveMinecart)
+            return Material.TNT_MINECART;
+        else if(entity instanceof RideableMinecart)
+            return Material.MINECART;
+        else if(entity instanceof PoweredMinecart)
+            return Material.FURNACE_MINECART;
+        else if(entity instanceof HopperMinecart)
+            return Material.HOPPER_MINECART;
+        else if(entity instanceof Painting)
+            return Material.PAINTING;
+        else if(entity instanceof ItemFrame)
+            return Material.ITEM_FRAME;
+        else if(entity instanceof LeashHitch)
+            return Material.LEAD;
+        else
+            return Material.AIR;
     }
 
     /**

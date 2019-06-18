@@ -54,7 +54,7 @@ public class EntityEventHandler implements Listener {
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onEntityExplosion(EntityExplodeEvent event) {
         if(EntityType.PRIMED_TNT.equals(event.getEntityType())) {
-            // Prevent the TNT from exploding at all if tnt explosions are turned off
+            // If the explosion occurs in a location where tnt is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
             if(flags != null && !flags.isAllowed(RegionFlag.TNT_EXPLOSIONS)) {
                 event.setCancelled(true);
@@ -78,10 +78,17 @@ public class EntityEventHandler implements Listener {
                 return flags0 != null && !flags0.isAllowed(RegionFlag.TNT_EXPLOSIONS);
             });
         }else{
+            // If the mob explosion occurs in an area where mob grief is not allowed, cancel the event altogether
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
+            if(flags != null && !flags.isAllowed(RegionFlag.MOB_GRIEF)) {
+                event.setCancelled(true);
+                return;
+            }
+
             // Prevent explosions caused by other entities besides TNT
             event.blockList().removeIf(block -> {
-                FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
-                return flags != null && !flags.isAllowed(RegionFlag.MOB_GRIEF);
+                FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
+                return flags0 != null && !flags0.isAllowed(RegionFlag.MOB_GRIEF);
             });
         }
     }

@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,6 +26,8 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.projectiles.BlockProjectileSource;
+import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.Objects;
 
@@ -39,7 +42,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerBreakBlock(BlockBreakEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if(flags == null || RegionProtection.getDataManager().getPlayerSession(event.getPlayer()).isIgnoringTrust())
+        if(flags == null)
             return;
         
         // Check admin flag first
@@ -68,8 +71,8 @@ public class PlayerEventHandler implements Listener {
         if(flags == null) {
             // Find the region
             Region region = RegionProtection.getDataManager().getRegionAtIgnoreY(event.getBlock().getLocation())
-                    .stream().filter(r -> r.isOwner(event.getPlayer()) && !r.isAdminOwned() && !r.hasParent()).findAny()
-                    .orElse(null);
+                    .stream().filter(r -> r.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
+                            TrustLevel.BUILD, r) && !r.isAdminOwned() && !r.hasParent()).findAny().orElse(null);
 
             // Adjust the y-value
             if(region != null && Materials.hasRecipe(event.getBlock().getType()))
@@ -77,8 +80,6 @@ public class PlayerEventHandler implements Listener {
 
             return;
         }
-        if (RegionProtection.getDataManager().getPlayerSession(event.getPlayer()).isIgnoringTrust())
-            return;
 
         // Check admin flag first
         if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_PLACE).isAllowed(event.getBlock().getType())) {
@@ -119,7 +120,7 @@ public class PlayerEventHandler implements Listener {
         if(event.getClickedBlock() == null)
             return;
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
-        if(flags == null || RegionProtection.getDataManager().getPlayerSession(event.getPlayer()).isIgnoringTrust())
+        if(flags == null)
             return;
     
         Material blockType = event.getClickedBlock().getType();
@@ -157,8 +158,8 @@ public class PlayerEventHandler implements Listener {
             // Handle every block related right-click interaction
             case RIGHT_CLICK_BLOCK:
             {
-
-                if (event.getClickedBlock().getType().name().endsWith("CHEST") && !flags.isAllowed(RegionFlag.CHEST_ACCESS)) {
+                if (event.getClickedBlock().getType().name().endsWith("CHEST") &&
+                        !flags.isAllowed(RegionFlag.CHEST_ACCESS)) {
                     event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
                     event.setCancelled(true);
                     return;
@@ -169,6 +170,14 @@ public class PlayerEventHandler implements Listener {
                 // Handle the placing of entities and other items as well as other changes that happen when the player's
                 // held item is used on the clicked block.
                 if(Materials.isUsable(heldItem) || Materials.changesOnUse(blockType, heldItem)) {
+                    // Deny placement of boats, paintings, etc.
+                    if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_PLACE).isAllowed(heldItem)) {
+                        if(EquipmentSlot.HAND.equals(event.getHand()))
+                            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
+                        event.setCancelled(true);
+                        return;
+                    }
+
                     // Build trust
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
@@ -240,11 +249,18 @@ public class PlayerEventHandler implements Listener {
         // Messages are only sent if the main-hand is used to prevent duplicate message sending
 
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getRightClicked().getLocation());
-        if(flags == null || RegionProtection.getDataManager().getPlayerSession(event.getPlayer()).isIgnoringTrust())
+        if(flags == null)
             return;
         
         // Handle breaking leash hitches
         if(event.getRightClicked().getType() == EntityType.LEASH_HITCH) {
+            if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(Material.LEAD)) {
+                if(EquipmentSlot.HAND.equals(event.getHand()))
+                    event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
+                event.setCancelled(true);
+                return;
+            }
+
             // Build trust
             if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
                 if(EquipmentSlot.HAND.equals(event.getHand()))
@@ -283,7 +299,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerManipulateArmorStand(PlayerArmorStandManipulateEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getRightClicked().getLocation());
-        if(flags == null || RegionProtection.getDataManager().getPlayerSession(event.getPlayer()).isIgnoringTrust())
+        if(flags == null)
             return;
 
         // Container trust
@@ -300,7 +316,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerLeashEntity(PlayerLeashEntityEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if(flags == null || RegionProtection.getDataManager().getPlayerSession(event.getPlayer()).isIgnoringTrust())
+        if(flags == null)
             return;
 
         // Build trust
@@ -321,8 +337,7 @@ public class PlayerEventHandler implements Listener {
             return;
 
         // Only check trust for non-hostile entities
-        if(event.getDamager() instanceof Player &&
-        !RegionProtection.getDataManager().getPlayerSession((Player)event.getDamager()).isIgnoringTrust()) {
+        if(event.getDamager() instanceof Player) {
             if (Entities.isHostile((Player) event.getDamager(), event.getEntity())) {
                 if(!flags.isAllowed(RegionFlag.HOSTILE_DAMAGE)) {
                     event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
@@ -331,7 +346,8 @@ public class PlayerEventHandler implements Listener {
                 }
                 
                 // Build trust
-                if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(), TrustLevel.BUILD, flags)) {
+                if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(),
+                        TrustLevel.BUILD, flags)) {
                     event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                     event.setCancelled(true);
                     return;
@@ -357,8 +373,14 @@ public class PlayerEventHandler implements Listener {
         if(flags == null)
             return;
 
-        if(event.getAttacker() instanceof Player &&
-                !RegionProtection.getDataManager().getPlayerSession((Player)event.getAttacker()).isIgnoringTrust()) {
+        if(event.getAttacker() instanceof Player) {
+            if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
+                    .isAllowed(Materials.forEntity(event.getVehicle()))) {
+                event.getAttacker().sendMessage(ChatColor.RED + "You can't break that here.");
+                event.setCancelled(true);
+                return;
+            }
+
             // Build trust
             if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getAttacker(), TrustLevel.BUILD, flags)) {
                 event.getAttacker().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
@@ -377,8 +399,7 @@ public class PlayerEventHandler implements Listener {
         if(flags == null)
             return;
 
-        if(event.getEntered() instanceof Player &&
-                !RegionProtection.getDataManager().getPlayerSession((Player)event.getEntered()).isIgnoringTrust()) {
+        if(event.getEntered() instanceof Player) {
             // Access trust
             if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getEntered(), TrustLevel.ACCESS, flags)) {
                 event.getEntered().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
@@ -393,13 +414,20 @@ public class PlayerEventHandler implements Listener {
      * @param event the event.
      */
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
-    public void onHangingEntityBroken(HangingBreakByEntityEvent event) {
+    public void onHangingEntityBrokenByPlayer(HangingBreakByEntityEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         if(flags == null)
             return;
 
-        if(event.getRemover() instanceof Player &&
-                !RegionProtection.getDataManager().getPlayerSession((Player)event.getRemover()).isIgnoringTrust()) {
+        if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
+                .isAllowed(Materials.forEntity(event.getEntity()))) {
+            if(event.getRemover() instanceof Player)
+                event.getRemover().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+            return;
+        }
+
+        if(event.getRemover() instanceof Player) {
             // Build trust
             if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getRemover(), TrustLevel.BUILD, flags)) {
                 event.getRemover().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
@@ -407,8 +435,18 @@ public class PlayerEventHandler implements Listener {
                 return;
             }
         }
-        event.setCancelled(event.getRemover() != null && (event.getRemover().getType() == EntityType.PRIMED_TNT ||
-                    event.getRemover().getType() == EntityType.ARROW));
+
+        // Prevent arrows from breaking these entities
+        if(event.getRemover() != null && event.getRemover().getType() == EntityType.ARROW) {
+            ProjectileSource shooter = ((Arrow)event.getEntity()).getShooter();
+            if(shooter instanceof Player) { // For players check trust
+                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)shooter,
+                        TrustLevel.BUILD, flags));
+            }else if(shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
+                event.setCancelled(RegionProtection.getDataManager().crossesRegions(((BlockProjectileSource)shooter)
+                                .getBlock().getLocation(), event.getEntity().getLocation()));
+            }
+        }
     }
     
     /**
@@ -440,7 +478,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerBedEnter(PlayerBedEnterEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBed().getLocation());
-        if (flags == null || RegionProtection.getDataManager().getPlayerSession(event.getPlayer()).isIgnoringTrust())
+        if (flags == null)
             return;
         
         if (!flags.isAllowed(RegionFlag.BED_ENTER)) {

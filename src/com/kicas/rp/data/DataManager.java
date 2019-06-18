@@ -375,7 +375,7 @@ public class DataManager implements Listener {
         if(!resizeChecks(owner, claim, bounds))
             return false;
 
-        readdRegionToLookupTable(claim);
+        readdRegionToLookupTable(claim, bounds);
 
         return true;
     }
@@ -429,7 +429,7 @@ public class DataManager implements Listener {
         // Make sure the bounds are still correct
         region.reevaluateBounds();
         // Re-add the claim to the lookup table
-        readdRegionToLookupTable(region);
+        readdRegionToLookupTable(region, bounds);
 
         return true;
     }
@@ -500,8 +500,10 @@ public class DataManager implements Listener {
             }
         }
 
-        // Remove the region from the list
-        if(!region.hasParent())
+        // Unregister the region
+        if(region.hasParent())
+            region.getParent().getChildren().remove(region);
+        else
             worlds.get(region.getWorld().getUID()).regions.remove(region);
 
         // Remove the region from the lookup table
@@ -735,10 +737,10 @@ public class DataManager implements Listener {
             region.getChildren().forEach(r -> addRegionToLookupTable(r, false));
     }
 
-    private void readdRegionToLookupTable(Region region) {
+    private void readdRegionToLookupTable(Region region, Pair<Location, Location> oldBounds) {
         // Remove the old claim from the lookup table
-        for(int x = region.getMin().getBlockX() >> 7;x <= region.getMax().getBlockX() >> 7;++ x) {
-            for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
+        for(int x = oldBounds.getFirst().getBlockX() >> 7;x <= oldBounds.getSecond().getBlockX() >> 7;++ x) {
+            for(int z = oldBounds.getFirst().getBlockZ() >> 7;z <= oldBounds.getSecond().getBlockZ() >> 7;++ z) {
                 lookupTable.get(region.getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL))
                         .remove(region);
             }

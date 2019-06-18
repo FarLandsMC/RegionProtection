@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.RegionProtection;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
@@ -44,7 +45,8 @@ public class TrustMeta implements Serializable {
      */
     public boolean hasTrust(Player player, TrustLevel trust, FlagContainer container) {
         return (trustData.containsKey(player.getUniqueId()) ? trustData.get(player.getUniqueId()).isAtLeast(trust) :
-                publicTrustLevel.isAtLeast(trust)) || container.isOwner(player);
+                publicTrustLevel.isAtLeast(trust)) || container.isOwner(player) || RegionProtection.getDataManager()
+                .getPlayerSession(player).isIgnoringTrust();
     }
 
     /**
@@ -196,8 +198,10 @@ public class TrustMeta implements Serializable {
 
             // Parse the players
             for(String player : players.split(",")) {
-                if("public".equals(player))
+                if("public".equals(player)) {
                     meta.trustPublic(level);
+                    continue;
+                }
                 UUID uuid = Utils.uuidForUsername(player);
                 if(uuid == null)
                     throw new IllegalArgumentException("Invalid player name: " + player);

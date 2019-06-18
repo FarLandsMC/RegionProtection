@@ -63,7 +63,7 @@ public class RegionToolHandler implements Listener {
                     Region region = dm.getHighestPriorityRegionAt(clickedLocation);
 
                     // No region here, make a new one
-                    if(region == null) {
+                    if(region == null || ps.isInAdminRegionMode()) {
                         ps.setAction(PlayerRegionAction.CREATE_REGION);
                         if(ps.isInAdminRegionMode()) {
                             player.sendMessage(ChatColor.GOLD + "Region corner set. Select another vertex to set the " +

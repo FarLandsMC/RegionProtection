@@ -89,10 +89,21 @@ public class CommandRegion extends Command {
 
         // Flag sub-command
         if("flag".equals(args[0])) {
+            // If the prefix the flag name with !, such as /region flag test !deny-spawn, delete the falg
+            boolean delete = args[2].startsWith("!");
+
             // Get and check the flag in question
-            RegionFlag flag = Utils.valueOfFormattedName(args[2], RegionFlag.class);
+            RegionFlag flag = Utils.valueOfFormattedName(delete ? args[2].substring(1) : args[2], RegionFlag.class);
             if(flag == null) {
                 sender.sendMessage(ChatColor.RED + "Invalid flag: " + args[2]);
+                return true;
+            }
+
+            // We're deleting the flag
+            if(delete) {
+                region.deleteFlag(flag);
+                sender.sendMessage(ChatColor.GREEN + "Deleted flag " + Utils.formattedName(flag) + " from region " +
+                        args[1]);
                 return true;
             }
 
@@ -238,7 +249,8 @@ public class CommandRegion extends Command {
         }else if("flag".equalsIgnoreCase(args[0])) {
             // Suggest the list of flags
             if(args.length == 3) {
-                return filterStartingWith(args[2], Stream.of(RegionFlag.VALUES).map(Utils::formattedName));
+                return filterStartingWith(args[2], Stream.of(RegionFlag.VALUES).map(flag -> (args[2].startsWith("!")
+                        ? "!" : "") + Utils.formattedName(flag)));
             }else if(args.length == 4) { // Suggest flag values
                 RegionFlag flag = Utils.valueOfFormattedName(args[2], RegionFlag.class);
                 switch(flag) {
