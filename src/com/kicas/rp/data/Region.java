@@ -124,8 +124,9 @@ public class Region extends FlagContainer implements Serializable {
      * @return true if the given location is in this region, false otherwise.
      */
     public boolean contains(Location loc) {
-        return loc.getX() >= min.getX() && loc.getY() >= min.getY() && loc.getZ() >= min.getZ() &&
-                loc.getX() <= max.getX() && loc.getY() <= max.getY() && loc.getZ() <= max.getZ();
+        return loc.getBlockX() >= min.getBlockX() && loc.getBlockY() >= min.getBlockY() &&
+                loc.getBlockZ() >= min.getBlockZ() && loc.getBlockX() <= max.getBlockX() &&
+                loc.getBlockY() <= max.getBlockY() && loc.getBlockZ() <= max.getBlockZ();
     }
 
     /**
@@ -134,8 +135,8 @@ public class Region extends FlagContainer implements Serializable {
      * @return true if the given location is in this region ignoring the y-axis, false otherwise.
      */
     public boolean containsIgnoreY(Location loc) {
-        return loc.getX() >= min.getX() && loc.getZ() >= min.getZ() && loc.getX() <= max.getX() &&
-                loc.getZ() <= max.getZ();
+        return loc.getBlockX() >= min.getBlockX() && loc.getBlockZ() >= min.getBlockZ() &&
+                loc.getBlockX() <= max.getBlockX() && loc.getBlockZ() <= max.getBlockZ();
     }
 
     /**
