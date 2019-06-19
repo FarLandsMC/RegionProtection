@@ -39,6 +39,7 @@ public class DataManager implements Listener {
     // These values are used to keep consistency in the serialized data
     public static final byte REGION_FORMAT_VERSION = 0;
     public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
+    public static final String WORLD_REGION_NAME = "__global__";
 
     public DataManager(File rootDir) {
         this.rootDir = rootDir;
@@ -93,6 +94,10 @@ public class DataManager implements Listener {
      */
     public List<Region> getRegionsInWorld(World world) {
         return worlds.get(world.getUID()).regions;
+    }
+
+    public FlagContainer getWorldFlags(World world) {
+        return worlds.get(world.getUID());
     }
 
     /**
@@ -317,6 +322,12 @@ public class DataManager implements Listener {
         // Make sure the name is free
         if(getRegionByName(region.getWorld(), name) != null) {
             creator.sendMessage(ChatColor.RED + "A region with that name already exists.");
+            return false;
+        }
+
+        // Make sure the __global__ region is not overwritten
+        if(WORLD_REGION_NAME.equals(name)) {
+            creator.sendMessage(ChatColor.RED + "This region name is reserved.");
             return false;
         }
 

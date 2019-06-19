@@ -80,15 +80,17 @@ public class CommandRegion extends Command {
             return true;
         }
 
-        // Check to make sure the region name is valid
-        Region region = RegionProtection.getDataManager().getRegionByName(((Player)sender).getWorld(), args[1]);
-        if(region == null) {
-            sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] + "\" in your world.");
-            return true;
-        }
-
         // Flag sub-command
         if("flag".equals(args[0])) {
+            FlagContainer flags = DataManager.WORLD_REGION_NAME.equals(args[1])
+                    ? RegionProtection.getDataManager().getWorldFlags(((Player)sender).getWorld())
+                    : RegionProtection.getDataManager().getRegionByName(((Player)sender).getWorld(), args[1]);
+
+            if(flags == null) {
+                sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] + "\" in your world.");
+                return true;
+            }
+
             // If the prefix the flag name with !, such as /region flag test !deny-spawn, delete the falg
             boolean delete = args[2].startsWith("!");
 
@@ -101,7 +103,7 @@ public class CommandRegion extends Command {
 
             // We're deleting the flag
             if(delete) {
-                region.deleteFlag(flag);
+                flags.deleteFlag(flag);
                 sender.sendMessage(ChatColor.GREEN + "Deleted flag " + Utils.formattedName(flag) + " from region " +
                         args[1]);
                 return true;
@@ -109,7 +111,7 @@ public class CommandRegion extends Command {
 
             // If no value is specified, notify the player of the current value
             if(args.length == 3) {
-                Object meta = region.getFlagMeta(flag);
+                Object meta = flags.getFlagMeta(flag);
                 String metaString;
 
                 if(flag.isBoolean())
@@ -170,9 +172,20 @@ public class CommandRegion extends Command {
             }
 
             // Set the flag and notify the player
-            region.setFlag(flag, meta);
+            flags.setFlag(flag, meta);
             sender.sendMessage(ChatColor.GREEN + "Updated flag value for region " + args[1]);
-        }else if("expand".equals(args[0]) || "retract".equals(args[0])) { // Region size modification
+
+            return true;
+        }
+
+        // Check to make sure the region name is valid
+        Region region = RegionProtection.getDataManager().getRegionByName(((Player)sender).getWorld(), args[1]);
+        if(region == null) {
+            sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] + "\" in your world.");
+            return true;
+        }
+
+        if("expand".equals(args[0]) || "retract".equals(args[0])) { // Region size modification
             // Verticle extension is a different case, so check for that first
             if("vert".equalsIgnoreCase(args[2]) || "vertical".equalsIgnoreCase(args[2])) {
                 // Retracting vertically doesn't make sense, don't allow it
