@@ -56,6 +56,7 @@ public class CommandAbandonClaim extends Command {
 
                 sender.sendMessage(ChatColor.GREEN + "Successfully deleted this claim." + (claim.hasParent() ? ""
                         : " You now have " + ps.getClaimBlocks() + " claim blocks."));
+                ps.setRegionHighlighter(null);
             } else { // Failed deletion due to subclaims present, show those claims
                 ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), Material.GLOWSTONE,
                         Material.NETHERRACK, false));

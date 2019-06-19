@@ -222,8 +222,9 @@ public class DataManager implements Listener {
     /**
      * Attempts to create a claim with the provided verticies and the specified player as the owner. The provided
      * verticies do not need to be minimums and maximums respecively, however they will be assumed to be diagonally
-     * opposite from one another. The created region will extend from y=62 to the maximum world height. The following
-     * checks are done to see if the claim can be created:
+     * opposite from one another. The created region will extend from y=62 to the maximum world height (if the claim is
+     * not in the overworld the claim will automatically extend from y=0 to world height). The following checks are done
+     * to see if the claim can be created:
      * <ul>
      *     <li>Collisions with regions that do not allow overlap (excluding child regions)</li>
      *     <li>The player not having enough claim blocks</li>
@@ -239,7 +240,8 @@ public class DataManager implements Listener {
      */
     public synchronized Region tryCreateClaim(Player creator, Location vertex1, Location vertex2) {
         // Convert the given verticies into a minimum and maximum vertex
-        Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()), 62,
+        Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
+                "world".equals(vertex1.getWorld().getName()) ? 62 : 0,
                 Math.min(vertex1.getZ(), vertex2.getZ()));
         Location max = new Location(vertex1.getWorld(), Math.max(vertex1.getX(), vertex2.getX()),
                 vertex1.getWorld().getMaxHeight(), Math.max(vertex1.getZ(), vertex2.getZ()));

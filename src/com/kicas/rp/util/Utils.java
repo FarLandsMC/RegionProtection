@@ -3,6 +3,8 @@ package com.kicas.rp.util;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -10,7 +12,36 @@ import java.util.function.Function;
  * Contains various unrelated utility functions.
  */
 public final class Utils {
+    private static final Map<String, String> WORLD_NAME_ALIASES = new HashMap<>();
+
+    static {
+        WORLD_NAME_ALIASES.put("overworld", "world");
+        WORLD_NAME_ALIASES.put("nether", "world_nether");
+        WORLD_NAME_ALIASES.put("the_nether", "world_nether");
+        WORLD_NAME_ALIASES.put("world_the_nether", "world_nether");
+        WORLD_NAME_ALIASES.put("end", "world_the_end");
+        WORLD_NAME_ALIASES.put("the_end", "world_the_end");
+        WORLD_NAME_ALIASES.put("world_end", "world_the_end");
+    }
+
     private Utils() {
+    }
+
+    /**
+     * Attempts to find the proper world name for the given alias. No pattern is necessarily used here, rather common
+     * names for the various vanilla worlds are mapped to the correct names. If no world name could be found for the
+     * given alias, the given alias is returned.
+     *
+     * @param alias the alias to map.
+     * @return the correct world name for the given alias, or the given alias if no world name could be found.
+     */
+    public static String getWorldName(String alias) {
+        String formattedAlias = alias.toLowerCase();
+        if(WORLD_NAME_ALIASES.values().contains(formattedAlias))
+            return formattedAlias;
+
+        formattedAlias = formattedAlias.replaceAll("[\\-\\s]", "_");
+        return WORLD_NAME_ALIASES.getOrDefault(formattedAlias, alias);
     }
 
     /**

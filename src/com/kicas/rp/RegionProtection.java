@@ -10,10 +10,15 @@ import com.kicas.rp.event.WorldEventHandler;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * This is the main plugin class for the Region Protection plugin. All non-utility features of the plugin can be
@@ -22,8 +27,10 @@ import java.util.Objects;
 public class RegionProtection extends JavaPlugin {
     private final CommandHandler commandHandler;
     private final DataManager dataManager;
+
     private Material claimCreationTool, claimViewer;
     private double claimBlocksGainedPerMinute;
+    private List<UUID> claimableWorlds;
 
     private static RegionProtection instance;
 
@@ -59,13 +66,14 @@ public class RegionProtection extends JavaPlugin {
         // current time.
         final long claimExpirationTime = getConfig().getInt("general.claim-expiration-time") * 24L * 60L * 60L * 1000L;
         if(claimExpirationTime > 0 && !getConfig().getBoolean("general.enable-claim-stealing")) {
-            Bukkit.getScheduler().runTaskLater(this, () -> {
+            // Check every hour
+            Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
                 Bukkit.getWorlds().forEach(world -> {
                     dataManager.getRegionsInWorld(world).stream().filter(region ->
                             region.hasExpired(claimExpirationTime)).forEach(region ->
                             dataManager.tryDeleteRegion(null, region, true));
                 });
-            }, 100L);
+            }, 100L, 60L * 60L * 20L);
         }
     }
 
@@ -94,6 +102,11 @@ public class RegionProtection extends JavaPlugin {
         return instance.claimViewer;
     }
 
+    // Just a note: the check for this is buried in the RegionToolHandler in the code for the first vertex selection
+    public static List<UUID> getClaimableWorlds() {
+        return instance.claimableWorlds;
+    }
+
     public static void log(Object x) {
         Bukkit.getLogger().info("[RegionProtection] " + Objects.toString(x));
     }
@@ -112,6 +125,7 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("general.claim-blocks-gained-per-hour", 512);
         config.addDefault("general.claim-expiration-time", 60);
         config.addDefault("general.enable-claim-stealing", false);
+        config.addDefault("general.enable-claims-in-worlds", Collections.singletonList("world"));
 
         config.addDefault("player.invincible", false);
         config.addDefault("player.hostile-damage", true);
@@ -136,7 +150,7 @@ public class RegionProtection extends JavaPlugin {
         config.options().copyDefaults(true);
         saveConfig();
 
-        // Convert some of the config values into usable types
+        // Convert the strings to enum constants
         claimCreationTool = Utils.safeValueOf(Material::valueOf, config.getString("general.claim-creation-item"));
         if(claimCreationTool == null) {
             log("Invalid material found in config under general.claim-creation-item: " +
@@ -149,7 +163,15 @@ public class RegionProtection extends JavaPlugin {
                     config.getString("general.claim-viewer"));
             claimViewer = Material.STICK;
         }
+        // Put claim block accruement in a usable form
         claimBlocksGainedPerMinute = (double)config.getInt("general.claim-blocks-gained-per-hour") / 60.0;
+        // Convert the world names to UUIDs, filtering out invalid names in the process
+        claimableWorlds = config.getStringList("general.enable-claims-in-worlds").stream().map(name -> {
+            World world = Bukkit.getWorld(Utils.getWorldName(name));
+            if(world == null)
+                log("Invalid world name in config value general.enable-claims-in-worlds: " + name);
+            return world;
+        }).filter(Objects::nonNull).map(World::getUID).collect(Collectors.toList());
 
         // Register default region flag values
         RegionFlag.registerDefaults(config);

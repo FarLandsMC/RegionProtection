@@ -69,6 +69,13 @@ public class RegionToolHandler implements Listener {
                             player.sendMessage(ChatColor.GOLD + "Region corner set. Select another vertex to set the " +
                                     "bounds for this administrative region.");
                         }else{
+                            // Make sure claims are allowed in the given world
+                            if(!RegionProtection.getClaimableWorlds().contains(clickedLocation.getWorld().getUID())) {
+                                player.sendMessage(ChatColor.RED + "Claims are not allowed in this world.");
+                                ps.setLastClickedBlock(null);
+                                return;
+                            }
+
                             player.sendMessage(ChatColor.GOLD + "Claim corner set. Select another corner to create " +
                                     "your claim.");
                         }
