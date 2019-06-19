@@ -273,6 +273,9 @@ public class DataManager implements Listener {
         ps.subtractClaimBlocks((int)area);
         // The default is full-trust, so make sure no one has trust
         region.setFlag(RegionFlag.TRUST, TrustMeta.EMPTY_TRUST_META);
+        // Make sure overlap is not allowed
+        if(RegionFlag.OVERLAP.getDefaultValue())
+            region.setFlag(RegionFlag.OVERLAP, false);
         // Register the claim
         worlds.get(creator.getWorld().getUID()).regions.add(region);
         addRegionToLookupTable(region, true);
