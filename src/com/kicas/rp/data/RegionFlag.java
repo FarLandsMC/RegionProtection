@@ -32,7 +32,8 @@ public enum RegionFlag {
     ICE_CHANGE,
     CORAL_DEATH,
     LEAF_DECAY,
-    LIGHTNING_MOB_DAMAGE;
+    LIGHTNING_MOB_DAMAGE,
+    PORTAL_PAIR_FORMATION;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
@@ -150,5 +151,6 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(CORAL_DEATH, config.getBoolean("world.coral-death"));
         DEFAULT_VALUES.put(LEAF_DECAY, config.getBoolean("world.leaf-decay"));
         DEFAULT_VALUES.put(LIGHTNING_MOB_DAMAGE, config.getBoolean("world.lightning-mob-damage"));
+        DEFAULT_VALUES.put(PORTAL_PAIR_FORMATION, config.getBoolean("world.portal-pair-formation"));
     }
 }

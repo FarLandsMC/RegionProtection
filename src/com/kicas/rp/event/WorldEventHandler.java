@@ -8,6 +8,7 @@ import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
 import org.bukkit.Material;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -15,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.world.PortalCreateEvent;
 
 /**
  * Handles events generally unrelated to entities that take place in the world.
@@ -118,5 +120,17 @@ public class WorldEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         event.setCancelled(flags != null && event.getCause() == EntityDamageEvent.DamageCause.LIGHTNING &&
                 !(event.getEntity() instanceof Player) && !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE));
+    }
+
+    /**
+     * Handle portal pair creation.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onPortalCreated(PortalCreateEvent event) {
+        if(event.getReason() == PortalCreateEvent.CreateReason.NETHER_PAIR) {
+            event.setCancelled(event.getBlocks().stream().map(state -> RegionProtection.getDataManager().getFlagsAt(
+                    state.getLocation())).anyMatch(flags -> !flags.isAllowed(RegionFlag.PORTAL_PAIR_FORMATION)));
+        }
     }
 }
