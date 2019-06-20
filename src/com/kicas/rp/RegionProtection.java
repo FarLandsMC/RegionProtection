@@ -122,6 +122,8 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("general.claim-creation-item", Material.GOLDEN_SHOVEL.name());
         config.addDefault("general.claim-viewer", Material.STICK.name());
         config.addDefault("general.minimum-claim-size", 100);
+        config.addDefault("general.minimum-subdivision-size", 25);
+        config.addDefault("general.minimum-subdivision-height", 5);
         config.addDefault("general.claim-blocks-gained-per-hour", 512);
         config.addDefault("general.claim-expiration-time", 60);
         config.addDefault("general.enable-claim-stealing", false);

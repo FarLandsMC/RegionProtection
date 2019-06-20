@@ -68,7 +68,7 @@ public class PlayerEventHandler implements Listener {
         // Allow for dynamic region expansion downwards
         if(flags == null) {
             // Find the region
-            Region region = RegionProtection.getDataManager().getRegionAtIgnoreY(event.getBlock().getLocation())
+            Region region = RegionProtection.getDataManager().getRegionsAtIgnoreY(event.getBlock().getLocation())
                     .stream().filter(r -> r.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
                             TrustLevel.BUILD, r) && !r.isAdminOwned() && !r.hasParent()).findAny().orElse(null);
 

@@ -51,9 +51,6 @@ public class CommandAbandonClaim extends Command {
 
             // Successful deletion: add claim blocks and send a confirmation message
             if (dm.tryDeleteRegion(player, claim, false)) {
-                if (!claim.hasParent())
-                    ps.addClaimBlocks(claim.area());
-
                 sender.sendMessage(ChatColor.GREEN + "Successfully deleted this claim." + (claim.hasParent() ? ""
                         : " You now have " + ps.getClaimBlocks() + " claim blocks."));
                 ps.setRegionHighlighter(null);
@@ -67,7 +64,6 @@ public class CommandAbandonClaim extends Command {
                     !region.isAdminOwned()).forEach(region -> {
                 // This will always succeed since children are included
                 dm.tryDeleteRegion(player, region, true);
-                ps.addClaimBlocks(region.area());
             });
 
             sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in your current world. You now have " +

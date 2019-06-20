@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.RegionProtection;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.ReflectionHelper;
@@ -50,11 +51,14 @@ public class FlagContainer implements Serializable {
 
     /**
      * Returns whether or not the given player is an owner of this container. If this container is admin owned, then
+     * true will be returned if the given player has OP. If the given player is ignoring trust, then true will also be
+     * returned.
      * @param player the player.
      * @return true if this player is an owner, false otherwise.
      */
     public boolean isOwner(Player player) {
-        return isAdminOwned() ? player.isOp() : owner.equals(player.getUniqueId());
+        return (isAdminOwned() ? player.isOp() : owner.equals(player.getUniqueId())) ||
+                RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust();
     }
 
     public void setOwner(UUID uuid) {

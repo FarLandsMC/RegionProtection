@@ -81,7 +81,15 @@ public class RegionToolHandler implements Listener {
                         }
                     }else{ // Modify the region at the clicked location
                         // Permissions check
-                        if(!region.isOwner(player)) {
+
+                        // Resizing of sub-claims only requires management trust
+                        if(region.hasParent() && !region.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player,
+                                TrustLevel.MANAGEMENT, region)) {
+                            player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
+                            ps.setLastClickedBlock(null);
+                            event.setCancelled(true);
+                            return;
+                        }else if (!region.isOwner(player)) { // Actions on the parent claim require ownership
                             player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
                             ps.setLastClickedBlock(null);
                             event.setCancelled(true);
