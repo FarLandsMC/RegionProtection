@@ -224,15 +224,14 @@ public class PlayerEventHandler implements Listener {
                 break;
             }
 
-            // Handle players stepping on things such as turtle eggs, tripwires, and pressure plates
+            // Handle players stepping on things such as turtle eggs, tripwires, farmland, and pressure plates
             case PHYSICAL:
                 if(Materials.isPressureSensitive(blockType)) {
-                    // Turtle eggs also fall under block breaking
-                    if((blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) &&
-                            (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(Material.TURTLE_EGG) ||
-                                    !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST)
-                            .hasTrust(event.getPlayer(), TrustLevel.BUILD, flags))) {
-                        event.setCancelled(true);
+                    // Handle trampling
+                    if(blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) {
+                        event.setCancelled(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(blockType) ||
+                                !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
+                                        TrustLevel.BUILD, flags));
                         return;
                     }
 
