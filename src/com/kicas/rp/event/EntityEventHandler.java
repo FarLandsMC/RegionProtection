@@ -144,18 +144,4 @@ public class EntityEventHandler implements Listener {
             event.getEntity().remove();
         }
     }
-    
-    /**
-     * Handle players hitting non-hostile entities inside of a region (requires build trust).
-     * @param event the event.
-     */
-    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
-    public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if (flags == null)
-            return;
-        event.setCancelled(event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION ||
-                event.getCause() == EntityDamageEvent.DamageCause.PROJECTILE ||
-                event.getCause() == EntityDamageEvent.DamageCause.MAGIC);
-    }
 }

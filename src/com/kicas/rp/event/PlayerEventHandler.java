@@ -9,9 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -353,7 +351,7 @@ public class PlayerEventHandler implements Listener {
      * Handle players hitting non-hostile entities inside of a region (requires build trust).
      * @param event the event.
      */
-    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.HIGHEST) // Highest to force the PVP flag
     public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         if(flags == null)
@@ -362,6 +360,7 @@ public class PlayerEventHandler implements Listener {
         // Only check trust for non-hostile entities
         if(event.getDamager() instanceof Player) {
             if (Entities.isHostile((Player) event.getDamager(), event.getEntity())) {
+                // OP flag to deny damage to hostiles
                 if(!flags.isAllowed(RegionFlag.HOSTILE_DAMAGE)) {
                     event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
                     event.setCancelled(true);
@@ -376,13 +375,39 @@ public class PlayerEventHandler implements Listener {
                     return;
                 }
             } else if (Entities.isPassive((Player) event.getDamager(), event.getEntity())) {
+                // OP flag to deny damage to non-hostiles
                 if(!flags.isAllowed(RegionFlag.ANIMAL_DAMAGE)) {
                     event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
                     event.setCancelled(true);
                     return;
                 }
             }
+
+            // PvP prevention
             event.setCancelled(event.getEntity() instanceof Player && !flags.isAllowed(RegionFlag.PVP));
+            return;
+        }
+
+        // Prevent arrows, other projectiles, and area effect clouds
+
+        ProjectileSource shooter = null;
+
+        // Determine the shooter
+        if(event.getDamager() instanceof Projectile)
+            shooter = ((Projectile)event.getDamager()).getShooter();
+        else if(event.getDamager() instanceof AreaEffectCloud)
+            shooter = ((AreaEffectCloud)event.getDamager()).getSource();
+
+        if(shooter instanceof Player) { // For players check trust and PvP
+            if(event.getEntity() instanceof Player) {
+                event.setCancelled(!flags.isAllowed(RegionFlag.PVP));
+            } else {
+                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter,
+                        TrustLevel.BUILD, flags));
+            }
+        }else if(shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
+            event.setCancelled(RegionProtection.getDataManager().crossesRegions(((BlockProjectileSource)shooter)
+                    .getBlock().getLocation(), event.getEntity().getLocation()));
         }
     }
 
