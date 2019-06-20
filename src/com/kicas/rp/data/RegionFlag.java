@@ -1,6 +1,8 @@
 package com.kicas.rp.data;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,17 +16,16 @@ public enum RegionFlag {
     DENY_BREAK(EnumFilter.class),
     DENY_PLACE(EnumFilter.class),
     MOB_GRIEF, // Any form of damage caused by non-player, hostile mobs
-    TNT_EXPLOSIONS(false),
+    TNT(false),
     OVERLAP, // Regions containing the same locations
     INVINCIBLE,
     GREETING(TextMeta.class),
     HOSTILE_DAMAGE, // Allow players to damage hostiles
     ANIMAL_DAMAGE, // Allow players to damage animals
     POTION_SPLASH, // The actual splash part
-    CHEST_ACCESS, // Just chests, trapped chests, and ender chests
+    FORCE_CHEST_ACCESS, // Just chests, trapped chests, and ender chests. Only checked if it's explicitly set.
     PVP,
     BED_ENTER,
-    ENDERMAN_BLOCK_DAMAGE,
     WATER_FLOW,
     LAVA_FLOW,
     SNOW_CHANGE,
@@ -72,6 +73,58 @@ public enum RegionFlag {
         return (T)DEFAULT_VALUES.get(this);
     }
 
+    public static String toString(RegionFlag flag, Object meta) {
+        String metaString;
+
+        if(flag.isBoolean())
+            metaString = (boolean)meta ? "allow" : "deny";
+        else if(flag == DENY_SPAWN)
+            metaString = ((EnumFilter)meta).toString(EntityType.class);
+        else if(flag == DENY_PLACE || flag == DENY_BREAK)
+            metaString = ((EnumFilter)meta).toString(Material.class);
+        else
+            metaString = meta.toString();
+
+        return metaString;
+    }
+
+    public static Object metaFromString(RegionFlag flag, String metaString) throws IllegalArgumentException {
+        Object meta;
+
+        switch (flag) {
+            case TRUST:
+                meta = TrustMeta.fromString(metaString);
+                break;
+
+            case DENY_SPAWN:
+                meta = EnumFilter.fromString(metaString, EntityType.class);
+                break;
+
+            case DENY_BREAK:
+            case DENY_PLACE:
+                meta = EnumFilter.fromString(metaString, Material.class);
+                break;
+
+            case GREETING:
+                // The TextUtils.SyntaxException is caught by the execution method wrapping this method
+                meta = new TextMeta(metaString);
+                break;
+
+            default:
+                metaString = metaString.trim();
+                if ("allow".equalsIgnoreCase(metaString) || "yes".equalsIgnoreCase(metaString) ||
+                        "true".equalsIgnoreCase(metaString)) {
+                    meta = true;
+                } else if ("deny".equalsIgnoreCase(metaString) || "no".equalsIgnoreCase(metaString) ||
+                        "false".equalsIgnoreCase(metaString)) {
+                    meta = false;
+                } else
+                    throw new IllegalArgumentException("Invalid flag value: " + metaString);
+        }
+
+        return meta;
+    }
+
     // Called when the plugin is enabled
     public static void registerDefaults(FileConfiguration config) {
         DEFAULT_VALUES.put(TRUST, TrustMeta.FULL_TRUST_META);
@@ -79,19 +132,18 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(DENY_BREAK, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(DENY_PLACE, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(MOB_GRIEF, config.getBoolean("entity.mob-grief"));
-        DEFAULT_VALUES.put(TNT_EXPLOSIONS, config.getBoolean("world.tnt-explosions"));
-        DEFAULT_VALUES.put(OVERLAP, config.getBoolean("world.overlap"));
-        DEFAULT_VALUES.put(INVINCIBLE, config.getBoolean("player.invincible"));
+        DEFAULT_VALUES.put(TNT, config.getBoolean("world.tnt-explosions"));
+        DEFAULT_VALUES.put(OVERLAP, false);
+        DEFAULT_VALUES.put(INVINCIBLE, false);
         DEFAULT_VALUES.put(GREETING, TextMeta.EMPTY_TEXT);
-        DEFAULT_VALUES.put(HOSTILE_DAMAGE, config.getBoolean("player.hostile-damage"));
-        DEFAULT_VALUES.put(ANIMAL_DAMAGE, config.getBoolean("player.animal-damage"));
-        DEFAULT_VALUES.put(POTION_SPLASH, config.getBoolean("player.potion-splash"));
-        DEFAULT_VALUES.put(CHEST_ACCESS, config.getBoolean("player.chest-access"));
+        DEFAULT_VALUES.put(HOSTILE_DAMAGE, true);
+        DEFAULT_VALUES.put(ANIMAL_DAMAGE, true);
+        DEFAULT_VALUES.put(POTION_SPLASH, true);
+        DEFAULT_VALUES.put(FORCE_CHEST_ACCESS, true);
         DEFAULT_VALUES.put(PVP, config.getBoolean("player.pvp"));
-        DEFAULT_VALUES.put(BED_ENTER, config.getBoolean("player.bed-enter"));
-        DEFAULT_VALUES.put(ENDERMAN_BLOCK_DAMAGE, config.getBoolean("entity.enderman-block-damage"));
-        DEFAULT_VALUES.put(WATER_FLOW, config.getBoolean("world.water-flow"));
-        DEFAULT_VALUES.put(LAVA_FLOW, config.getBoolean("world.lava-flow"));
+        DEFAULT_VALUES.put(BED_ENTER, true);
+        DEFAULT_VALUES.put(WATER_FLOW, true);
+        DEFAULT_VALUES.put(LAVA_FLOW, true);
         DEFAULT_VALUES.put(SNOW_CHANGE, config.getBoolean("world.snow-change"));
         DEFAULT_VALUES.put(ICE_CHANGE, config.getBoolean("world.ice-change"));
         DEFAULT_VALUES.put(CORAL_DEATH, config.getBoolean("world.coral-death"));

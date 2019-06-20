@@ -127,21 +127,11 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("general.enable-claim-stealing", false);
         config.addDefault("general.enable-claims-in-worlds", Collections.singletonList("world"));
 
-        config.addDefault("player.invincible", false);
-        config.addDefault("player.hostile-damage", true);
-        config.addDefault("player.animal-damage", false);
-        config.addDefault("player.potion-splash", true);
-        config.addDefault("player.chest-access", true);
         config.addDefault("player.pvp", false);
-        config.addDefault("player.bed-enter", true);
 
         config.addDefault("entity.mob-grief", false);
-        config.addDefault("entity.enderman-block-damage", false);
 
-        config.addDefault("world.tnt-explosions", false);
-        config.addDefault("world.overlap", false);
-        config.addDefault("world.water-flow", true);
-        config.addDefault("world.lava-flow", true);
+        config.addDefault("world.tnt", false);
         config.addDefault("world.snow-change", true);
         config.addDefault("world.ice-change", true);
         config.addDefault("world.coral-death", true);

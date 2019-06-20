@@ -112,7 +112,7 @@ public abstract class Command extends org.bukkit.command.Command {
     }
 
     public static List<String> filterStartingWith(String prefix, Stream<String> stream) {
-        return stream.filter(s -> s != null && s.toLowerCase().startsWith(prefix.toLowerCase()))
+        return stream.filter(s -> s != null && !s.isEmpty() && s.toLowerCase().startsWith(prefix.toLowerCase()))
                 .collect(Collectors.toList());
     }
 

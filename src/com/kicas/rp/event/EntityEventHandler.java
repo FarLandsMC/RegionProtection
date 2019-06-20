@@ -3,11 +3,13 @@ package com.kicas.rp.event;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 
+import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
@@ -29,6 +31,11 @@ public class EntityEventHandler implements Listener {
             return;
 
         if((event.getEntityType() == EntityType.ARROW || event.getEntityType() == EntityType.SMALL_FIREBALL)) {
+            if(event.getBlock().getType() == Material.TNT && !flags.isAllowed(RegionFlag.TNT)) {
+                event.setCancelled(true);
+                return;
+            }
+
             ProjectileSource shooter = ((Arrow)event.getEntity()).getShooter();
             if(shooter instanceof Player) { // For players check trust
                 event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)shooter,
@@ -40,11 +47,29 @@ public class EntityEventHandler implements Listener {
             return;
         }
 
-        // Prevent enderman grief
-        if (event.getEntityType() == EntityType.ENDERMAN && !flags.isAllowed(RegionFlag.ENDERMAN_BLOCK_DAMAGE))
+        event.setCancelled(!flags.isAllowed(RegionFlag.MOB_GRIEF));
+    }
+
+    /**
+     * Handle frost walker and snow golem trails.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onEntityFormBlock(EntityBlockFormEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        if(flags == null)
+            return;
+
+        if((event.getEntity().getType() == EntityType.SNOWMAN && !flags.isAllowed(RegionFlag.MOB_GRIEF)))
             event.setCancelled(true);
-        else
-            event.setCancelled(!flags.isAllowed(RegionFlag.MOB_GRIEF));
+        else if(event.getEntity().getType() == EntityType.PLAYER) {
+            if(!flags.isAllowed(RegionFlag.ICE_CHANGE))
+                event.setCancelled(true);
+            else if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getEntity(),
+                    TrustLevel.BUILD, flags)) {
+                event.setCancelled(true);
+            }
+        }
     }
 
     /**
@@ -56,7 +81,7 @@ public class EntityEventHandler implements Listener {
         if(EntityType.PRIMED_TNT.equals(event.getEntityType())) {
             // If the explosion occurs in a location where tnt is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
-            if(flags != null && !flags.isAllowed(RegionFlag.TNT_EXPLOSIONS)) {
+            if(flags != null && !flags.isAllowed(RegionFlag.TNT)) {
                 event.setCancelled(true);
                 return;
             }
@@ -75,7 +100,7 @@ public class EntityEventHandler implements Listener {
             // Just to make sure no damage is done on the border of a region
             event.blockList().removeIf(block -> {
                 FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
-                return flags0 != null && !flags0.isAllowed(RegionFlag.TNT_EXPLOSIONS);
+                return flags0 != null && !flags0.isAllowed(RegionFlag.TNT);
             });
         }else{
             // If the mob explosion occurs in an area where mob grief is not allowed, cancel the event altogether

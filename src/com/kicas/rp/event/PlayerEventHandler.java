@@ -159,13 +159,22 @@ public class PlayerEventHandler implements Listener {
             case RIGHT_CLICK_BLOCK:
             {
                 if (event.getClickedBlock().getType().name().endsWith("CHEST") &&
-                        !flags.isAllowed(RegionFlag.CHEST_ACCESS)) {
-                    event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
-                    event.setCancelled(true);
+                        flags.hasFlag(RegionFlag.FORCE_CHEST_ACCESS)) {
+                    if(!flags.isAllowed(RegionFlag.FORCE_CHEST_ACCESS)) {
+                        event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
+                        event.setCancelled(true);
+                    }
                     return;
                 }
     
                 Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
+
+                if((heldItem == Material.FLINT_AND_STEEL || heldItem == Material.FIRE_CHARGE) &&
+                        blockType == Material.TNT && !flags.isAllowed(RegionFlag.TNT)) {
+                    event.getPlayer().sendMessage(ChatColor.RED + "TNT is not allowed here.");
+                    event.setCancelled(true);
+                    return;
+                }
                 
                 // Handle the placing of entities and other items as well as other changes that happen when the player's
                 // held item is used on the clicked block.
@@ -189,9 +198,11 @@ public class PlayerEventHandler implements Listener {
                 }
 
                 // Handle the opening of block inventory holders
-                if(Materials.isInventoryHolder(blockType)) {
+                if(Materials.isInventoryHolder(blockType) || blockType == Material.ANVIL ||
+                        blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
                     // Container trust
-                    if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
+                    if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER,
+                            flags)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
                             event.getPlayer().sendMessage(ChatColor.RED +
                                     "This belongs to " + flags.getOwnerName() + ".");
@@ -219,8 +230,9 @@ public class PlayerEventHandler implements Listener {
             case PHYSICAL:
                 if(Materials.isPressureSensitive(blockType)) {
                     // Turtle eggs also fall under block breaking
-                    if(blockType == Material.TURTLE_EGG && (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
-                            .isAllowed(Material.TURTLE_EGG) || !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST)
+                    if((blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) &&
+                            (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(Material.TURTLE_EGG) ||
+                                    !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST)
                             .hasTrust(event.getPlayer(), TrustLevel.BUILD, flags))) {
                         event.setCancelled(true);
                         return;
@@ -268,6 +280,17 @@ public class PlayerEventHandler implements Listener {
                 event.setCancelled(true);
                 return;
             }
+        }
+
+        Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
+
+        if((heldItem == Material.NAME_TAG ||
+                (heldItem == Material.SHEARS && event.getRightClicked().getType() == EntityType.MUSHROOM_COW)) &&
+                !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+            if(EquipmentSlot.HAND.equals(event.getHand()))
+                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+            return;
         }
 
         // Handle entity container interactions

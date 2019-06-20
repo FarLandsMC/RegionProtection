@@ -12,14 +12,34 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Allows players to grant or deny certain permissions for other players in their claim.
  */
 public class CommandTrust extends Command {
+    private static final Map<String, String> HELP_MESSAGES = new HashMap<>();
+    private static final String ACCESS_HELP = ChatColor.GOLD + "Grant access to buttons, levers, switches, villager " +
+            "trade, crafting and enchant tables, sheep shearing, and animal breeding.";
+    private static final String CONTAINER_HELP = ChatColor.GOLD + "Grant someone access to containers, or any block " +
+            "or entity which stores items.";
+    private static final String BUILD_HELP = ChatColor.GOLD + "Grant someone full access to your claim in every way." +
+            " The only thing they will not be able to do is edit the claim\'s size or trust permissions.";
+    private static final String MANAGEMENT_HELP = ChatColor.GOLD + "Grant someone the ability to edit the trust " +
+            "permissions on your claim. They will not be able to resize, subdivide, or delete your claim.";
+    private static final String UNTRUST_HELP = ChatColor.GOLD + "Revoke all trust from someone.";
+
+    static {
+        HELP_MESSAGES.put("accesstrust", ACCESS_HELP);
+        HELP_MESSAGES.put("at", ACCESS_HELP);
+        HELP_MESSAGES.put("containertrust", CONTAINER_HELP);
+        HELP_MESSAGES.put("ct", CONTAINER_HELP);
+        HELP_MESSAGES.put("trust", BUILD_HELP);
+        HELP_MESSAGES.put("managementtrust", MANAGEMENT_HELP);
+        HELP_MESSAGES.put("mt", MANAGEMENT_HELP);
+        HELP_MESSAGES.put("untrust", UNTRUST_HELP);
+    }
+
     CommandTrust() {
         super("trust", "Give players levels of access to your claim.", "/trust <player>", "accesstrust", "at",
                 "containertrust", "ct", "managementtrust", "mt", "untrust");
@@ -27,9 +47,11 @@ public class CommandTrust extends Command {
 
     @Override
     protected boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
-        // Args check
-        if(args.length == 0)
-            return false;
+        // Send the help messages
+        if(args.length == 0) {
+            sender.sendMessage(HELP_MESSAGES.get(alias.toLowerCase()));
+            return true;
+        }
 
         // Sender check
         if(!(sender instanceof Player)) {

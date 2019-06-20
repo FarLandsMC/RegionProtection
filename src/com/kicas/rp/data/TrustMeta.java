@@ -148,7 +148,7 @@ public class TrustMeta implements Serializable {
         return getFormattedTrustList().entrySet().stream().filter(entry -> !entry.getValue().isEmpty())
                 .sorted(Comparator.comparingInt(entry -> entry.getKey().ordinal()))
                 .map(entry -> Utils.capitalize(entry.getKey().name()) + ": " + entry.getValue() + "\n")
-                .reduce("", String::concat);
+                .reduce("", String::concat).trim();
     }
 
     @Override

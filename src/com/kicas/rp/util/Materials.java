@@ -107,7 +107,7 @@ public class Materials {
      * @return true if the material could change when being interacted with, false otherwise.
      */
     public static boolean changesOnInteraction(Material material) {
-        return material.isInteractable() && !CRAFTING_TABLE.equals(material);
+        return material.isInteractable() && material != CRAFTING_TABLE && material != ENCHANTING_TABLE;
     }
 
     /**

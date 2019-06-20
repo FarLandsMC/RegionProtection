@@ -68,8 +68,12 @@ public class Region extends FlagContainer implements Serializable {
         this.children = new ArrayList<>();
     }
 
-    public String getName() {
+    public String getRawName() {
         return name;
+    }
+
+    public String getDisplayName() {
+        return name == null || name.isEmpty() ? "[Owned by " + getOwnerName() + "]" : name;
     }
 
     public void setName(String name) {
