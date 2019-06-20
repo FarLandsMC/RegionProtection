@@ -246,6 +246,20 @@ public class PlayerEventHandler implements Listener {
     }
 
     /**
+     * Prevent players from taking lectern books unless they have container trust and above.
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onLecternBookTaken(PlayerTakeLecternBookEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLectern().getLocation());
+        if(flags != null &&!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
+                TrustLevel.CONTAINER, flags)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "That belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+        }
+    }
+
+    /**
      * Handles multiple different types of entity interactions as detailed below.
      * <ul>
      *     <li>The breaking of leash hitches by right-clicking it.</li>
