@@ -8,11 +8,13 @@ import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 
 /**
  * Handles events generally unrelated to entities that take place in the world.
@@ -60,14 +62,21 @@ public class WorldEventHandler implements Listener {
     }
     
     /**
-     * Handles creature spawn flag restrictions.
+     * Handles creature spawn flag restrictions and mob lightning damage.
      * @param event the event.
      */
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        event.setCancelled(flags != null && !Entities.isArtificialSpawn(event.getSpawnReason()) &&
-                !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType()));
+        if(flags != null) {
+            if(event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.LIGHTNING &&
+                    !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE)) {
+                event.setCancelled(true);
+            }else if(!Entities.isArtificialSpawn(event.getSpawnReason()) &&
+                    !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType())) {
+                event.setCancelled(true);
+            }
+        }
     }
     
     /**
@@ -98,5 +107,16 @@ public class WorldEventHandler implements Listener {
     public void onLeafDecay(LeavesDecayEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
         event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.LEAF_DECAY));
+    }
+
+    /**
+     * Handles lightning damage on mobs.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onEntityDamage(EntityDamageEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        event.setCancelled(flags != null && event.getCause() == EntityDamageEvent.DamageCause.LIGHTNING &&
+                !(event.getEntity() instanceof Player) && !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE));
     }
 }

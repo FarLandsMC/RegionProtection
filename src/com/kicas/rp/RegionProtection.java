@@ -136,6 +136,7 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("world.ice-change", true);
         config.addDefault("world.coral-death", true);
         config.addDefault("world.leaf-decay", true);
+        config.addDefault("world.lightning-mob-damage", false);
 
         config.options().copyDefaults(true);
         saveConfig();
