@@ -59,12 +59,7 @@ public class CommandAbandonClaim extends Command {
                         Material.NETHERRACK, false));
             }
         } else { // Abandon all claims including their subdivisions
-            // This list won't contain subdivisions
-            dm.getRegionsInWorld(player.getWorld()).stream().filter(region -> region.isOwner(player) &&
-                    !region.isAdminOwned()).forEach(region -> {
-                // This will always succeed since children are included
-                dm.tryDeleteRegion(player, region, true);
-            });
+            dm.tryDeleteRegions(player, region -> region.isOwner(player) && !region.isAdminOwned(), true);
 
             sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in your current world. You now have " +
                     ps.getClaimBlocks() + " claim blocks.");

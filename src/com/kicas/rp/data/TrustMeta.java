@@ -37,13 +37,28 @@ public class TrustMeta implements Serializable {
     /**
      * Returns whether or not the given player has the specified level of trust for the given flag container. If the
      * player's trust level is explicitly defined in this object, then that value is used otherwise it defaults to the
-     * public trust level. If the specified player is the owner of the container, then true is always returned.
+     * public trust level. If the specified player is the owner of the container, then true is always returned. If the
+     * specified container of this trust meta is a Region with a parent, then unless explicitly defined in this meta
+     * this method will default to the trust meta of the parent of the given container.
      * @param player the player.
      * @param trust the trust level.
      * @param container the flag container.
      * @return true if the given player has the given level of trust, false other wise.
      */
     public boolean hasTrust(Player player, TrustLevel trust, FlagContainer container) {
+        if(container instanceof Region) {
+            Region region = (Region)container;
+            if(region.hasParent()) {
+                if(trustData.containsKey(player.getUniqueId()))
+                    return trustData.get(player.getUniqueId()).isAtLeast(trust);
+                TrustMeta parentTrustMeta = region.getParent().getFlagMeta(RegionFlag.TRUST);
+                if(parentTrustMeta.trustData.containsKey(player.getUniqueId()))
+                    return parentTrustMeta.trustData.get(player.getUniqueId()).isAtLeast(trust);
+                return publicTrustLevel == TrustLevel.NONE ? parentTrustMeta.publicTrustLevel.isAtLeast(trust)
+                        : publicTrustLevel.isAtLeast(trust);
+            }
+        }
+
         return (trustData.containsKey(player.getUniqueId()) ? trustData.get(player.getUniqueId()).isAtLeast(trust) :
                 publicTrustLevel.isAtLeast(trust)) || container.isOwner(player) || RegionProtection.getDataManager()
                 .getPlayerSession(player).isIgnoringTrust();

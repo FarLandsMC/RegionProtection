@@ -61,6 +61,10 @@ public class FlagContainer implements Serializable {
                 RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust();
     }
 
+    public boolean isOwner(UUID uuid) {
+        return (isAdminOwned() ? Bukkit.getOfflinePlayer(uuid).isOp() : owner.equals(uuid));
+    }
+
     public void setOwner(UUID uuid) {
         owner = uuid;
     }

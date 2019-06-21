@@ -57,7 +57,7 @@ public class CommandRegion extends Command {
         }
 
         if ("info".equals(args[0])) {
-            if (DataManager.WORLD_REGION_NAME.equals(args[1])) {
+            if (args.length > 1 && DataManager.WORLD_REGION_NAME.equals(args[1])) {
                 FlagContainer worldFlags = RegionProtection.getDataManager().getWorldFlags(((Player) sender).getWorld());
                 if (worldFlags.isEmpty()) {
                     sender.sendMessage(ChatColor.GOLD + "There are no global flags set in this world.");
@@ -87,9 +87,9 @@ public class CommandRegion extends Command {
 
             regions.forEach(region -> {
                 TextUtils.sendFormatted(sender, "&(gold)Showing info for region {&(green)%0}:\nPriority: {&(aqua)%1}" +
-                                "\nParent: {&(aqua)%2}\nFlags:\n%3", region.getDisplayName(), region.getPriority(),
-                        region.hasParent() ? region.getParent().getDisplayName() : "none", region.getFlags().entrySet()
-                                .stream().map(entry -> {
+                                "\nParent: {&(aqua)%2}%3", region.getDisplayName(), region.getPriority(),
+                        region.hasParent() ? region.getParent().getDisplayName() : "none", region.isEmpty() ? ""
+                                : "\nFlags:\n" + region.getFlags().entrySet().stream().map(entry -> {
                                     return "- " + Utils.formattedName(entry.getKey()) + ": {&(gray)" +
                                             RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n";
                                 }).reduce("", String::concat).trim());
@@ -268,7 +268,7 @@ public class CommandRegion extends Command {
             // Don't suggest names if we're creating a region
             return "create".equalsIgnoreCase(args[0]) ? Collections.emptyList()
                     : filterStartingWith(args[1], RegionProtection.getDataManager()
-                    .getRegionsInWorld(location.getWorld()).stream().map(Region::getRawName));
+                    .getRegionNames(((Player)sender).getWorld()));
         }
 
         // Creation suggestions: suggest the unused tags, and if it's the parent tag then suggest the list of possible

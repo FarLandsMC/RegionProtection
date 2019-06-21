@@ -18,6 +18,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -100,6 +101,17 @@ public class DataManager implements Listener {
         return worlds.get(world.getUID());
     }
 
+    public List<String> getRegionNames(World world) {
+        List<String> names = new LinkedList<>();
+        names.add(WORLD_REGION_NAME);
+        worlds.get(world.getUID()).regions.forEach(region -> {
+            if(region.getRawName() != null && !region.getRawName().isEmpty())
+            names.add(region.getRawName());
+            region.getChildren().stream().map(Region::getRawName).forEach(names::add);
+        });
+        return names;
+    }
+
     /**
      * Gets a region by the given name and returns it.
      * @param world the world that contains the region.
@@ -107,8 +119,17 @@ public class DataManager implements Listener {
      * @return the region with the given name in the given world, or null if it could not be found.
      */
     public synchronized Region getRegionByName(World world, String name) {
-        return worlds.get(world.getUID()).regions.stream().filter(region -> name.equals(region.getRawName()))
-                .findAny().orElse(null);
+        for(Region region : worlds.get(world.getUID()).regions) {
+            if(region.getRawName().equals(name))
+                return region;
+
+            for(Region child : region.getChildren()) {
+                if(child.getRawName().equals(name))
+                    return child;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -498,7 +519,6 @@ public class DataManager implements Listener {
         }
 
         // Register the subdivision
-        claim.getChildren().add(region);
         addRegionToLookupTable(region, false);
 
         return region;
@@ -515,22 +535,45 @@ public class DataManager implements Listener {
      * @return true if the region was successfully deleted, false otherwise.
      */
     public synchronized boolean tryDeleteRegion(Player delegate, Region region, boolean includeChildren) {
+        return tryDeleteRegion(delegate, region, includeChildren, true);
+    }
+
+    public synchronized void tryDeleteRegions(Player delegate, Predicate<Region> filter, boolean includeChildren) {
+        Iterator<Region> itr = worlds.get(delegate.getWorld().getUID()).regions.iterator();
+        Region region;
+        while(itr.hasNext()) {
+            region = itr.next();
+            if(filter.test(region) && tryDeleteRegion(delegate, region, includeChildren, false))
+                itr.remove();
+        }
+    }
+
+    private boolean tryDeleteRegion(Player delegate, Region region, boolean includeChildren, boolean unregister) {
         if(!region.getChildren().isEmpty()) {
-            if(includeChildren)
-                region.getChildren().forEach(child -> tryDeleteRegion(delegate, child, false));
-            else{
+            if(includeChildren) {
+                region.getChildren().forEach(child -> tryDeleteRegion(delegate, child, false, false));
+                region.getChildren().clear();
+            }else{
                 delegate.sendMessage(ChatColor.RED + "This region has subdivisions which must be removed first.");
                 return false;
             }
         }
 
         // Unregister the region and modify claim blocks
-        if(region.hasParent())
-            region.getParent().getChildren().remove(region);
-        else {
-            worlds.get(region.getWorld().getUID()).regions.remove(region);
-            if(!region.isAdminOwned())
-                playerClaimBlocks.put(region.getOwner(), playerClaimBlocks.get(region.getOwner()) + (int)region.area());
+        if(region.hasParent()) {
+            if(unregister)
+                region.getParent().getChildren().remove(region);
+        }else {
+            if(unregister)
+                worlds.get(region.getWorld().getUID()).regions.remove(region);
+            if(!region.isAdminOwned()) {
+                if(playerSessionCache.containsKey(region.getOwner()))
+                    playerSessionCache.get(region.getOwner()).addClaimBlocks((int) region.area());
+                else{
+                    playerClaimBlocks.put(region.getOwner(), playerClaimBlocks.get(region.getOwner()) +
+                            (int) region.area());
+                }
+            }
         }
 
         // Remove the region from the lookup table
@@ -560,7 +603,9 @@ public class DataManager implements Listener {
         // Regular claims
         if (!region.hasParent()) {
             // Check claim blocks
-            int claimBlocks = playerClaimBlocks.get(region.getOwner());
+            int claimBlocks = playerSessionCache.containsKey(region.getOwner())
+                    ? playerSessionCache.get(region.getOwner()).getClaimBlocks()
+                    : playerClaimBlocks.get(region.getOwner());
             long areaDiff = region.area() - ((long)bounds.getSecond().getBlockX() - bounds.getFirst().getBlockX()) *
                     ((long)bounds.getSecond().getBlockZ() - bounds.getFirst().getBlockZ());
             if (areaDiff > claimBlocks) {
@@ -591,7 +636,10 @@ public class DataManager implements Listener {
             }
 
             // Modify claim blocks
-            playerClaimBlocks.put(region.getOwner(), claimBlocks - (int)areaDiff);
+            if(playerSessionCache.containsKey(region.getOwner()))
+                playerSessionCache.get(region.getOwner()).subtractClaimBlocks((int)areaDiff);
+            else
+                playerClaimBlocks.put(region.getOwner(), playerClaimBlocks.get(region.getOwner()) - (int)areaDiff);
         } else { // Subdivisions
             // Check to make sure the subdivision is still completely within the parent claim
             if (!region.getParent().contains(region)) {

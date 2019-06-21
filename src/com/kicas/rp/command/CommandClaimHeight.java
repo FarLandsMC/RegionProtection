@@ -104,27 +104,35 @@ public class CommandClaimHeight extends Command {
                 }
             }else{
                 if(region.hasParent()) {
-                    if(newY > 62) {
-                        sender.sendMessage(ChatColor.RED + "Your claim must extend down to at least y=62.");
+                    if(newY < region.getParent().getMin().getBlockY()) {
+                        sender.sendMessage(ChatColor.RED + "You cannot extend this subdivision below the minimum " +
+                                "y-level of its parent claim (y=" + region.getParent().getMin().getBlockY() + ").");
                         return true;
-                    }
-                }else{
-                    if(region.getMax().getBlockY() - newY < RegionProtection.getRPConfig()
+                    }else if(region.getMax().getBlockY() - newY < RegionProtection.getRPConfig()
                             .getInt("general.minimum-subdivision-height")) {
                         sender.sendMessage(ChatColor.RED + "A subdivision must have a height of at least " +
                                 RegionProtection.getRPConfig().getInt("general.minimum-subdivision-height") +
                                 " blocks.");
                         return true;
-                    }else if(newY < region.getParent().getMin().getBlockY()) {
-                        sender.sendMessage(ChatColor.RED + "You cannot extend this subdivision below the minimum " +
-                                "y-level of its parent claim (y=" + region.getParent().getMin().getBlockY() + ").");
+                    }
+
+                    loc.setY(newY);
+                    sender.sendMessage(ChatColor.GOLD + "The bottom of this claim is now set to " + ChatColor.AQUA +
+                            "y=" + newY);
+                }else{
+                    if(newY > 62) {
+                        sender.sendMessage(ChatColor.RED + "Your claim must extend down to at least y=62.");
                         return true;
                     }
-                }
 
-                loc.setY(newY);
-                sender.sendMessage(ChatColor.GOLD + "The bottom of this claim is now set to " + ChatColor.AQUA +
-                        "y=" + newY);
+                    loc.setY(newY);
+                    region.getChildren().forEach(child -> {
+                        if(child.getMin().getBlockY() < newY)
+                            child.getMin().setY(newY);
+                    });
+                    sender.sendMessage(ChatColor.GOLD + "The bottom of this claim is now set to " + ChatColor.AQUA +
+                            "y=" + newY);
+                }
             }
         }else
             sender.sendMessage(ChatColor.RED + "Invalid sub-command: " + args[0]);

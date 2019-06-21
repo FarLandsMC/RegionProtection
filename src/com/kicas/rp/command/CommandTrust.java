@@ -66,6 +66,12 @@ public class CommandTrust extends Command {
             return true;
         }
 
+        // Make sure the owner isn't trying to dmote themself
+        if(claim.isOwner((Player)sender)) {
+            sender.sendMessage(ChatColor.RED + "You cannot set your own trust level on your claim.");
+            return true;
+        }
+
         // Make sure the sender has permission to modify trust levels
         TrustMeta trustMeta = claim.getAndCreateFlagMeta(RegionFlag.TRUST);
         if(!trustMeta.hasTrust((Player)sender, TrustLevel.MANAGEMENT, claim)) {
@@ -107,6 +113,12 @@ public class CommandTrust extends Command {
                 }
             }else
                 uuid = player.getUniqueId();
+
+            if(claim.isOwner(uuid)) {
+                sender.sendMessage(ChatColor.RED + "You cannot set the trust level of " + args[0] + " in this claim " +
+                        "since they are also an owner of the claim.");
+                return true;
+            }
 
             if(trust == TrustLevel.NONE) {
                 trustMeta.untrust(uuid);

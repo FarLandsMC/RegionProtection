@@ -344,6 +344,11 @@ public class Region extends FlagContainer implements Serializable {
     }
 
     @Override
+    public boolean equals(Object other) {
+        return other == this;
+    }
+
+    @Override
     public void serialize(Encoder encoder) throws IOException {
         encoder.writeUTF8Raw(name == null ? "" : name);
         encoder.write(priority);
