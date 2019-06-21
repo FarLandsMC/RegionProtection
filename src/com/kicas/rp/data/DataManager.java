@@ -792,7 +792,6 @@ public class DataManager implements Listener {
         final List<Region> regions;
 
         WorldData(UUID uuid) {
-            super(null);
             this.worldUid = uuid;
             this.regions = new ArrayList<>();
         }

@@ -20,6 +20,7 @@ public enum RegionFlag {
     OVERLAP, // Regions containing the same locations
     INVINCIBLE,
     GREETING(TextMeta.class),
+    FAREWELL(TextMeta.class),
     HOSTILE_DAMAGE, // Allow players to damage hostiles
     ANIMAL_DAMAGE, // Allow players to damage animals
     POTION_SPLASH, // The actual splash part
@@ -33,7 +34,10 @@ public enum RegionFlag {
     CORAL_DEATH,
     LEAF_DECAY,
     LIGHTNING_MOB_DAMAGE,
-    PORTAL_PAIR_FORMATION;
+    PORTAL_PAIR_FORMATION,
+    ENTER_COMMAND(CommandMeta.class),
+    EXIT_COMMAND(CommandMeta.class),
+    DENY_COMMAND(StringFilter.class);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
@@ -91,40 +95,50 @@ public enum RegionFlag {
     }
 
     public static Object metaFromString(RegionFlag flag, String metaString) throws IllegalArgumentException {
-        Object meta;
-
         switch (flag) {
             case TRUST:
-                meta = TrustMeta.fromString(metaString);
-                break;
+                return TrustMeta.fromString(metaString);
 
             case DENY_SPAWN:
-                meta = EnumFilter.fromString(metaString, EntityType.class);
-                break;
+                return EnumFilter.fromString(metaString, EntityType.class);
 
             case DENY_BREAK:
             case DENY_PLACE:
-                meta = EnumFilter.fromString(metaString, Material.class);
-                break;
+                return EnumFilter.fromString(metaString, Material.class);
 
             case GREETING:
                 // The TextUtils.SyntaxException is caught by the execution method wrapping this method
-                meta = new TextMeta(metaString);
-                break;
+                return new TextMeta(metaString);
+
+            case ENTER_COMMAND:
+            case EXIT_COMMAND: {
+                int index = metaString.indexOf(':');
+                if (index < 0)
+                    throw new IllegalArgumentException("Invalid command format. Format: <console|player>:<command>");
+
+                String sender = metaString.substring(0, index);
+                if ("console".equalsIgnoreCase(sender))
+                    return new CommandMeta(true, metaString.substring(index + 1));
+                else if ("player".equalsIgnoreCase(sender))
+                    return new CommandMeta(false, metaString.substring(index + 1));
+                else
+                    throw new IllegalArgumentException("Invalid sender: " + sender);
+            }
+
+            case DENY_COMMAND:
+                return StringFilter.fromString(metaString);
 
             default:
                 metaString = metaString.trim();
                 if ("allow".equalsIgnoreCase(metaString) || "yes".equalsIgnoreCase(metaString) ||
                         "true".equalsIgnoreCase(metaString)) {
-                    meta = true;
+                    return true;
                 } else if ("deny".equalsIgnoreCase(metaString) || "no".equalsIgnoreCase(metaString) ||
                         "false".equalsIgnoreCase(metaString)) {
-                    meta = false;
+                    return false;
                 } else
                     throw new IllegalArgumentException("Invalid flag value: " + metaString);
         }
-
-        return meta;
     }
 
     // Called when the plugin is enabled
@@ -138,6 +152,7 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(OVERLAP, false);
         DEFAULT_VALUES.put(INVINCIBLE, false);
         DEFAULT_VALUES.put(GREETING, TextMeta.EMPTY_TEXT);
+        DEFAULT_VALUES.put(FAREWELL, TextMeta.EMPTY_TEXT);
         DEFAULT_VALUES.put(HOSTILE_DAMAGE, true);
         DEFAULT_VALUES.put(ANIMAL_DAMAGE, true);
         DEFAULT_VALUES.put(POTION_SPLASH, true);
@@ -152,5 +167,8 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(LEAF_DECAY, config.getBoolean("world.leaf-decay"));
         DEFAULT_VALUES.put(LIGHTNING_MOB_DAMAGE, config.getBoolean("world.lightning-mob-damage"));
         DEFAULT_VALUES.put(PORTAL_PAIR_FORMATION, config.getBoolean("world.portal-pair-formation"));
+        DEFAULT_VALUES.put(ENTER_COMMAND, CommandMeta.EMPTY_META);
+        DEFAULT_VALUES.put(EXIT_COMMAND, CommandMeta.EMPTY_META);
+        DEFAULT_VALUES.put(DENY_COMMAND, StringFilter.EMPTY_FILTER);
     }
 }

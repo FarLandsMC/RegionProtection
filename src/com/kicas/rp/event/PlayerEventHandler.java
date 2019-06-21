@@ -563,7 +563,45 @@ public class PlayerEventHandler implements Listener {
         FlagContainer fromFlags = RegionProtection.getDataManager().getFlagsAt(event.getFrom());
         FlagContainer toFlags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
 
-        if(!Objects.equals(fromFlags, toFlags) && toFlags != null && toFlags.hasFlag(RegionFlag.GREETING))
-            event.getPlayer().spigot().sendMessage(toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).getFormatted());
+        if(!Objects.equals(fromFlags, toFlags)) {
+            if(toFlags != null) {
+                if (toFlags.hasFlag(RegionFlag.GREETING)) {
+                    event.getPlayer().spigot().sendMessage(toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING)
+                            .getFormatted());
+                }
+                if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND))
+                    toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(event.getPlayer());
+            }
+
+            if(fromFlags != null) {
+                if(fromFlags.hasFlag(RegionFlag.FAREWELL)) {
+                    event.getPlayer().spigot().sendMessage(fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL)
+                            .getFormatted());
+                }
+                if(fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
+                    fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(event.getPlayer());
+            }
+        }
+    }
+
+    /**
+     * Handle the deny-command flag.
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+        if(flags != null) {
+            String message = event.getMessage().trim().replaceAll("^(/+)?", ""); // Remove beginning /'s
+            int start = message.indexOf(':') + 1, end = message.indexOf(' ');
+            if(end < 0)
+                end = message.length();
+            if(start >= end)
+                start = 0;
+            if(!flags.<StringFilter>getFlagMeta(RegionFlag.DENY_COMMAND).isAllowed(message.substring(start, end))) {
+                event.setCancelled(true);
+                event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that command here.");
+            }
+        }
     }
 }
