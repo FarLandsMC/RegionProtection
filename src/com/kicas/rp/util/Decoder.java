@@ -64,7 +64,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public byte[] readByteArray() throws IOException {
-        int len = readInt();
+        int len = readCompressedUint();
         byte[] a = new byte[len];
         read(a, 0, len);
         return a;
@@ -97,7 +97,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public short[] readShortArray() throws IOException {
-        short[] a = new short[readInt()];
+        short[] a = new short[readCompressedUint()];
         for (int i = 0; i < a.length; ++i)
             a[i] = readShort();
         return a;
@@ -120,7 +120,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public int[] readIntArray() throws IOException {
-        int[] a = new int[readInt()];
+        int[] a = new int[readCompressedUint()];
         for (int i = 0; i < a.length; ++i)
             a[i] = readInt();
         return a;
@@ -133,8 +133,9 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public long readLong() throws IOException {
-        return ((long) in.read()) << 56 | ((long) in.read()) << 48 | ((long) in.read()) << 40 | ((long) in.read()) << 32 |
-                ((long) in.read()) << 24 | ((long) in.read()) << 16 | ((long) in.read()) << 8 | ((long) in.read());
+        return ((long) in.read()) << 56 | ((long) in.read()) << 48 | ((long) in.read()) << 40 |
+                ((long) in.read()) << 32 | ((long) in.read()) << 24 | ((long) in.read()) << 16 |
+                ((long) in.read()) << 8 | ((long) in.read());
     }
 
     /**
@@ -144,10 +145,54 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public long[] readLongArray() throws IOException {
-        long[] a = new long[readInt()];
+        long[] a = new long[readCompressedUint()];
         for (int i = 0; i < a.length; ++i)
             a[i] = readLong();
         return a;
+    }
+
+    /**
+     * Decompresses an unsigned integer as encoded by the <code>writeCompressedUint</code> method in the encoder class.
+     *
+     * @return the decoded length.
+     * @throws IOException If an I/O error occurs.
+     */
+    public int readCompressedUint() throws IOException {
+        int b0 = in.read();
+        switch (b0 & 0xC0) {
+            case 0x0:
+                return b0 & 0x3F;
+            case 0x40:
+                return ((b0 & 0x3F) << 8) | in.read();
+            case 0x80:
+                return (b0 & 0x3F) << 16 | in.read() << 8 | in.read();
+            case 0xC0:
+                return (b0 & 0x3F) << 24 | in.read() << 16 | in.read() << 8 | in.read();
+            default:
+                return 0;
+        }
+    }
+
+    public int readCompressedInt() throws IOException {
+        int b0 = in.read();
+        int val;
+        switch (b0 & 0xC0) {
+            case 0x0:
+                val = b0 & 0x1F;
+                break;
+            case 0x40:
+                val = (b0 & 0x1F) << 8 | in.read();
+                break;
+            case 0x80:
+                val = (b0 & 0x1F) << 16 | in.read() << 8 | in.read();
+                break;
+            case 0xC0:
+                val = (b0 & 0x1F) << 24 | in.read() << 16 | in.read() << 8 | in.read();
+                break;
+            default:
+                return 0;
+        }
+        return (b0 & 0x20) != 0 ? ~val : val;
     }
 
     /**
@@ -169,7 +214,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public float[] readFloatArray() throws IOException {
-        float[] a = new float[readInt()];
+        float[] a = new float[readCompressedUint()];
         for (int i = 0; i < a.length; ++i)
             a[i] = Float.intBitsToFloat(readInt());
         return a;
@@ -194,7 +239,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public double[] readDoubleArray() throws IOException {
-        double[] a = new double[readInt()];
+        double[] a = new double[readCompressedUint()];
         for (int i = 0; i < a.length; ++i)
             a[i] = Double.longBitsToDouble(readLong());
         return a;
@@ -207,7 +252,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public String readUTF8Raw() throws IOException {
-        byte[] buffer = new byte[readInt()];
+        byte[] buffer = new byte[readCompressedUint()];
         if (buffer.length == 0)
             return "";
         int read = read(buffer, 0, buffer.length);
@@ -221,7 +266,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public String readASCIIRaw() throws IOException {
-        byte[] buffer = new byte[readInt()];
+        byte[] buffer = new byte[readCompressedUint()];
         if (buffer.length == 0)
             return "";
         int read = read(buffer, 0, buffer.length);
@@ -261,7 +306,7 @@ public class Decoder implements Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public <T> ArrayList<T> readArrayAsList(Class<T> clazz) throws IOException {
-        int len = readInt();
+        int len = readCompressedUint();
         if (len == 0)
             return new ArrayList<>();
         ArrayList<T> list = new ArrayList<>(len);

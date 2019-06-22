@@ -355,17 +355,17 @@ public class Region extends FlagContainer implements Serializable {
         if(parent == null)
             encoder.writeUuid(owner);
 
-        encoder.writeInt(min.getBlockX());
-        encoder.writeInt(min.getBlockY());
-        encoder.writeInt(min.getBlockZ());
-        encoder.writeInt(max.getBlockX());
-        encoder.writeInt(max.getBlockY());
-        encoder.writeInt(max.getBlockZ());
+        encoder.writeCompressedInt(min.getBlockX());
+        encoder.write(Utils.constrain(min.getBlockY(), 0, 255));
+        encoder.writeCompressedInt(min.getBlockZ());
+        encoder.writeCompressedInt(max.getBlockX());
+        encoder.write(Utils.constrain(max.getBlockY(), 0, 255));
+        encoder.writeCompressedInt(max.getBlockZ());
 
         super.serialize(encoder); // flags
 
         if(parent == null) {
-            encoder.writeInt(children.size());
+            encoder.writeCompressedUint(children.size());
             for(Region region : children)
                 region.serialize(encoder);
         }
@@ -378,13 +378,13 @@ public class Region extends FlagContainer implements Serializable {
         if(parent == null)
             owner = decoder.readUuid();
 
-        min = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
-        max = new Location(world, decoder.readInt(), decoder.readInt(), decoder.readInt());
+        min = new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());
+        max = new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());
 
         super.deserialize(decoder); // flags
 
         if(parent == null) {
-            int len = decoder.readInt();
+            int len = decoder.readCompressedUint();
             while(len > 0) {
                 Region assoc = new Region(this);
                 assoc.deserialize(decoder);

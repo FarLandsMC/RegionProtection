@@ -773,9 +773,9 @@ public class DataManager implements Listener {
                 if(format != PLAYER_DATA_FORMAT_VERSION)
                     throw new RuntimeException("Could not load player data file since it uses format version " +
                             format + " and is not up to date.");
-                int len = decoder.readInt();
+                int len = decoder.readCompressedUint();
                 while(len > 0) {
-                    playerClaimBlocks.put(decoder.readUuid(), decoder.readInt());
+                    playerClaimBlocks.put(decoder.readUuid(), decoder.readCompressedUint());
                     -- len;
                 }
             }
@@ -817,10 +817,10 @@ public class DataManager implements Listener {
                 playerDataFile.createNewFile();
             Encoder encoder = new Encoder(new FileOutputStream(playerDataFile));
             encoder.write(PLAYER_DATA_FORMAT_VERSION);
-            encoder.writeInt(playerClaimBlocks.size());
+            encoder.writeCompressedUint(playerClaimBlocks.size());
             for(Map.Entry<UUID, Integer> entry : playerClaimBlocks.entrySet()) {
                 encoder.writeUuid(entry.getKey());
-                encoder.writeInt(entry.getValue());
+                encoder.writeCompressedUint(entry.getValue());
             }
         }catch(IOException ex) {
             RegionProtection.error("Failed to save player data file: " + ex.getMessage());
@@ -873,7 +873,7 @@ public class DataManager implements Listener {
         public void serialize(Encoder encoder) throws IOException {
             encoder.writeUuid(worldUid);
             super.serialize(encoder);
-            encoder.writeInt(regions.size());
+            encoder.writeCompressedUint(regions.size());
             for(Region region : regions)
                 region.serialize(encoder);
         }
@@ -883,7 +883,7 @@ public class DataManager implements Listener {
             worldUid = decoder.readUuid();
             super.deserialize(decoder);
             World world = Bukkit.getWorld(worldUid);
-            int len = decoder.readInt();
+            int len = decoder.readCompressedUint();
             while(len > 0) {
                 Region region = new Region(world);
                 region.deserialize(decoder);

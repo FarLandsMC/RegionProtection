@@ -46,22 +46,26 @@ public class TrustMeta implements Serializable {
      * @return true if the given player has the given level of trust, false other wise.
      */
     public boolean hasTrust(Player player, TrustLevel trust, FlagContainer container) {
+        if(container.isOwner(player) || RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust())
+            return true;
+
         if(container instanceof Region) {
             Region region = (Region)container;
             if(region.hasParent()) {
                 if(trustData.containsKey(player.getUniqueId()))
                     return trustData.get(player.getUniqueId()).isAtLeast(trust);
+
                 TrustMeta parentTrustMeta = region.getParent().getFlagMeta(RegionFlag.TRUST);
                 if(parentTrustMeta.trustData.containsKey(player.getUniqueId()))
                     return parentTrustMeta.trustData.get(player.getUniqueId()).isAtLeast(trust);
+
                 return publicTrustLevel == TrustLevel.NONE ? parentTrustMeta.publicTrustLevel.isAtLeast(trust)
                         : publicTrustLevel.isAtLeast(trust);
             }
         }
 
         return (trustData.containsKey(player.getUniqueId()) ? trustData.get(player.getUniqueId()).isAtLeast(trust) :
-                publicTrustLevel.isAtLeast(trust)) || container.isOwner(player) || RegionProtection.getDataManager()
-                .getPlayerSession(player).isIgnoringTrust();
+                publicTrustLevel.isAtLeast(trust));
     }
 
     /**
@@ -134,7 +138,7 @@ public class TrustMeta implements Serializable {
     @Override
     public void serialize(Encoder encoder) throws IOException {
         encoder.write(publicTrustLevel.ordinal());
-        encoder.writeInt(trustData.size());
+        encoder.writeCompressedUint(trustData.size());
         for(Map.Entry<UUID, TrustLevel> trust : trustData.entrySet()) {
             encoder.writeUuid(trust.getKey());
             encoder.write(trust.getValue().ordinal());
@@ -144,7 +148,7 @@ public class TrustMeta implements Serializable {
     @Override
     public void deserialize(Decoder decoder) throws IOException {
         publicTrustLevel = TrustLevel.VALUES[decoder.read()];
-        int len = decoder.readInt();
+        int len = decoder.readCompressedUint();
         while(len > 0) {
             trustData.put(decoder.readUuid(), TrustLevel.VALUES[decoder.read()]);
             -- len;

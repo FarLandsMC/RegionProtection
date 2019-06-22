@@ -39,7 +39,7 @@ public enum RegionFlag {
     EXIT_COMMAND(CommandMeta.class),
     DENY_COMMAND(StringFilter.class),
     FOLLOW, // prevent pet tp
-    AGGRO(EnumFilter.class), // prevent certain mobs from targeting the player
+    DENY_AGGRO(EnumFilter.class), // prevent certain mobs from targeting the player
     GROWTH; // vine growth grass spread etc
 
     public static final RegionFlag[] VALUES = values();
@@ -173,5 +173,8 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(ENTER_COMMAND, CommandMeta.EMPTY_META);
         DEFAULT_VALUES.put(EXIT_COMMAND, CommandMeta.EMPTY_META);
         DEFAULT_VALUES.put(DENY_COMMAND, StringFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(FOLLOW, true);
+        DEFAULT_VALUES.put(DENY_AGGRO, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(GROWTH, true);
     }
 }

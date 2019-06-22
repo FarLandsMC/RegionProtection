@@ -8,7 +8,6 @@ import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
 import org.bukkit.Material;
-import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -89,9 +88,7 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onBlockSpread(BlockSpreadEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if(flags == null)
-            return;
-        event.setCancelled(!flags.isAllowed(RegionFlag.GROWTH));
+        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
     }
     
     /**
@@ -101,9 +98,7 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onStructureGrow(StructureGrowEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
-        if(flags == null)
-            return;
-        event.setCancelled(!flags.isAllowed(RegionFlag.GROWTH));
+        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
     }
     
     /**
@@ -113,9 +108,7 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onBlockGrow(BlockGrowEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if(flags == null)
-            return;
-        event.setCancelled(!flags.isAllowed(RegionFlag.GROWTH));
+        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
     }
     
     /**

@@ -62,7 +62,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeByteArray(byte[] a) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         out.write(a);
     }
 
@@ -94,7 +94,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeShortArray(short[] a) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         for (short s : a)
             writeShort(s);
     }
@@ -117,7 +117,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeShortArray(int[] a) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         for (int s : a)
             writeShort(s);
     }
@@ -142,7 +142,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeIntArray(int[] a) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         for (int i : a)
             writeInt(i);
     }
@@ -171,9 +171,67 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeLongArray(long[] a) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         for (long l : a)
             writeLong(l);
+    }
+
+    /**
+     * Writes a compressed length (unsigned integer) to the output stream. This algorithm precedes the bytes
+     * representing the length with various markers dictating how long the number is, allowing the length to take up
+     * less space if its numerical value is relatively small. The length will be mapped like so:
+     * <ul>
+     * <li>i &lt; 64 -&gt; 1 byte</li>
+     * <li>i &lt; 16,384 -&gt; 2 bytes</li>
+     * <li>i &lt; 4,194,304 -&gt; 3 bytes</li>
+     * <li>else -&gt; 4 bytes</li>
+     * </ul>
+     *
+     * @param i the length to write.
+     * @throws IOException If an I/O error occurs.
+     */
+    public void writeCompressedUint(int i) throws IOException {
+        /* Format of first byte in sequence (x is an unknown bit)
+         * length   format
+         * 1 byte:  00xxxxxx
+         * 2 bytes: 01xxxxxx
+         * 3 bytes: 10xxxxxx
+         * 4 bytes: 11xxxxxx */
+        if (i < 0x40)
+            out.write(i);
+        else if (i < 0x4000) {
+            out.write(0x40 | i >>> 8);
+            out.write(i & 0xFF);
+        } else if (i < 0x400000) {
+            out.write(0x80 | i >>> 16);
+            out.write(i >>> 8 & 0xFF);
+            out.write(i & 0xFF);
+        } else {
+            out.write(0xC0 | i >>> 24);
+            out.write(i >>> 16 & 0xFF);
+            out.write(i >>> 8 & 0xFF);
+            out.write(i & 0xFF);
+        }
+    }
+
+    public void writeCompressedInt(int i) throws IOException {
+        int absi = i < 0 ? ~i : i;
+        int sb = i < 0 ? 0x20 : 0;
+        if (absi < 0x20) {
+            out.write(sb | absi & 0x1F);
+        }else if (absi < 0x2000) {
+            out.write(0x40 | sb | absi >>> 8);
+            out.write(absi & 0xFF);
+        } else if (absi < 0x200000) {
+            out.write(0x80 | sb | absi >>> 16 & 0x1F);
+            out.write(absi >> 8 & 0xFF);
+            out.write(absi & 0xFF);
+        } else {
+            out.write(0xC0 | sb | absi >>> 24 & 0x1F);
+            out.write(absi >> 16 & 0xFF);
+            out.write(absi >> 8 & 0xFF);
+            out.write(absi & 0xFF);
+        }
     }
 
     /**
@@ -195,7 +253,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeFloatArray(float[] a) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         for (float f : a)
             writeInt(Float.floatToRawIntBits(f));
     }
@@ -219,7 +277,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeDoubleArray(double[] a) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         for (double d : a)
             writeLong(Double.doubleToRawLongBits(d));
     }
@@ -232,10 +290,10 @@ public class Encoder implements Flushable, Closeable {
      */
     public void writeUTF8Raw(String s) throws IOException {
         if (s.isEmpty())
-            writeInt(0);
+            out.write(0);
         else {
             byte[] raw = s.getBytes(StandardCharsets.UTF_8);
-            writeInt(raw.length);
+            writeCompressedUint(raw.length);
             out.write(raw);
         }
     }
@@ -248,10 +306,10 @@ public class Encoder implements Flushable, Closeable {
      */
     public void writeASCIIRaw(String s) throws IOException {
         if (s.isEmpty())
-            writeInt(0);
+            out.write(0);
         else {
             char[] cs = s.toCharArray();
-            writeInt(cs.length);
+            writeCompressedUint(cs.length);
             for (char c : cs)
                 out.write(c & 0xFF);
         }
@@ -272,12 +330,12 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes an array of the specified type to the output stream using uncompressed, default methods for the encoding.
      *
-     * @param a the array.
+     * @param a             the array.
      * @param componentType the component type of the array.
      * @throws IOException if an I/O error occurs.
      */
     public void writeArray(Object[] a, Class<?> componentType) throws IOException {
-        writeInt(a.length);
+        writeCompressedUint(a.length);
         if (a.length == 0)
             return;
         if (byte.class.equals(componentType) || Byte.class.equals(componentType)) {
@@ -321,9 +379,9 @@ public class Encoder implements Flushable, Closeable {
     /**
      * Writes a collection to the output stream as an array using uncompressed, default methods for the encoding.
      *
-     * @param c   the collection.
+     * @param c             the collection.
      * @param componentType the component type of the collection.
-     * @param <T> the type of data being encoded.
+     * @param <T>           the type of data being encoded.
      * @throws IOException if an I/O error occurs.
      */
     public <T> void writeArray(Collection<T> c, Class<T> componentType) throws IOException {

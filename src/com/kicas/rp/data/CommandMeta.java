@@ -33,7 +33,7 @@ public class CommandMeta implements Serializable {
     }
 
     public void execute(Player player) {
-        String cmd = command.replaceAll("\\$p", player.getName());
+        String cmd = command.replaceAll("\\%0", player.getName());
         Bukkit.getScheduler().runTask(RegionProtection.getInstance(),
                 () -> Bukkit.dispatchCommand(isConsole ? Bukkit.getConsoleSender() : player, cmd));
     }

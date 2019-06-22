@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Provides utilities for a more complex text component formatting system. The format is as follows:
+ * Provides utilities for a more complex text component formatting system.
  */
 public class TextUtils {
     private static final char VALUE_MARKER = '%';

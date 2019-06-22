@@ -3,7 +3,6 @@ package com.kicas.rp.command;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.PlayerSession;
 import com.kicas.rp.data.Region;
-import com.kicas.rp.data.RegionFlag;
 import com.kicas.rp.data.RegionHighlighter;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;

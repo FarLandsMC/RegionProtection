@@ -91,7 +91,7 @@ public class CommandRegion extends Command {
             }
 
             regions.forEach(region -> {
-                TextUtils.sendFormatted(sender, "&(gold)Showing info for region {&(green)%0}:\nPriority: {&(aqua)%1}" +
+                TextUtils.sendFormatted(sender, "&(gold)Showing info for region {&(green)%0:}\nPriority: {&(aqua)%1}" +
                                 "\nParent: {&(aqua)%2}%3", region.getDisplayName(), region.getPriority(),
                         region.hasParent() ? region.getParent().getDisplayName() : "none", region.isEmpty() ? ""
                                 : "\nFlags:\n" + region.getFlags().entrySet().stream().map(entry -> {

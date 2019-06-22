@@ -27,6 +27,10 @@ public final class Utils {
     private Utils() {
     }
 
+    public static int constrain(int n, int min, int max) {
+        return n < min ? min : (n > max ? max : n);
+    }
+
     /**
      * Attempts to find the proper world name for the given alias. No pattern is necessarily used here, rather common
      * names for the various vanilla worlds are mapped to the correct names. If no world name could be found for the
