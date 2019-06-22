@@ -144,4 +144,33 @@ public class EntityEventHandler implements Listener {
             event.getEntity().remove();
         }
     }
+    
+    /**
+     * Prevent pets teleporting to a region
+     *
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onEntityTeleport(EntityTeleportEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
+        if(flags == null)
+            return;
+        event.setCancelled(event.getEntity() instanceof Tameable && ((Tameable) event.getEntity()).isTamed() &&
+                !flags.isAllowed(RegionFlag.FOLLOW));
+    }
+    
+    /**
+     * Prevent mobs from becoming aggro towards players inside a region
+     *
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onEntityTarget(EntityTargetEvent event) {
+        if (event.getTarget() == null)
+            return;
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTarget().getLocation());
+        if(flags == null)
+            return;
+        event.setCancelled(flags.<EnumFilter>getFlagMeta(RegionFlag.AGGRO).isAllowed(event.getEntity().getType()));
+    }
 }

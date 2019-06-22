@@ -37,7 +37,10 @@ public enum RegionFlag {
     PORTAL_PAIR_FORMATION,
     ENTER_COMMAND(CommandMeta.class),
     EXIT_COMMAND(CommandMeta.class),
-    DENY_COMMAND(StringFilter.class);
+    DENY_COMMAND(StringFilter.class),
+    FOLLOW, // prevent pet tp
+    AGGRO(EnumFilter.class), // prevent certain mobs from targeting the player
+    GROWTH; // vine growth grass spread etc
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();

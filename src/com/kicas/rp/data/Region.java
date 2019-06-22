@@ -128,9 +128,9 @@ public class Region extends FlagContainer implements Serializable {
      * @return true if the given location is in this region, false otherwise.
      */
     public boolean contains(Location loc) {
-        return loc.getBlockX() >= min.getBlockX() && loc.getBlockY() >= min.getBlockY() &&
-                loc.getBlockZ() >= min.getBlockZ() && loc.getBlockX() <= max.getBlockX() &&
-                loc.getBlockY() <= max.getBlockY() && loc.getBlockZ() <= max.getBlockZ();
+        return min.getBlockX() <= loc.getBlockX() && loc.getBlockX() <= max.getBlockX() &&
+                min.getBlockY() <= loc.getBlockY() && loc.getBlockY() <= max.getBlockY() &&
+                min.getBlockZ() <= loc.getBlockZ() && loc.getBlockZ() <= max.getBlockZ();
     }
 
     /**

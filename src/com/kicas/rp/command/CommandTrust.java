@@ -66,7 +66,7 @@ public class CommandTrust extends Command {
             return true;
         }
 
-        // Make sure the owner isn't trying to dmote themself
+        // Make sure the owner isn't trying to demote themself
         if(claim.isOwner((Player)sender)) {
             sender.sendMessage(ChatColor.RED + "You cannot set your own trust level on your claim.");
             return true;

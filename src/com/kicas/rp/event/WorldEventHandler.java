@@ -17,6 +17,7 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.world.PortalCreateEvent;
+import org.bukkit.event.world.StructureGrowEvent;
 
 /**
  * Handles events generally unrelated to entities that take place in the world.
@@ -82,6 +83,42 @@ public class WorldEventHandler implements Listener {
     }
     
     /**
+     * Handles block spreading and vine growth.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onBlockSpread(BlockSpreadEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        if(flags == null)
+            return;
+        event.setCancelled(!flags.isAllowed(RegionFlag.GROWTH));
+    }
+    
+    /**
+     * Handles mushroom and tree growth.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onStructureGrow(StructureGrowEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
+        if(flags == null)
+            return;
+        event.setCancelled(!flags.isAllowed(RegionFlag.GROWTH));
+    }
+    
+    /**
+     * Handles mushroom and tree growth.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onBlockGrow(BlockGrowEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        if(flags == null)
+            return;
+        event.setCancelled(!flags.isAllowed(RegionFlag.GROWTH));
+    }
+    
+    /**
      * Handles ice and snow melting or forming.
      * @param event the event.
      */
@@ -90,13 +127,13 @@ public class WorldEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
         if(flags == null)
             return;
-
+        
         if (!flags.isAllowed(RegionFlag.ICE_CHANGE) &&
                 (event.getBlock().getType() == Material.ICE || event.getBlock().getType() == Material.FROSTED_ICE))
             event.setCancelled(true);
         else if (!flags.isAllowed(RegionFlag.SNOW_CHANGE) && event.getBlock().getType() == Material.SNOW)
             event.setCancelled(true);
-        // 2DO: prevent fire decay
+            // 2DO: prevent fire decay
         else if (!flags.isAllowed(RegionFlag.CORAL_DEATH) && Materials.isCoral(event.getBlock().getType()))
             event.setCancelled(true);
     }
