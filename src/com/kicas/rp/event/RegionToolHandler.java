@@ -202,7 +202,7 @@ public class RegionToolHandler implements Listener {
                     .stream().filter(region -> region.distanceFromEdge(event.getPlayer().getLocation()) < 100 &&
                             !region.isAllowed(RegionFlag.OVERLAP)).collect(Collectors.toList());
             if(!regions.isEmpty())
-                ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions));
+                ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions, true));
         }else if(Materials.stackType(event.getPlayer().getInventory().getItem(event.getPreviousSlot())) ==
                 RegionProtection.getClaimCreationTool()) { // Scrolling away from the claim creation tool
             // Clear action values
@@ -223,7 +223,7 @@ public class RegionToolHandler implements Listener {
         }else{
             recipient.sendMessage(ChatColor.GOLD + "This belongs to " + claim.getOwnerName());
             RegionProtection.getDataManager().getPlayerSession(recipient)
-                    .setRegionHighlighter(new RegionHighlighter(recipient, claim));
+                    .setRegionHighlighter(new RegionHighlighter(recipient, claim, true));
         }
     }
 }

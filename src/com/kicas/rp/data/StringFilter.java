@@ -44,10 +44,10 @@ public class StringFilter implements Serializable {
     @Override
     public String toString() {
         if(!isWhitelist && filter.isEmpty())
-            return "__none__";
+            return "~";
 
-        String base = isWhitelist ? "__all__" : "";
-        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "__all__,") + String.join(", ", filter.stream()
+        String base = isWhitelist ? "*" : "";
+        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*,") + String.join(", ", filter.stream()
                 .map(string -> (isWhitelist ? "!" : "") + string).toArray(String[]::new));
     }
 
@@ -64,15 +64,15 @@ public class StringFilter implements Serializable {
     }
 
     public static StringFilter fromString(String string) {
-        if("__none__".equals(string))
+        if("~".equals(string))
             return EMPTY_FILTER;
 
-        boolean isWhitelist = string.contains("__all__");
+        boolean isWhitelist = string.contains("*");
         StringFilter sf = new StringFilter(isWhitelist);
         for(String element : string.split(",")) {
             element = element.trim();
             // Ignore negation depending on the filter type (! = negation)
-            if(!"__all__".equals(element) && isWhitelist == element.startsWith("!")) {
+            if(!"*".equals(element) && isWhitelist == element.startsWith("!")) {
                 // Convert the element into the actual enum name
                 sf.filter.add(isWhitelist ? element.substring(1) : element);
             }

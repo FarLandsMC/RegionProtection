@@ -85,6 +85,11 @@ public class CommandRegion extends Command {
                 regions = Collections.singletonList(region);
             }
 
+            if(regions.isEmpty()) {
+                sender.sendMessage(ChatColor.GOLD + "There are no regions present at your location.");
+                return true;
+            }
+
             regions.forEach(region -> {
                 TextUtils.sendFormatted(sender, "&(gold)Showing info for region {&(green)%0}:\nPriority: {&(aqua)%1}" +
                                 "\nParent: {&(aqua)%2}%3", region.getDisplayName(), region.getPriority(),

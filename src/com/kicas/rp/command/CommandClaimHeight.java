@@ -145,9 +145,9 @@ public class CommandClaimHeight extends Command {
             throws IllegalArgumentException {
         switch(args.length) {
             case 1:
-                return SUB_COMMANDS;
+                return filterStartingWith(args[0], SUB_COMMANDS);
             case 2:
-                return SIDES;
+                return filterStartingWith(args[1], SIDES);
             default:
                 return Collections.emptyList();
         }

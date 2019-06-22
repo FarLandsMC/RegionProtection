@@ -31,12 +31,20 @@ public class RegionHighlighter {
         initBlocks(regions, lightSource, block, includeChildren);
     }
 
+    public RegionHighlighter(Player player, Collection<Region> regions, boolean includeChildren) {
+        this(player, regions, null, null, includeChildren);
+    }
+
     public RegionHighlighter(Player player, Collection<Region> regions) {
         this(player, regions, null, null, false);
     }
 
     public RegionHighlighter(Player player, Region region, Material lightSource, Material block) {
         this(player, Collections.singleton(region), lightSource, block, false);
+    }
+
+    public RegionHighlighter(Player player, Region region, boolean includeChildren) {
+        this(player, Collections.singleton(region), null, null, includeChildren);
     }
 
     public RegionHighlighter(Player player, Region region) {

@@ -4,6 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.PlayerSession;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionFlag;
+import com.kicas.rp.data.RegionHighlighter;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -53,13 +54,12 @@ public class CommandSteal extends Command {
             return true;
         }
 
-        // Transfer the claim
-        region.setOwner(((Player)sender).getUniqueId());
-        // Remove old trusts
-        region.deleteFlag(RegionFlag.TRUST);
-        // Subtract claim blocks
-        ps.subtractClaimBlocks((int)region.area());
+        // Transfer the claim without transferring the trust flag. This should always succeed.
+        RegionProtection.getDataManager().tryTransferOwnership((Player)sender, region, ((Player)sender).getUniqueId(),
+                false);
 
+        // Notify the sender
+        ps.setRegionHighlighter(new RegionHighlighter((Player)sender, region));
         sender.sendMessage(ChatColor.GREEN + "This claim is now yours. You have " + ps.getClaimBlocks() + " claim " +
                 "blocks remaining.");
 

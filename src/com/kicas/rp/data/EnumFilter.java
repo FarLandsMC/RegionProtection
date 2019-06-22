@@ -47,11 +47,11 @@ public class EnumFilter implements Serializable {
     @SuppressWarnings("unchecked")
     public <E extends Enum<E>> String toString(Class<E> clazz) {
         if(!isWhitelist && filter.isEmpty())
-            return "__none__";
+            return "~";
 
-        String base = isWhitelist ? "__all__" : "";
+        String base = isWhitelist ? "*" : "";
         Enum<E>[] values = (Enum<E>[])ReflectionHelper.invoke("values", clazz, null);
-        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "__all__,") + String.join(", ", filter.stream()
+        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*,") + String.join(", ", filter.stream()
                 .map(ordinal -> (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal]))
                 .toArray(String[]::new));
     }
@@ -69,15 +69,15 @@ public class EnumFilter implements Serializable {
     }
 
     public static <E extends Enum<E>> EnumFilter fromString(String string, Class<E> clazz) {
-        if("__none__".equals(string))
+        if("~".equals(string))
             return EMPTY_FILTER;
 
-        boolean isWhitelist = string.contains("__all__");
+        boolean isWhitelist = string.contains("*");
         EnumFilter ef = new EnumFilter(isWhitelist);
         for(String element : string.split(",")) {
             element = element.trim();
             // Ignore negation depending on the filter type (! = negation)
-            if(!"__all__".equals(element) && isWhitelist == element.startsWith("!")) {
+            if(!"*".equals(element) && isWhitelist == element.startsWith("!")) {
                 // Convert the element into the actual enum name
                 String name = isWhitelist ? element.substring(1) : element;
 

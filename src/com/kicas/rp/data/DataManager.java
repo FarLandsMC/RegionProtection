@@ -524,6 +524,30 @@ public class DataManager implements Listener {
         return region;
     }
 
+    public boolean tryTransferOwnership(Player delegate, Region region, UUID newOwner, boolean transferTrust) {
+        if(region.isAdminOwned()) {
+            delegate.sendMessage(ChatColor.RED + "You cannot transfer the ownership of an admin owned region.");
+            return false;
+        }
+
+        if(region.area() > getClaimBlocks(newOwner)) {
+            delegate.sendMessage(ChatColor.RED + "This player does not have enough claim blocks to take ownership of " +
+                    "this claim.");
+            return false;
+        }
+
+        if(!transferTrust) {
+            region.setFlag(RegionFlag.TRUST, TrustMeta.EMPTY_TRUST_META);
+            region.getChildren().forEach(child -> child.deleteFlag(RegionFlag.TRUST));
+        }
+
+        modifyClaimBlocks(region.getOwner(), (int)region.area());
+        modifyClaimBlocks(newOwner, -(int)region.area());
+        region.setOwner(newOwner);
+
+        return true;
+    }
+
     /**
      * Deletes the given region. This will remove the region from the list and the lookup table, and the same operation
      * will be performed on all the regions children if includeChildren is set to true. Upon successful deletion of the
@@ -566,14 +590,8 @@ public class DataManager implements Listener {
         }else {
             if(unregister)
                 worlds.get(region.getWorld().getUID()).regions.remove(region);
-            if(!region.isAdminOwned()) {
-                if(playerSessionCache.containsKey(region.getOwner()))
-                    playerSessionCache.get(region.getOwner()).addClaimBlocks((int) region.area());
-                else{
-                    playerClaimBlocks.put(region.getOwner(), playerClaimBlocks.get(region.getOwner()) +
-                            (int) region.area());
-                }
-            }
+            if(!region.isAdminOwned())
+                modifyClaimBlocks(region.getOwner(), (int) region.area());
         }
 
         // Remove the region from the lookup table
@@ -603,9 +621,7 @@ public class DataManager implements Listener {
         // Regular claims
         if (!region.hasParent()) {
             // Check claim blocks
-            int claimBlocks = playerSessionCache.containsKey(region.getOwner())
-                    ? playerSessionCache.get(region.getOwner()).getClaimBlocks()
-                    : playerClaimBlocks.get(region.getOwner());
+            int claimBlocks = getClaimBlocks(region.getOwner());
             long areaDiff = region.area() - ((long)bounds.getSecond().getBlockX() - bounds.getFirst().getBlockX()) *
                     ((long)bounds.getSecond().getBlockZ() - bounds.getFirst().getBlockZ());
             if (areaDiff > claimBlocks) {
@@ -636,10 +652,7 @@ public class DataManager implements Listener {
             }
 
             // Modify claim blocks
-            if(playerSessionCache.containsKey(region.getOwner()))
-                playerSessionCache.get(region.getOwner()).subtractClaimBlocks((int)areaDiff);
-            else
-                playerClaimBlocks.put(region.getOwner(), playerClaimBlocks.get(region.getOwner()) - (int)areaDiff);
+            modifyClaimBlocks(region.getOwner(), -(int)areaDiff);
         } else { // Subdivisions
             // Check to make sure the subdivision is still completely within the parent claim
             if (!region.getParent().contains(region)) {
@@ -699,6 +712,18 @@ public class DataManager implements Listener {
      */
     public synchronized PlayerSession getPlayerSession(Player player) {
         return playerSessionCache.get(player.getUniqueId());
+    }
+
+    public synchronized int getClaimBlocks(UUID uuid) {
+        return playerSessionCache.containsKey(uuid) ? playerSessionCache.get(uuid).getClaimBlocks()
+                : playerClaimBlocks.getOrDefault(uuid, 0);
+    }
+
+    public synchronized void modifyClaimBlocks(UUID uuid, int amount) {
+        if(playerSessionCache.containsKey(uuid))
+            playerSessionCache.get(uuid).addClaimBlocks(amount);
+        else
+            playerClaimBlocks.put(uuid, playerClaimBlocks.getOrDefault(uuid, 0) + amount);
     }
 
     /**
