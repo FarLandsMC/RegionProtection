@@ -152,7 +152,7 @@ public class Decoder implements Closeable {
     }
 
     /**
-     * Decompresses an unsigned integer as encoded by the <code>writeCompressedUint</code> method in the encoder class.
+     * Decompresses an unsigned integer as encoded by the <code>writeUintCompressed</code> method in the encoder class.
      *
      * @return the decoded unsigned integer.
      * @throws IOException If an I/O error occurs.

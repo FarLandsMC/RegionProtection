@@ -35,13 +35,19 @@ public class EnumFilter implements Serializable {
     @Override
     public void serialize(Encoder encoder) throws IOException {
         encoder.writeBoolean(isWhitelist);
-        encoder.writeArray(filter, Integer.class);
+        encoder.writeUintCompressed(filter.size());
+        for(Integer ordinal : filter)
+            encoder.writeUintCompressed(ordinal);
     }
     
     @Override
     public void deserialize(Decoder decoder) throws IOException {
         isWhitelist = decoder.readBoolean();
-        filter.addAll(decoder.readArrayAsList(Integer.class));
+        int len = decoder.readCompressedUint();
+        while(len > 0) {
+            filter.add(decoder.readCompressedUint());
+            -- len;
+        }
     }
 
     @SuppressWarnings("unchecked")

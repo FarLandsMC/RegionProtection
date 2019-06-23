@@ -137,7 +137,7 @@ public class TrustMeta implements Serializable {
     @Override
     public void serialize(Encoder encoder) throws IOException {
         encoder.write(publicTrustLevel.ordinal());
-        encoder.writeCompressedUint(trustData.size());
+        encoder.writeUintCompressed(trustData.size());
         for(Map.Entry<UUID, TrustLevel> trust : trustData.entrySet()) {
             encoder.writeUuid(trust.getKey());
             encoder.write(trust.getValue().ordinal());

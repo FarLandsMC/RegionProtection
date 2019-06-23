@@ -1034,10 +1034,10 @@ public class DataManager implements Listener {
                 playerDataFile.createNewFile();
             Encoder encoder = new Encoder(new FileOutputStream(playerDataFile));
             encoder.write(PLAYER_DATA_FORMAT_VERSION);
-            encoder.writeCompressedUint(playerClaimBlocks.size());
+            encoder.writeUintCompressed(playerClaimBlocks.size());
             for (Map.Entry<UUID, Integer> entry : playerClaimBlocks.entrySet()) {
                 encoder.writeUuid(entry.getKey());
-                encoder.writeCompressedUint(entry.getValue());
+                encoder.writeUintCompressed(entry.getValue());
             }
         } catch (IOException ex) {
             RegionProtection.error("Failed to save player data file: " + ex.getMessage());
@@ -1090,7 +1090,7 @@ public class DataManager implements Listener {
         public void serialize(Encoder encoder) throws IOException {
             encoder.writeUuid(worldUid);
             super.serialize(encoder);
-            encoder.writeCompressedUint(regions.size());
+            encoder.writeUintCompressed(regions.size());
             for (Region region : regions)
                 region.serialize(encoder);
         }

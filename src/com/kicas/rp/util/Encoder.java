@@ -62,7 +62,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeByteArray(byte[] a) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         out.write(a);
     }
 
@@ -94,7 +94,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeShortArray(short[] a) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         for (short s : a)
             writeShort(s);
     }
@@ -117,7 +117,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeShortArray(int[] a) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         for (int s : a)
             writeShort(s);
     }
@@ -142,7 +142,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeIntArray(int[] a) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         for (int i : a)
             writeInt(i);
     }
@@ -171,7 +171,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeLongArray(long[] a) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         for (long l : a)
             writeLong(l);
     }
@@ -190,7 +190,7 @@ public class Encoder implements Flushable, Closeable {
      * @param i the unsigned integer to write.
      * @throws IOException If an I/O error occurs.
      */
-    public void writeCompressedUint(int i) throws IOException {
+    public void writeUintCompressed(int i) throws IOException {
         /* Format of first byte in sequence (x is an unknown bit)
          * length   format
          * 1 byte:  00xxxxxx
@@ -280,7 +280,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeFloatArray(float[] a) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         for (float f : a)
             writeInt(Float.floatToRawIntBits(f));
     }
@@ -304,7 +304,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeDoubleArray(double[] a) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         for (double d : a)
             writeLong(Double.doubleToRawLongBits(d));
     }
@@ -320,7 +320,7 @@ public class Encoder implements Flushable, Closeable {
             out.write(0);
         else {
             byte[] raw = s.getBytes(StandardCharsets.UTF_8);
-            writeCompressedUint(raw.length);
+            writeUintCompressed(raw.length);
             out.write(raw);
         }
     }
@@ -336,7 +336,7 @@ public class Encoder implements Flushable, Closeable {
             out.write(0);
         else {
             char[] cs = s.toCharArray();
-            writeCompressedUint(cs.length);
+            writeUintCompressed(cs.length);
             for (char c : cs)
                 out.write(c & 0xFF);
         }
@@ -362,7 +362,7 @@ public class Encoder implements Flushable, Closeable {
      * @throws IOException if an I/O error occurs.
      */
     public void writeArray(Object[] a, Class<?> componentType) throws IOException {
-        writeCompressedUint(a.length);
+        writeUintCompressed(a.length);
         if (a.length == 0)
             return;
         if (byte.class.equals(componentType) || Byte.class.equals(componentType)) {

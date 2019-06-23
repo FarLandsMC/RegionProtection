@@ -142,7 +142,7 @@ public class FlagContainer implements Serializable {
 
     @Override
     public void serialize(Encoder encoder) throws IOException {
-        encoder.writeCompressedUint(flags.size());
+        encoder.writeUintCompressed(flags.size());
         for(Map.Entry<RegionFlag, Object> entry : flags.entrySet()) {
             encoder.write(entry.getKey().ordinal());
             if(entry.getKey().isBoolean())

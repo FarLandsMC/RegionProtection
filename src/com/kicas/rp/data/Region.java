@@ -360,7 +360,7 @@ public class Region extends FlagContainer implements Serializable {
         super.serialize(encoder); // flags
 
         if(parent == null) {
-            encoder.writeCompressedUint(children.size());
+            encoder.writeUintCompressed(children.size());
             for(Region region : children)
                 region.serialize(encoder);
         }
