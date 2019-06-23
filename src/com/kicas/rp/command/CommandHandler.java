@@ -39,6 +39,7 @@ public class CommandHandler implements Listener {
         registerCommand(new CommandIgnoreTrust());
         registerCommand(new CommandRegion());
         registerCommand(new CommandSteal());
+        registerCommand(new CommandClaimTnt());
         registerCommand(new CommandTransferClaim());
         registerCommand(new CommandTrust());
         registerCommand(new CommandTrustList());

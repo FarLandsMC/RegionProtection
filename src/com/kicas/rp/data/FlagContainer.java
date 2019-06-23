@@ -93,10 +93,6 @@ public class FlagContainer implements Serializable {
         return flags.containsKey(flag) ? (boolean)flags.get(flag) : flag.getDefaultValue();
     }
 
-    public void setFlag(RegionFlag flag, boolean allow) {
-        flags.put(flag, allow);
-    }
-
     public void setFlag(RegionFlag flag, Object meta) {
         flags.put(flag, meta);
     }

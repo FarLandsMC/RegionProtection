@@ -35,7 +35,8 @@ public class CommandSteal extends Command {
 
         // Check for the existence of a region
         List<Region> regions = RegionProtection.getDataManager().getParentRegionsAt(((Player)sender)
-                .getLocation()).stream().filter(region -> !region.isAdminOwned()).collect(Collectors.toList());
+                .getLocation()).stream().filter(region -> !region.isAdminOwned() && !region.hasParent())
+                .collect(Collectors.toList());
         if(regions.isEmpty()) {
             sender.sendMessage(ChatColor.RED + "There is no region here to be stolen.");
             return true;
