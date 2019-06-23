@@ -228,7 +228,7 @@ public class Encoder implements Flushable, Closeable {
      * @param i the unsigned integer to write.
      * @throws IOException If an I/O error occurs.
      */
-    public void writeCompressedInt(int i) throws IOException {
+    public void writeIntCompressed(int i) throws IOException {
         /* Format of first byte in sequence (x is an unknown bit)
          * length   format
          * 1 byte:  00sxxxxx

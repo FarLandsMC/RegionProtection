@@ -226,11 +226,11 @@ public class DataManager implements Listener {
      */
     public synchronized Region getRegionByName(World world, String name) {
         for (Region region : worlds.get(world.getUID()).regions) {
-            if (region.getRawName().equals(name))
+            if (Objects.equals(region.getRawName(), name))
                 return region;
 
             for (Region child : region.getChildren()) {
-                if (child.getRawName().equals(name))
+                if (Objects.equals(child.getRawName(), name))
                     return child;
             }
         }
@@ -490,6 +490,12 @@ public class DataManager implements Listener {
                 return false;
             }
 
+            if (parent.hasParent()) {
+                delegate.sendMessage(ChatColor.RED + "You cannot assign a child to region " + parentName + " since " +
+                        "that region has a parent.");
+                return false;
+            }
+
             associate(parent, region);
         }
 
@@ -625,7 +631,6 @@ public class DataManager implements Listener {
 
         // Create the region add associate it
         Region region = new Region(null, claim.getPriority() + 1, claim.getOwner(), min, max, claim);
-        associate(claim, region);
 
         // Check for complete containment
         if (!claim.contains(region)) {
@@ -633,9 +638,29 @@ public class DataManager implements Listener {
             return null;
         }
 
-        // Check for collisions with other subdivisions
-        if (!checkCollisions(delegate, region))
+        // Build the list of collisions ignoring the parent claim (this code is slightly different from the regular
+        // checkCollisions method)
+        List<Region> collisions = new LinkedList<>();
+        // Build a list of collisions from the lookup table
+        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
+            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
+                List<Region> regions = lookupTable.get(region.getWorld().getUID())
+                        .get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL));
+                if (regions != null) {
+                    // Ignore associations to prevent conflict with subdivisions
+                    regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.overlaps(region) &&
+                            !r.equals(claim)).forEach(collisions::add);
+                }
+            }
+        }
+
+        // Check collisions
+        if (!collisions.isEmpty()) {
+            delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
+            playerSessionCache.get(delegate.getUniqueId()).setRegionHighlighter(new RegionHighlighter(delegate,
+                    collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
             return null;
+        }
 
         // Make sure the sides are the minimum length
         if (!checkSides(delegate, region))
@@ -649,6 +674,7 @@ public class DataManager implements Listener {
         }
 
         // Register the subdivision
+        associate(claim, region);
         addRegionToLookupTable(region, false);
 
         return region;
@@ -870,8 +896,9 @@ public class DataManager implements Listener {
 
     // Ensures that each side of the given region is at leas three blocks long
     private boolean checkSides(Player delegate, Region region) {
-        if (region.getMax().getBlockX() - region.getMin().getBlockX() < 3 ||
-                region.getMax().getBlockZ() - region.getMin().getBlockZ() < 3) {
+        // < 2 is used to counter the off-by-one error (in other words it accounts for the width of the block)
+        if (region.getMax().getBlockX() - region.getMin().getBlockX() < 2 ||
+                region.getMax().getBlockZ() - region.getMin().getBlockZ() < 2) {
             delegate.sendMessage(ChatColor.RED + "All sides of your claim must be at least three blocks long.");
             return false;
         }

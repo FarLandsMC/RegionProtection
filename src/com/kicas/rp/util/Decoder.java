@@ -174,7 +174,7 @@ public class Decoder implements Closeable {
     }
 
     /**
-     * Decompresses a signed integer from the input stream as encoded by the <code>writeCompressedInt</code> method in
+     * Decompresses a signed integer from the input stream as encoded by the <code>writeIntCompressed</code> method in
      * the encoder class.
      *
      * @return the decoded integer.

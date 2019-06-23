@@ -350,12 +350,12 @@ public class Region extends FlagContainer implements Serializable {
         if(parent == null && !isAdminOwned())
             encoder.writeUuid(owner);
 
-        encoder.writeCompressedInt(min.getBlockX());
+        encoder.writeIntCompressed(min.getBlockX());
         encoder.write(Utils.constrain(min.getBlockY(), 0, 255));
-        encoder.writeCompressedInt(min.getBlockZ());
-        encoder.writeCompressedInt(max.getBlockX());
+        encoder.writeIntCompressed(min.getBlockZ());
+        encoder.writeIntCompressed(max.getBlockX());
         encoder.write(Utils.constrain(max.getBlockY(), 0, 255));
-        encoder.writeCompressedInt(max.getBlockZ());
+        encoder.writeIntCompressed(max.getBlockZ());
 
         super.serialize(encoder); // flags
 
