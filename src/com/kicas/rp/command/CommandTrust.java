@@ -1,11 +1,7 @@
 package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.data.Region;
-import com.kicas.rp.data.RegionFlag;
-import com.kicas.rp.data.TrustLevel;
-import com.kicas.rp.data.TrustMeta;
-import com.kicas.rp.util.Utils;
+import com.kicas.rp.data.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -97,10 +93,11 @@ public class CommandTrust extends Command {
                         "your claim.");
             }
         }else{
+            // Get the UUID to trust
             Player player = Bukkit.getPlayer(args[0]);
             UUID uuid;
             if(player == null) {
-                uuid = Utils.uuidForUsername(args[0]);
+                uuid = DataManager.uuidForUsername(args[0]);
                 if(uuid == null) {
                     sender.sendMessage(ChatColor.RED + "Player not found.");
                     return true;
@@ -108,12 +105,14 @@ public class CommandTrust extends Command {
             }else
                 uuid = player.getUniqueId();
 
+            // Check to make sure the owner isn't demoting themselves
             if(claim.isOwner(uuid)) {
                 sender.sendMessage(ChatColor.RED + "You cannot set the trust level of " + args[0] + " in this claim " +
                         "since they are also an owner of the claim.");
                 return true;
             }
 
+            // Notify the sender
             if(trust == TrustLevel.NONE) {
                 trustMeta.untrust(uuid);
                 sender.sendMessage(ChatColor.GOLD + "Untrusted " + args[0] + " from your claim.");
@@ -130,6 +129,7 @@ public class CommandTrust extends Command {
     @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
             throws IllegalArgumentException {
+        // Online players
         return args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList();
     }
 }

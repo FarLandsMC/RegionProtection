@@ -5,7 +5,6 @@ import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
 import com.kicas.rp.util.Utils;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
@@ -20,15 +19,15 @@ public class TrustMeta implements Serializable {
     private TrustLevel publicTrustLevel;
 
     // Default values
-    public static final TrustMeta FULL_TRUST_META = new TrustMeta(TrustLevel.BUILD);
-    public static final TrustMeta EMPTY_TRUST_META = new TrustMeta();
+    public static final TrustMeta FULL_TRUST = new TrustMeta(TrustLevel.BUILD);
+    public static final TrustMeta NO_TRUST = new TrustMeta();
 
     public TrustMeta() {
         this.trustData = new HashMap<>();
         this.publicTrustLevel = TrustLevel.NONE;
     }
 
-    // Just used for the FULL_TRUST_META field
+    // Just used for the FULL_TRUST field
     private TrustMeta(TrustLevel publicTrustLevel) {
         this.trustData = new HashMap<>();
         this.publicTrustLevel = publicTrustLevel;
@@ -46,7 +45,7 @@ public class TrustMeta implements Serializable {
      * @return true if the given player has the given level of trust, false other wise.
      */
     public boolean hasTrust(Player player, TrustLevel trust, FlagContainer container) {
-        if(container.isOwner(player) || RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust())
+        if(container.isEffectiveOwner(player) || RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust())
             return true;
 
         if(container instanceof Region) {
@@ -125,7 +124,7 @@ public class TrustMeta implements Serializable {
             list.put(publicTrustLevel, "public");
 
         trustData.forEach((uuid, trust) -> {
-            String name = Bukkit.getOfflinePlayer(uuid).getName();
+            String name = DataManager.currentUsernameForUuid(uuid);
             if(name != null) {
                 String current = list.get(trust);
                 list.put(trust, current.isEmpty() ? name : current + ", " + name);
@@ -195,7 +194,7 @@ public class TrustMeta implements Serializable {
         // Trim off any excess whitespace and check for an empty string, resulting in an empty trust meta
         string = string.trim();
         if(string.isEmpty())
-            return EMPTY_TRUST_META;
+            return NO_TRUST;
 
         // Create the metadata and begin parsing the individual trust levels
         TrustMeta meta = new TrustMeta();
@@ -221,7 +220,7 @@ public class TrustMeta implements Serializable {
                     meta.trustPublic(level);
                     continue;
                 }
-                UUID uuid = Utils.uuidForUsername(player);
+                UUID uuid = DataManager.uuidForUsername(player);
                 if(uuid == null)
                     throw new IllegalArgumentException("Invalid player name: " + player);
                 meta.trustData.put(uuid, level);

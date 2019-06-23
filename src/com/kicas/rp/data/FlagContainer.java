@@ -1,10 +1,7 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.util.Decoder;
-import com.kicas.rp.util.Encoder;
-import com.kicas.rp.util.ReflectionHelper;
-import com.kicas.rp.util.Serializable;
+import com.kicas.rp.util.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -30,7 +27,7 @@ public class FlagContainer implements Serializable {
      * Constructs a flag container that is admin owned.
      */
     public FlagContainer() {
-        this(new UUID(0, 0));
+        this(Utils.UUID_00);
     }
 
     public boolean isAdminOwned() {
@@ -56,7 +53,7 @@ public class FlagContainer implements Serializable {
      * @param player the player.
      * @return true if this player is an owner, false otherwise.
      */
-    public boolean isOwner(Player player) {
+    public boolean isEffectiveOwner(Player player) {
         return (isAdminOwned() ? player.isOp() : owner.equals(player.getUniqueId())) ||
                 RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust();
     }

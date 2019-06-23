@@ -1,7 +1,7 @@
 package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.util.Utils;
+import com.kicas.rp.data.DataManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -11,6 +11,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Allows server operators to view and adjust the claim blocks for a given player.
+ */
 public class CommandClaimBlocks extends Command {
     private static final List<String> SUB_COMMANDS = Arrays.asList("add", "remove", "view");
 
@@ -21,30 +24,38 @@ public class CommandClaimBlocks extends Command {
 
     @Override
     public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+        // Args check
         if(args.length < 2)
             return false;
 
+        // Sub-command check
         if(!SUB_COMMANDS.contains(args[0].toLowerCase())) {
             sender.sendMessage(ChatColor.RED + "Invalid sub-command: " + args[0]);
             return true;
         }
 
-        UUID player = Utils.uuidForUsername(args[1]);
+        // Get and check the UUID of the given player
+        UUID player = DataManager.uuidForUsername(args[1]);
         if(player == null) {
             sender.sendMessage(ChatColor.RED + "Invalid username: " + args[1]);
             return true;
         }
 
+        // View the number of claim blocks they have
         if("view".equalsIgnoreCase(args[0])) {
             sender.sendMessage(ChatColor.GOLD + args[1] + " has " + RegionProtection.getDataManager()
                     .getClaimBlocks(player) + " claim blocks.");
         }else{
+            // Secondary args check
             if(args.length < 3) {
                 sender.sendMessage(ChatColor.RED + "Usage: /claimblocks <add|remove> <name> <amount>");
                 return true;
             }
 
+            // Whether or not we're removing blocks
             boolean removing = "remove".equalsIgnoreCase(args[0]);
+
+            // Parse the amount and account for parsing errors
             int amount;
             try {
                 amount = Integer.parseInt(args[2]);
@@ -53,12 +64,14 @@ public class CommandClaimBlocks extends Command {
                 return true;
             }
 
+            // Check to make sure we're not going to end up with negative claim blocks
             if(removing && amount > RegionProtection.getDataManager().getClaimBlocks(player)) {
                 sender.sendMessage(ChatColor.RED + "You cannot take that many claim blocks from this player " +
                         "otherwise they would have negative claim blocks.");
                 return true;
             }
 
+            // Modify the claim blocks and notify the serder
             RegionProtection.getDataManager().modifyClaimBlocks(player, (removing ? -1 : 1) * amount);
             sender.sendMessage(ChatColor.GOLD + (removing ? "Removed " : "Added ") + amount + " claim blocks " +
                     (removing ? "from " : "to ") + args[1] + ". They now have " +
@@ -79,5 +92,10 @@ public class CommandClaimBlocks extends Command {
             default:
                 return Collections.emptyList();
         }
+    }
+
+    @Override
+    public boolean isOpOnly() {
+        return true;
     }
 }

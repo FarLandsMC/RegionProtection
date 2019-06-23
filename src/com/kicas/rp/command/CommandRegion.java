@@ -40,14 +40,15 @@ public class CommandRegion extends Command {
 
     @Override
     public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+        // Args check
+        if (args.length < 1)
+            return false;
+
         // Sender check
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
-
-        if (args.length < 1)
-            return false;
 
         // Check the sub-command
         args[0] = args[0].toLowerCase();
@@ -56,53 +57,60 @@ public class CommandRegion extends Command {
             return false;
         }
 
+        // Show info about the regions the player is standing in, a specific region (by name), or the global flags
         if ("info".equals(args[0])) {
-            if (args.length > 1 && DataManager.WORLD_REGION_NAME.equals(args[1])) {
+            // Show information about the flags set in the player's world
+            if (args.length > 1 && DataManager.GLOBAL_FLAG_NAME.equals(args[1])) {
+                // Get the flags and detail them
                 FlagContainer worldFlags = RegionProtection.getDataManager().getWorldFlags(((Player) sender).getWorld());
+
+                // No flags -> skip formatting
                 if (worldFlags.isEmpty()) {
                     sender.sendMessage(ChatColor.GOLD + "There are no global flags set in this world.");
                     return true;
                 }
 
                 TextUtils.sendFormatted(sender, "&(gold)Showing global flag info:\nFlags:\n%0",
-                        worldFlags.getFlags().entrySet().stream().map(entry -> {
-                            return "- " + Utils.formattedName(entry.getKey()) + ": {&(gray)" +
-                                    RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n";
-                        }).reduce("", String::concat).trim());
+                        formatFlags(worldFlags));
+
                 return true;
             }
 
+            // Get the list of regions to detail
             List<Region> regions;
-            if (args.length == 1)
+            if (args.length == 1) // Get the regions the player is standing in
                 regions = RegionProtection.getDataManager().getRegionsAt(((Player) sender).getLocation());
-            else {
+            else { // Get the region specified by name
                 Region region = RegionProtection.getDataManager().getRegionByName(((Player) sender).getWorld(), args[1]);
+
+                // Invalid region name
                 if (region == null) {
                     sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] +
                             "\" in your world.");
                     return true;
                 }
+
                 regions = Collections.singletonList(region);
             }
 
+            // No regions were found
             if(regions.isEmpty()) {
                 sender.sendMessage(ChatColor.GOLD + "There are no regions present at your location.");
                 return true;
             }
 
+            // Detail the regions
             regions.forEach(region -> {
                 TextUtils.sendFormatted(sender, "&(gold)Showing info for region {&(green)%0:}\nPriority: {&(aqua)%1}" +
                                 "\nParent: {&(aqua)%2}%3", region.getDisplayName(), region.getPriority(),
                         region.hasParent() ? region.getParent().getDisplayName() : "none", region.isEmpty() ? ""
-                                : "\nFlags:\n" + region.getFlags().entrySet().stream().map(entry -> {
-                                    return "- " + Utils.formattedName(entry.getKey()) + ": {&(gray)" +
-                                            RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n";
-                                }).reduce("", String::concat).trim());
+                                : "\nFlags:\n" + formatFlags(region));
             });
 
             return true;
         }
 
+        // All commands beyond this point require at lest two args
         if (args.length == 1)
             return false;
 
@@ -115,6 +123,7 @@ public class CommandRegion extends Command {
 
             // Skip the sub-command and region name and evaluate the rest of the arguments
             for (int i = 2; i < args.length; ++i) {
+                // Parse the priority
                 if (args[i].toLowerCase().startsWith("priority:")) {
                     String priorityString = args[i].substring(args[i].indexOf(':') + 1);
                     try {
@@ -123,13 +132,13 @@ public class CommandRegion extends Command {
                         sender.sendMessage(ChatColor.RED + "Invalid priority: " + priorityString);
                         return true;
                     }
-                } else if (args[i].toLowerCase().startsWith("parent:"))
+                } else if (args[i].toLowerCase().startsWith("parent:")) // Get the parent region's name
                     parentName = args[i].substring(args[i].indexOf(':') + 1);
-                else
+                else // Skip invalid tags
                     sender.sendMessage(ChatColor.RED + "Ignoring argument \"" + args[i] + "\" since it is invalid.");
             }
 
-            // Attempt to register the region
+            // Attempt to register the region (parent name checked here)
             if (RegionProtection.getDataManager().tryRegisterRegion((Player) sender, ps.getCurrentSelectedRegion(),
                     args[1], priority, parentName)) {
                 sender.sendMessage(ChatColor.GREEN + "Created region " + args[1] + " with a priority of " +
@@ -142,15 +151,18 @@ public class CommandRegion extends Command {
 
         // Flag sub-command
         if ("flag".equals(args[0])) {
+            // Teritary args check
             if (args.length < 3) {
                 sender.sendMessage(ChatColor.RED + "Usage: /region flag <name> <flag> [value]");
                 return true;
             }
 
-            FlagContainer flags = DataManager.WORLD_REGION_NAME.equals(args[1])
+            // Get the flag container being modified
+            FlagContainer flags = DataManager.GLOBAL_FLAG_NAME.equals(args[1])
                     ? RegionProtection.getDataManager().getWorldFlags(((Player) sender).getWorld())
                     : RegionProtection.getDataManager().getRegionByName(((Player) sender).getWorld(), args[1]);
 
+            // Invalid region name
             if (flags == null) {
                 sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] + "\" in your world.");
                 return true;
@@ -184,8 +196,8 @@ public class CommandRegion extends Command {
 
             // More arguments means there is a value that should be evaluated as done below
             Object meta;
-            // Parse/evaluate the meta string
             try {
+                // Parse/evaluate the meta string
                 meta = RegionFlag.metaFromString(flag, joinArgsBeyond(2, " ", args));
             } catch (IllegalArgumentException ex) { // Thrown by the meta parsers
                 sender.sendMessage(ChatColor.RED + ex.getMessage());
@@ -202,11 +214,17 @@ public class CommandRegion extends Command {
         // Check to make sure the region name is valid
         Region region = RegionProtection.getDataManager().getRegionByName(((Player) sender).getWorld(), args[1]);
         if (region == null) {
-            sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] + "\" in your world.");
+            if(DataManager.GLOBAL_FLAG_NAME.equals(args[1]))
+                sender.sendMessage(ChatColor.RED + "This operation cannot be performed on the global flag set.");
+            else
+                sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] +
+                        "\" in your world.");
             return true;
         }
 
-        if ("expand".equals(args[0]) || "retract".equals(args[0])) { // Region size modification
+        // Region size modification
+        if ("expand".equals(args[0]) || "retract".equals(args[0])) {
+            // Teritary args check
             if (args.length < 3) {
                 sender.sendMessage(ChatColor.RED + "Usage: /region expand|retract <name> <direction> [value]");
                 return true;
@@ -226,14 +244,15 @@ public class CommandRegion extends Command {
                 region.getMax().setY(region.getWorld().getMaxHeight());
                 sender.sendMessage(ChatColor.GREEN + "Extended region to bedrock and world height.");
             } else { // Regular expansion and retraction
+                // Final args check
                 if (args.length < 4) {
                     sender.sendMessage(ChatColor.RED + "Usage: /region expand|retract <name> <direction> <value>");
                     return true;
                 }
 
-                // Get and check the direction
-                BlockFace face = Utils.valueOfFormattedName(args[2], BlockFace.class);
-                if (face == null) {
+                // Get and check the side
+                BlockFace side = Utils.valueOfFormattedName(args[2], BlockFace.class);
+                if (side == null) {
                     sender.sendMessage(ChatColor.RED + "Invalid direction: " + args[2]);
                     return true;
                 }
@@ -247,7 +266,8 @@ public class CommandRegion extends Command {
                     return true;
                 }
 
-                if (RegionProtection.getDataManager().tryExpandRegion((Player) sender, region, face, amount))
+                // Expand the region
+                if (RegionProtection.getDataManager().tryExpandRegion((Player) sender, region, side, amount))
                     sender.sendMessage(ChatColor.GREEN + "Successfully adjusted region " + args[1]);
             }
         } else if ("delete".equals(args[0])) { // Delete a region
@@ -266,20 +286,29 @@ public class CommandRegion extends Command {
     @SuppressWarnings("unchecked")
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
             throws IllegalArgumentException {
-        // The first two argument suggestions are independent of the sub-command
+        // Show sub-commands
         if (args.length == 1)
             return filterStartingWith(args[0], SUB_COMMANDS);
         else if (args.length == 2) {
             // Don't suggest names if we're creating a region
-            return "create".equalsIgnoreCase(args[0]) ? Collections.emptyList()
-                    : filterStartingWith(args[1], RegionProtection.getDataManager()
-                    .getRegionNames(((Player)sender).getWorld()));
+            if("create".equalsIgnoreCase(args[0]))
+                return Collections.emptyList();
+            else if("info".equalsIgnoreCase(args[0]) || "flag".equalsIgnoreCase(args[0])) {
+                // Global flags allowed
+                return filterStartingWith(args[1], RegionProtection.getDataManager()
+                        .getRegionNames(((Player) sender).getWorld(), true));
+            }else {
+                // Global flags aren't allowed
+                return filterStartingWith(args[1], RegionProtection.getDataManager()
+                        .getRegionNames(((Player) sender).getWorld(), false));
+            }
         }
 
         // Creation suggestions: suggest the unused tags, and if it's the parent tag then suggest the list of possible
         // parents.
         if ("create".equalsIgnoreCase(args[0])) {
-            if (args[args.length - 1].toLowerCase().startsWith("parent:")) { // Suggest list of possible parents
+            // Suggest list of possible parents
+            if (args[args.length - 1].toLowerCase().startsWith("parent:")) {
                 return filterStartingWith(args[args.length - 1], RegionProtection.getDataManager()
                         .getRegionsInWorld(location.getWorld()).stream().map(region -> "parent:" + region.getRawName()));
             } else if (args[args.length - 1].indexOf(':') < 0) { // Suggest the tag prefixes that are left
@@ -298,6 +327,7 @@ public class CommandRegion extends Command {
                         ? "!" : "") + Utils.formattedName(flag)));
             } else if (args.length == 4) { // Suggest flag values
                 RegionFlag flag = Utils.valueOfFormattedName(args[2], RegionFlag.class);
+
                 switch (flag) {
                     // Too complex, not worth giving suggestions for
                     case TRUST:
@@ -305,33 +335,39 @@ public class CommandRegion extends Command {
                     case FAREWELL:
                         return Collections.emptyList();
 
-                    case DENY_SPAWN: // Give suggestions following the enum filter format (entities)
+                    // Give suggestions following the enum filter format (entities)
+                    case DENY_SPAWN:
+                    case DENY_AGGRO:
                         return filterStartingWith(args[3], Stream.of(EntityType.values())
                                 .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
                                         ? "!" : "") + Utils.formattedName(e)));
 
+                    // Ibid (materials)
                     case DENY_BREAK:
-                    case DENY_PLACE: // Ibid (materials)
+                    case DENY_PLACE:
                         return filterStartingWith(args[3], Stream.of(Material.values())
                                 .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
                                         ? "!" : "") + Utils.formattedName(e)));
 
                     case ENTER_COMMAND:
                     case EXIT_COMMAND: {
+                        // Suggest the allowed senders
                         if (!args[3].contains(":"))
                             return filterStartingWith(args[3], Stream.of("console:", "player:"));
-                        else {
+                        else { // Suggest the known commands matching the prefix
                             String prefix = args[3].substring(0, args[3].indexOf(':') + 1);
                             Map<String, org.bukkit.command.Command> knownCommands =
                                     (Map<String, org.bukkit.command.Command>) ReflectionHelper.getFieldValue
                                             ("knownCommands", SimpleCommandMap.class, ((CraftServer) Bukkit.getServer())
                                                     .getCommandMap());
+
                             return filterStartingWith(args[3], knownCommands.keySet().stream()
                                     .filter(command -> !command.contains(":"))
                                     .map(command -> prefix + command.toLowerCase()));
                         }
                     }
 
+                    // Suggest the known commands
                     case DENY_COMMAND: {
                         Map<String, org.bukkit.command.Command> knownCommands =
                                 (Map<String, org.bukkit.command.Command>) ReflectionHelper.getFieldValue
@@ -343,17 +379,26 @@ public class CommandRegion extends Command {
                                         (args[3].contains("*") ? "!" : "") + command));
                     }
 
+                    // Boolean flags
                     default:
                         return filterStartingWith(args[3], ALLOW_DENY);
                 }
             }
-        } else if (("expand".equalsIgnoreCase(args[0]) || "retract".equalsIgnoreCase(args[0])) && args.length == 3)
+        } else if (("expand".equalsIgnoreCase(args[0]) || "retract".equalsIgnoreCase(args[0])) && args.length == 3) {
             // For expansion and retraction just suggest the valid directions
             return filterStartingWith(args[2], EXPANSION_DIRECTIONS);
-        else if ("delete".equalsIgnoreCase(args[0]) && args.length == 3) // Suggestion for the includeChildren option
-            return filterStartingWith(args[1], Stream.of("true", "false"));
+        }else if ("delete".equalsIgnoreCase(args[0]) && args.length == 3) // Suggestion for the includeChildren option
+            return filterStartingWith(args[2], Stream.of("true", "false"));
 
         // By default return no suggestions
         return Collections.emptyList();
+    }
+
+    // Convert the flags and their meta in the given container into a readable format
+    private static String formatFlags(FlagContainer flags) {
+        return flags.getFlags().entrySet().stream().map(entry -> {
+            return "- " + Utils.formattedName(entry.getKey()) + ": {&(gray)" +
+                    RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n";
+        }).reduce("", String::concat).trim();
     }
 }

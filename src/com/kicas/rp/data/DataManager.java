@@ -13,10 +13,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -40,7 +38,9 @@ public class DataManager implements Listener {
     // These values are used to keep consistency in the serialized data
     public static final byte REGION_FORMAT_VERSION = 0;
     public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
-    public static final String WORLD_REGION_NAME = "__global__";
+    public static final String GLOBAL_FLAG_NAME = "__global__";
+
+    private static final String MOJANG_API_BASE = "https://api.mojang.com";
 
     public DataManager(File rootDir) {
         this.rootDir = rootDir;
@@ -51,18 +51,105 @@ public class DataManager implements Listener {
     }
 
     /**
+     * Fetches the UUID for the given Minecraft username, or returns null if no username could be found. This method
+     * will check for an offline player instance with the given username, and will use the UUID attached to that offline
+     * player if they have played on this server before. If no such offline player could be found, then this method
+     * queries the Mojang API for the UUID associated with the given username.
+     *
+     * @param username the username.
+     * @return the UUID associated with the given username, or null if no such UUID could be found.
+     */
+    @SuppressWarnings("deprecation")
+    public static UUID uuidForUsername(String username) {
+        // Check to see if they've joined before
+        OfflinePlayer op = Bukkit.getOfflinePlayer(username);
+        if (op.hasPlayedBefore())
+            return op.getUniqueId();
+
+        // They have not joined before therefore we'll use the Mojang API
+        try {
+            // Get the URL and open the stream
+            URL url = new URL(MOJANG_API_BASE + "/users/profiles/minecraft/" + username);
+            InputStream in = url.openStream();
+
+            // Read the data
+            byte[] buffer = new byte[39]; // Minimum bytes needed
+            int len = in.read(buffer, 0, buffer.length);
+            in.close();
+
+            // Invalid username check
+            if (len <= 0)
+                return null;
+
+            // Format the UUID with -'s and parse it
+            String unformatted = new String(buffer, 7, 32);
+            return UUID.fromString(String.format("%s-%s-%s-%s-%s", unformatted.substring(0, 8),
+                    unformatted.substring(8, 12), unformatted.substring(12, 16), unformatted.substring(16, 20),
+                    unformatted.substring(20)));
+        } catch (IOException ex) {
+            // Some error occurred, return null
+            return null;
+        }
+    }
+
+    /**
+     * Fetches the current username associated with the given UUID. If the given UUID is not associated with an account,
+     * then null is returned. If a player with the given UUID has joined this server before, then the name in the
+     * offline player class associated with the given UUID is returned. If the a player with the given UUID has not
+     * joined the server before, then the Mojang API is used to lookup the current name for the given UUID.
+     *
+     * @param uuid the uuid.
+     * @return the username associated with the given UUID if one could be found, or null if no associated username
+     * could be found.
+     */
+    public static String currentUsernameForUuid(UUID uuid) {
+        // Check to see if they've joined before
+        OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+        if (op.hasPlayedBefore())
+            return op.getName();
+
+        // They have not joined before therefore we'll use the Mojang API
+        try {
+            // Get the URL and open the stream
+            URL url = new URL(MOJANG_API_BASE + "/user/profiles/" + uuid.toString().replaceAll("-", "") + "/names");
+            InputStream in = url.openStream();
+
+            // Read the data
+            StringBuilder sb = new StringBuilder();
+            int b;
+            while ((b = in.read()) > -1)
+                sb.appendCodePoint(b);
+
+            // Invalid UUID check
+            if (sb.length() == 0)
+                return null;
+
+            // Get the last name (most recent)
+            String data = sb.toString();
+            int index = data.lastIndexOf("\"changedToAt\":");
+            return data.substring(data.lastIndexOf("\"name\":") + 8, (index < 0 ? data.length() - 3 : index - 2));
+        } catch (IOException ex) {
+            // Some error occurred, return null
+            return null;
+        }
+    }
+
+    /**
      * Creates a new player session for the player if one is not already present.
+     *
      * @param event the event.
      */
     @EventHandler(priority = EventPriority.HIGH)
     public synchronized void onPlayerPreJoin(AsyncPlayerPreLoginEvent event) {
-        playerClaimBlocks.putIfAbsent(event.getUniqueId(), 0);
+        playerClaimBlocks.putIfAbsent(event.getUniqueId(),
+                RegionProtection.getRPConfig().getInt("general.starting-claim-blocks"));
         playerSessionCache.put(event.getUniqueId(), new PlayerSession(event.getUniqueId(),
                 playerClaimBlocks.get(event.getUniqueId())));
     }
 
     /**
      * Deletes the cached player session for the given player.
+     *
      * @param event the event.
      */
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -74,14 +161,15 @@ public class DataManager implements Listener {
     /**
      * Sets the second region as a child of the first. The priority of the child region will be modified so it is at
      * least the value of the parent region, and the child region will adopt the ownership of the parent region.
+     *
      * @param parent the parent region.
-     * @param child the child region.
+     * @param child  the child region.
      */
     public synchronized void associate(Region parent, Region child) {
         worlds.get(child.getWorld().getUID()).regions.remove(child);
-        if(child.getPriority() < parent.getPriority())
+        if (child.getPriority() < parent.getPriority())
             child.setPriority(parent.getPriority());
-        if(child.getPriority() == parent.getPriority())
+        if (child.getPriority() == parent.getPriority())
             child.setFlags(parent.getFlags());
         child.setOwner(parent.getOwner());
         child.setParent(parent);
@@ -90,6 +178,7 @@ public class DataManager implements Listener {
 
     /**
      * Returns all the regions in a given world without a parent.
+     *
      * @param world the world.
      * @return all the regions in a given world without a parent.
      */
@@ -101,30 +190,47 @@ public class DataManager implements Listener {
         return worlds.get(world.getUID());
     }
 
-    public List<String> getRegionNames(World world) {
+    /**
+     * Returns a list of region names including the names of child regions while excluding names which are null or empty
+     * strings. If this method is called with include global name set to trust, then the resulting list will include
+     * the name denoting the global flags for a world.
+     *
+     * @param world             the world.
+     * @param includeGlobalName whether or not the include the name for the global flags of a world.
+     * @return a list of region names including the names of child regions while excluding names which are null or empty
+     * strings.
+     */
+    public List<String> getRegionNames(World world, boolean includeGlobalName) {
         List<String> names = new LinkedList<>();
-        names.add(WORLD_REGION_NAME);
-        worlds.get(world.getUID()).regions.forEach(region -> {
-            if(region.getRawName() != null && !region.getRawName().isEmpty())
+
+        if (includeGlobalName)
+            names.add(GLOBAL_FLAG_NAME);
+
+        // Add the filtered names
+        worlds.get(world.getUID()).regions.stream().filter(region -> region.getRawName() != null &&
+                !region.getRawName().isEmpty()).forEach(region -> {
             names.add(region.getRawName());
+            // Add the children's names
             region.getChildren().stream().map(Region::getRawName).forEach(names::add);
         });
+
         return names;
     }
 
     /**
      * Gets a region by the given name and returns it.
+     *
      * @param world the world that contains the region.
-     * @param name the name of the region.
+     * @param name  the name of the region.
      * @return the region with the given name in the given world, or null if it could not be found.
      */
     public synchronized Region getRegionByName(World world, String name) {
-        for(Region region : worlds.get(world.getUID()).regions) {
-            if(region.getRawName().equals(name))
+        for (Region region : worlds.get(world.getUID()).regions) {
+            if (region.getRawName().equals(name))
                 return region;
 
-            for(Region child : region.getChildren()) {
-                if(child.getRawName().equals(name))
+            for (Region child : region.getChildren()) {
+                if (child.getRawName().equals(name))
                     return child;
             }
         }
@@ -134,13 +240,14 @@ public class DataManager implements Listener {
 
     /**
      * Returns a list of regions that contain the specified location.
+     *
      * @param location the location.
      * @return a list of regions that contain the specified location.
      */
     public synchronized List<Region> getRegionsAt(Location location) {
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
-                ((long)(location.getBlockX() >> 7)) << 32 |
-                ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL)
+                ((long) (location.getBlockX() >> 7)) << 32 |
+                        ((long) (location.getBlockZ() >> 7) & 0xFFFFFFFFL)
         );
 
         return regions == null ? Collections.emptyList() : regions.stream().filter(region -> region.contains(location))
@@ -149,13 +256,14 @@ public class DataManager implements Listener {
 
     /**
      * Identical to the getRegionsAt method except this method does not take into account y-axis restrictions.
+     *
      * @param location the location.
      * @return a list of regions the contain the x and z value of the given location.
      */
     public synchronized List<Region> getRegionsAtIgnoreY(Location location) {
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
-                ((long)(location.getBlockX() >> 7)) << 32 |
-                        ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL)
+                ((long) (location.getBlockX() >> 7)) << 32 |
+                        ((long) (location.getBlockZ() >> 7) & 0xFFFFFFFFL)
         );
 
         return regions == null ? Collections.emptyList() : regions.stream().filter(region ->
@@ -163,11 +271,11 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Checks to see if there is a potential conflict of region flags by moving from the first specified location to the
-     * second.
+     * Checks to see if the set of regions at each location differ from each other in any way.
+     *
      * @param from the original location.
-     * @param to the destination location.
-     * @return true, if there is a conflict of flags, false otherwise.
+     * @param to   the destination location.
+     * @return true if the set of regions at each location differ, false otherwise.
      */
     public synchronized boolean crossesRegions(Location from, Location to) {
         return !getRegionsAt(from).equals(getRegionsAt(to));
@@ -175,6 +283,7 @@ public class DataManager implements Listener {
 
     /**
      * Returns the highest priority region at the given location.
+     *
      * @param location the location.
      * @return the highest priority region at the given location.
      */
@@ -186,6 +295,7 @@ public class DataManager implements Listener {
 
     /**
      * Returns a list of the regions at the given location which do not have a parent.
+     *
      * @param location the location.
      * @return a list of the regions at the given location which do not have a parent.
      */
@@ -196,43 +306,44 @@ public class DataManager implements Listener {
 
     /**
      * Gets the flags present at a certain location, accounting for region priorities and global flags.
+     *
      * @param location the location.
      * @return the fkags at the specified location, or null if no flags are present.
      */
     public synchronized FlagContainer getFlagsAt(Location location) {
         FlagContainer worldFlags = worlds.get(location.getWorld().getUID());
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
-                ((long)(location.getBlockX() >> 7)) << 32 |
-                ((long)(location.getBlockZ() >> 7) & 0xFFFFFFFFL)
+                ((long) (location.getBlockX() >> 7)) << 32 |
+                        ((long) (location.getBlockZ() >> 7) & 0xFFFFFFFFL)
         );
 
         // Quick check for an absence of regions
-        if(regions == null)
+        if (regions == null)
             return worldFlags.isEmpty() ? null : worldFlags;
 
         // Filter out the regions that are near the location but don't contain it
         regions = regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
-        if(regions.isEmpty())
+        if (regions.isEmpty())
             return worldFlags.isEmpty() ? null : worldFlags;
 
         // Another quick check to avoid computation
-        if(regions.size() == 1 && worldFlags.isEmpty())
+        if (regions.size() == 1 && worldFlags.isEmpty())
             return regions.get(0);
 
         // Copy the region flags (highest priority first), and take the ownership of the highest priority region
         FlagContainer flags = new FlagContainer(null);
         regions.stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
             region.getFlags().forEach((flag, meta) -> {
-                if(!flags.hasFlag(flag))
+                if (!flags.hasFlag(flag))
                     flags.setFlag(flag, meta);
             });
-            if(flags.getOwner() == null)
+            if (flags.getOwner() == null)
                 flags.setOwner(region.getOwner());
         });
 
         // Copy the world flags
         worldFlags.getFlags().forEach((flag, meta) -> {
-            if(!flags.hasFlag(flag))
+            if (!flags.hasFlag(flag))
                 flags.setFlag(flag, meta);
         });
 
@@ -242,17 +353,19 @@ public class DataManager implements Listener {
     /**
      * Attempts to create a claim with the provided verticies and the specified player as the owner. The provided
      * verticies do not need to be minimums and maximums respecively, however they will be assumed to be diagonally
-     * opposite from one another. The created region will extend from y=62 to the maximum world height (if the claim is
-     * not in the overworld the claim will automatically extend from y=0 to world height). The following checks are done
-     * to see if the claim can be created:
+     * opposite from one another. The created region will extend from y=62 to the maximum world height if in the
+     * overworld, else the claim will extend from y=0 to world height. The following conditions are tested to ensure the
+     * claim can be safely created:
      * <ul>
-     *     <li>Collisions with regions that do not allow overlap (excluding child regions)</li>
-     *     <li>The player not having enough claim blocks</li>
-     *     <li>The claim is smaller than the minimum claim size</li>
+     * <li>Collisions with regions that do not allow overlap (excluding child regions)</li>
+     * <li>A side being less than three blocks in length</li>
+     * <li>The player not having enough claim blocks</li>
+     * <li>The claim having a smaller than the minimum claim size</li>
      * </ul>
-     * If any of these checks fail, then the player will be notified with a message and null will be returned. Upon
-     * successful creation of the claim, the player will have the area of the claim subtracted from their claim blocks
-     * and that region will be returned.
+     * If any of these conditions are found, then the player will be notified with an error message and null will be
+     * returned. Upon successful creation of the claim, the player will have the area of the claim subtracted from their
+     * claim blocks and the created region will be registered and returned.
+     *
      * @param creator the player creating the claim.
      * @param vertex1 the first claim vertex.
      * @param vertex2 the second claim vertex.
@@ -270,34 +383,38 @@ public class DataManager implements Listener {
         Region region = new Region(null, 0, creator.getUniqueId(), min, max, null);
 
         // checkCollisions sends an error message to the creator
-        if(!checkCollisions(creator, region))
+        if (!checkCollisions(creator, region))
+            return null;
+
+        // Also sends the error message
+        if (!checkSides(creator, region))
             return null;
 
         // Check claim blocks
         PlayerSession ps = playerSessionCache.get(creator.getUniqueId());
         long area = region.area();
-        if(area > ps.getClaimBlocks()) {
+        if (area > ps.getClaimBlocks()) {
             creator.sendMessage(ChatColor.RED + "You need " + (area - ps.getClaimBlocks()) +
                     " more claim blocks to create this claim.");
             return null;
         }
 
         // Check to make sure it's at least the minimum area
-        if(area < RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) {
+        if (area < RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) {
             creator.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at least " +
                     RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
             return null;
         }
 
         // Modify claim blocks
-        ps.subtractClaimBlocks((int)area);
+        ps.subtractClaimBlocks((int) area);
         // The default is full-trust, so make sure no one has trust
-        region.setFlag(RegionFlag.TRUST, TrustMeta.EMPTY_TRUST_META);
+        region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST);
         // Make sure overlap is not allowed
         region.setFlag(RegionFlag.OVERLAP, false);
         // Register the claim
         worlds.get(creator.getWorld().getUID()).regions.add(region);
-        addRegionToLookupTable(region, true);
+        addRegionToLookupTable(region, false);
 
         return region;
     }
@@ -306,9 +423,10 @@ public class DataManager implements Listener {
      * Simply creates an administrator-owned region with the given vertices. This method checks to ensure that there is
      * no overlap with other regions that do not allow overlap. This method does not register the region, this should be
      * done in the tryRegisterRegion method.
+     *
      * @param delegate the creator of the region.
-     * @param vertex1 the first vertex.
-     * @param vertex2 the second vertex.
+     * @param vertex1  the first vertex.
+     * @param vertex2  the second vertex.
      * @return the region, or null if the region could not be created.
      */
     public Region tryCreateAdminRegion(Player delegate, Location vertex1, Location vertex2) {
@@ -322,7 +440,7 @@ public class DataManager implements Listener {
         Region region = new Region(min, max);
 
         // checkCollisions sends an error message to the creator
-        if(!checkCollisions(delegate, region))
+        if (!checkCollisions(delegate, region))
             return null;
 
         return region;
@@ -333,24 +451,25 @@ public class DataManager implements Listener {
      * region should not be assigned to a parent region then the given parent name should be null. If the given parent
      * name is not null and the name is valid, then the given region will be associated to the region with the given
      * parent name according to the associate method in this class. Upon failure to register the region, the given
-     * delegate will be notified with an error message and null will be returned.
-     * @param delegate the player registering the region.
-     * @param region the region to register.
-     * @param name the name of the region.
-     * @param priority the priority of the region.
+     * delegate will be notified with an error message and false will be returned.
+     *
+     * @param delegate   the player registering the region.
+     * @param region     the region to register.
+     * @param name       the name of the region.
+     * @param priority   the priority of the region.
      * @param parentName the name of the parent of the region, or null if the region should not have a parent.
      * @return true if the registration was successful, false otherwise.
      */
     public synchronized boolean tryRegisterRegion(Player delegate, Region region, String name, int priority,
                                                   String parentName) {
         // Make sure the name is free
-        if(getRegionByName(region.getWorld(), name) != null) {
+        if (getRegionByName(region.getWorld(), name) != null) {
             delegate.sendMessage(ChatColor.RED + "A region with that name already exists.");
             return false;
         }
 
         // Make sure the __global__ region is not overwritten
-        if(WORLD_REGION_NAME.equals(name)) {
+        if (GLOBAL_FLAG_NAME.equals(name)) {
             delegate.sendMessage(ChatColor.RED + "This region name is reserved.");
             return false;
         }
@@ -361,12 +480,12 @@ public class DataManager implements Listener {
         addRegionToLookupTable(region, true);
 
         // Adding it to the region list is only needed if it's not a child region
-        if(parentName == null)
+        if (parentName == null)
             worlds.get(region.getWorld().getUID()).regions.add(region);
-        else{ // Have the parent region manage this region
+        else { // Have the parent region manage this region
             // Check to make sure the name is valid
             Region parent = getRegionByName(region.getWorld(), parentName);
-            if(parent == null) {
+            if (parent == null) {
                 delegate.sendMessage(ChatColor.RED + "Could not find a region with name \n" + parentName + "\".");
                 return false;
             }
@@ -381,21 +500,24 @@ public class DataManager implements Listener {
      * Attempts to modify the size of a given claim, which can be a sub-claim. This method does not check to ensure that
      * the provided player has permission to modify the size of the claim, this check should be performed outside of
      * this method. The two given locations are the original location and new location of any vertex of the claim. The
-     * following checks are done to a claim which has no parent:
+     * following conditions are tested to ensure the claim can be resized safely:
      * <ul>
-     *     <li>Collisions with regions that do not allow overlap (excluding child regions)</li>
-     *     <li>The player not having enough claim blocks</li>
-     *     <li>The new claim size is smaller than the minimum claim area</li>
-     *     <li>Any children are no longer fully contained within the parent region</li>
+     * <li>Collisions with regions that do not allow overlap (excluding child regions)</li>
+     * <li>A side being less than three blocks in length</li>
+     * <li>The player not having enough claim blocks</li>
+     * <li>The new claim size being smaller than the minimum claim size</li>
+     * <li>Any children no longer being fully contained within the parent region</li>
      * </ul>
-     * The only check performed to a subdivision is to ensure it is still completely contained within the parent claim.
-     * If any of these checks fail, then the player will be notified with a message and false will be returned. Upon
-     * successful resizing of the claim, the owner of the claim will gain or lose claim blocks depending on the change
-     * in area of the claim and true will be returned.
-     * @param delegate the player resizing the claim.
-     * @param claim the claim to resize.
+     * The first two conditions above are tested for all regions, while the rest are only tested for
+     * non-administrator-owned parent claims. The only unique check performed to a subdivision is to ensure it is still
+     * completely contained within the parent claim. If any of these coniditons are found, then the player will be
+     * notified with an error message and false will be returned. Upon successful resizing of the claim, the owner of
+     * the claim will gain or lose claim blocks depending on the change in area of the claim and true will be returned.
+     *
+     * @param delegate       the player resizing the claim.
+     * @param claim          the claim to resize.
      * @param originalVertex the original vertex of the claim.
-     * @param newVertex the new location of the vertex.
+     * @param newVertex      the new location of the vertex.
      * @return true if the resizing was successful, false otherwise.
      */
     public synchronized boolean tryResizeClaim(Player delegate, Region claim, Location originalVertex,
@@ -406,8 +528,8 @@ public class DataManager implements Listener {
         // Resize the claim
         claim.moveVertex(originalVertex, newVertex);
 
-        // Manage collisions, claim blocks, exclaving of subdivisions
-        if(!resizeChecks(delegate, claim, bounds))
+        // Manage collisions, sides, claim blocks, and exclaving of subdivisions
+        if (!resizeChecks(delegate, claim, bounds))
             return false;
 
         readdRegionToLookupTable(claim, bounds);
@@ -416,18 +538,20 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Attempts to expand the given region in the given direction by the given amount.
-     * @param delegate the player expanding the region.
-     * @param region the region to expand.
+     * Attempts to expand the given region in the given direction by the given amount. This method should only be used
+     * for administrator-owned regions.
+     *
+     * @param delegate  the player expanding the region.
+     * @param region    the region to expand.
      * @param direction the direction in which to expand the region.
-     * @param amount the amount by which to expand the region.
+     * @param amount    the amount by which to expand the region.
      * @return true if the region was successfull expanded, false otherwise.
      */
     public synchronized boolean tryExpandRegion(Player delegate, Region region, BlockFace direction, int amount) {
         Pair<Location, Location> bounds = region.getBounds();
 
         // Perform the size modification
-        switch(direction) {
+        switch (direction) {
             case UP:
                 region.getMax().add(0, amount, 0);
                 break;
@@ -458,7 +582,7 @@ public class DataManager implements Listener {
                 return false;
         }
 
-        if(!resizeChecks(delegate, region, bounds))
+        if (!resizeChecks(delegate, region, bounds))
             return false;
 
         // Make sure the bounds are still correct
@@ -474,20 +598,22 @@ public class DataManager implements Listener {
      * that the provided player has permission to subdivide this claim, this check should be performed outside of this
      * method. The provided verticies do not need to be minimums and maximums respecively, however they will be assumed
      * to be diagonally opposite from one another. The created subdivision will adopt the ownership of the given claim,
-     * as well as the minimum y-value of the given claim. The following checks are done to see if the subdivision can be
-     * created:
+     * as well as the minimum y-value of the given claim. The following conditions are tested to see if the subdivision
+     * cannot be created:
      * <ul>
-     *     <li>Incomplete containment of the subdivision within the given claim</li>
-     *     <li>Collisions with other subdivisions</li>
-     *     <li>An area smaller than the minimum subdivision area</li>
+     * <li>Incomplete containment of the subdivision within the given claim</li>
+     * <li>Collisions with other subdivisions</li>
+     * <li>A side being less than three blocks in length</li>
+     * <li>An area smaller than the minimum subdivision area</li>
      * </ul>
      * If any of these checks fail, then the player will be notified with a message and null will be returned. Upon
-     * successful subdividing of the claim, the subdivision will be child with the given region, and will have a
+     * successful subdividing of the claim, the subdivision will becoma a child of the given region, and will have a
      * higher priority than the given region.
+     *
      * @param delegate the creator of the subdivision.
-     * @param claim the claim to subdivide.
-     * @param vertex1 the first vertex of the subdivision.
-     * @param vertex2 the second vertex of the subdivision.
+     * @param claim    the claim to subdivide.
+     * @param vertex1  the first vertex of the subdivision.
+     * @param vertex2  the second vertex of the subdivision.
      * @return the subdivision, or null if the subdivision could not be created.
      */
     public synchronized Region tryCreateSubdivision(Player delegate, Region claim, Location vertex1, Location vertex2) {
@@ -502,17 +628,21 @@ public class DataManager implements Listener {
         associate(claim, region);
 
         // Check for complete containment
-        if(!claim.contains(region)) {
+        if (!claim.contains(region)) {
             delegate.sendMessage(ChatColor.RED + "A claim subdivision must be completely within the parent claim.");
             return null;
         }
 
         // Check for collisions with other subdivisions
-        if(!checkCollisions(delegate, region))
+        if (!checkCollisions(delegate, region))
+            return null;
+
+        // Make sure the sides are the minimum length
+        if (!checkSides(delegate, region))
             return null;
 
         // Area check
-        if(region.area() < RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size")) {
+        if (region.area() < RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size")) {
             delegate.sendMessage(ChatColor.RED + "A claim subdivision must have an area of at least " +
                     RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size") + " blocks.");
             return null;
@@ -524,37 +654,51 @@ public class DataManager implements Listener {
         return region;
     }
 
+    /**
+     * Attempts to transfer the ownership of the given region to the new, given owner. A transfer of ownership also
+     * involves a transfer of claim blocks where the original owner gains the claim blocks used to create the claim and
+     * the new owner has those blocks subtracted. If the new owner does not haven enough claim blocks then the transfer
+     * fails and the delegate is notified with a message. Administrator-owned regions cannot have their ownership
+     * transferred.
+     *
+     * @param delegate      the player performing the transfer.
+     * @param region        the region to transfer ownership.
+     * @param newOwner      the new owner of the region.
+     * @param transferTrust whether or not to keep the trust flag through the transfer.
+     * @return true if the transfer was successful, false otherwise.
+     */
     public boolean tryTransferOwnership(Player delegate, Region region, UUID newOwner, boolean transferTrust) {
-        if(region.isAdminOwned()) {
+        if (region.isAdminOwned()) {
             delegate.sendMessage(ChatColor.RED + "You cannot transfer the ownership of an admin owned region.");
             return false;
         }
 
-        if(region.area() > getClaimBlocks(newOwner)) {
+        if (region.area() > getClaimBlocks(newOwner)) {
             delegate.sendMessage(ChatColor.RED + "This player does not have enough claim blocks to take ownership of " +
                     "this claim.");
             return false;
         }
 
-        if(!transferTrust) {
-            region.setFlag(RegionFlag.TRUST, TrustMeta.EMPTY_TRUST_META);
+        if (!transferTrust) {
+            region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST);
             region.getChildren().forEach(child -> child.deleteFlag(RegionFlag.TRUST));
         }
 
-        modifyClaimBlocks(region.getOwner(), (int)region.area());
-        modifyClaimBlocks(newOwner, -(int)region.area());
+        modifyClaimBlocks(region.getOwner(), (int) region.area());
+        modifyClaimBlocks(newOwner, -(int) region.area());
         region.setOwner(newOwner);
 
         return true;
     }
 
     /**
-     * Deletes the given region. This will remove the region from the list and the lookup table, and the same operation
-     * will be performed on all the regions children if includeChildren is set to true. Upon successful deletion of the
-     * region, if the given region has no parent and is not owned by an administrator then the owner will regain the
-     * claim blocks used to create the given region.
-     * @param delegate the player deleting the region.
-     * @param region the region.
+     * Attempts to delete the given region. This will remove the region from the list and the lookup table, and the same
+     * operation will be performed on all the regions children if includeChildren is set to true. Upon successful
+     * deletion of the region, if the given region has no parent and is not owned by an administrator then the owner
+     * will regain the claim blocks used to create the given region.
+     *
+     * @param delegate        the player deleting the region.
+     * @param region          the region.
      * @param includeChildren whether or not to delete the regions children as well.
      * @return true if the region was successfully deleted, false otherwise.
      */
@@ -562,42 +706,55 @@ public class DataManager implements Listener {
         return tryDeleteRegion(delegate, region, includeChildren, true);
     }
 
-    public synchronized void tryDeleteRegions(Player delegate, Predicate<Region> filter, boolean includeChildren) {
-        Iterator<Region> itr = worlds.get(delegate.getWorld().getUID()).regions.iterator();
+    /**
+     * Attempts to delete the regions in the given world the match the given predicate. Only parent regions are tested
+     * with the given filter.
+     *
+     * @param delegate        the player deleting the regions.
+     * @param world           the world to delete the regions from.
+     * @param filter          the filter by which to determine which regions should be deleted.
+     * @param includeChildren whether or not to include the children of the regions that match the given filter.
+     */
+    public synchronized void tryDeleteRegions(Player delegate, World world, Predicate<Region> filter,
+                                              boolean includeChildren) {
+        Iterator<Region> itr = worlds.get(world.getUID()).regions.iterator();
         Region region;
-        while(itr.hasNext()) {
+        while (itr.hasNext()) {
             region = itr.next();
-            if(filter.test(region) && tryDeleteRegion(delegate, region, includeChildren, false))
+            if (filter.test(region) && tryDeleteRegion(delegate, region, includeChildren, false))
                 itr.remove();
         }
     }
 
+    // Actually performs the deletion of the given region. The removal of the given region from the lookup table always
+    // occurs however the regions will not be removed from its world's list unless the unregister parameter is true.
+    // This also includes the removal of child regions from their parent.
     private boolean tryDeleteRegion(Player delegate, Region region, boolean includeChildren, boolean unregister) {
-        if(!region.getChildren().isEmpty()) {
-            if(includeChildren) {
+        if (!region.getChildren().isEmpty()) {
+            if (includeChildren) {
                 region.getChildren().forEach(child -> tryDeleteRegion(delegate, child, false, false));
                 region.getChildren().clear();
-            }else{
+            } else {
                 delegate.sendMessage(ChatColor.RED + "This region has subdivisions which must be removed first.");
                 return false;
             }
         }
 
         // Unregister the region and modify claim blocks
-        if(region.hasParent()) {
-            if(unregister)
+        if (region.hasParent()) {
+            if (unregister)
                 region.getParent().getChildren().remove(region);
-        }else {
-            if(unregister)
+        } else {
+            if (unregister)
                 worlds.get(region.getWorld().getUID()).regions.remove(region);
-            if(!region.isAdminOwned())
+            if (!region.isAdminOwned())
                 modifyClaimBlocks(region.getOwner(), (int) region.area());
         }
 
         // Remove the region from the lookup table
-        for(int x = region.getMin().getBlockX() >> 7;x <= region.getMax().getBlockX() >> 7;++ x) {
-            for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
-                lookupTable.get(region.getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL))
+        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
+            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
+                lookupTable.get(region.getWorld().getUID()).get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL))
                         .remove(region);
             }
         }
@@ -609,21 +766,27 @@ public class DataManager implements Listener {
     // given bounds if those constraints are violated
     private boolean resizeChecks(Player delegate, Region region, Pair<Location, Location> bounds) {
         // checkCollisions sends the error message to the player
-        if(!checkCollisions(delegate, region)) {
+        if (!checkCollisions(delegate, region)) {
+            region.setBounds(bounds);
+            return false;
+        }
+
+        // Also sends an error message to the delegate
+        if (!checkSides(delegate, region)) {
             region.setBounds(bounds);
             return false;
         }
 
         // Admin regions do not require the following checks
-        if(region.isAdminOwned())
+        if (region.isAdminOwned())
             return true;
 
         // Regular claims
         if (!region.hasParent()) {
             // Check claim blocks
             int claimBlocks = getClaimBlocks(region.getOwner());
-            long areaDiff = region.area() - ((long)bounds.getSecond().getBlockX() - bounds.getFirst().getBlockX()) *
-                    ((long)bounds.getSecond().getBlockZ() - bounds.getFirst().getBlockZ());
+            long areaDiff = region.area() - ((long) bounds.getSecond().getBlockX() - bounds.getFirst().getBlockX()) *
+                    ((long) bounds.getSecond().getBlockZ() - bounds.getFirst().getBlockZ());
             if (areaDiff > claimBlocks) {
                 region.setBounds(bounds);
                 delegate.sendMessage(ChatColor.RED + "You need " + (areaDiff - claimBlocks) +
@@ -652,7 +815,7 @@ public class DataManager implements Listener {
             }
 
             // Modify claim blocks
-            modifyClaimBlocks(region.getOwner(), -(int)areaDiff);
+            modifyClaimBlocks(region.getOwner(), -(int) areaDiff);
         } else { // Subdivisions
             // Check to make sure the subdivision is still completely within the parent claim
             if (!region.getParent().contains(region)) {
@@ -683,11 +846,11 @@ public class DataManager implements Listener {
     private boolean checkCollisions(Player delegate, Region region) {
         List<Region> collisions = new LinkedList<>();
         // Build a list of collisions from the lookup table
-        for(int x = region.getMin().getBlockX() >> 7;x <= region.getMax().getBlockX() >> 7;++ x) {
-            for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
+        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
+            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
                 List<Region> regions = lookupTable.get(region.getWorld().getUID())
-                        .get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL));
-                if(regions != null) {
+                        .get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL));
+                if (regions != null) {
                     // Ignore associations to prevent conflict with subdivisions
                     regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.overlaps(region) &&
                             !r.equals(region) && !r.isAssociated(region)).forEach(collisions::add);
@@ -695,7 +858,7 @@ public class DataManager implements Listener {
             }
         }
 
-        if(!collisions.isEmpty()) {
+        if (!collisions.isEmpty()) {
             delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
             playerSessionCache.get(delegate.getUniqueId()).setRegionHighlighter(new RegionHighlighter(delegate,
                     collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
@@ -705,8 +868,20 @@ public class DataManager implements Listener {
         return true;
     }
 
+    // Ensures that each side of the given region is at leas three blocks long
+    private boolean checkSides(Player delegate, Region region) {
+        if (region.getMax().getBlockX() - region.getMin().getBlockX() < 3 ||
+                region.getMax().getBlockZ() - region.getMin().getBlockZ() < 3) {
+            delegate.sendMessage(ChatColor.RED + "All sides of your claim must be at least three blocks long.");
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * Returns a player session for the given player.
+     *
      * @param player the player.
      * @return a player session for the given player.
      */
@@ -714,13 +889,28 @@ public class DataManager implements Listener {
         return playerSessionCache.get(player.getUniqueId());
     }
 
+    /**
+     * Returns the current number of claim blocks associated with the given UUID. If no claim blocks are associated with
+     * the given uuid, then 0 is returned.
+     *
+     * @param uuid the player's UUID.
+     * @return the number of claim blocks associated with the given UUID, or 0 if there are no claim blocks associated
+     * with the given UUID.
+     */
     public synchronized int getClaimBlocks(UUID uuid) {
         return playerSessionCache.containsKey(uuid) ? playerSessionCache.get(uuid).getClaimBlocks()
                 : playerClaimBlocks.getOrDefault(uuid, 0);
     }
 
+    /**
+     * Modifies the number of claim blocks associated with the given UUID by adding the given amount to the current
+     * number of claim blocks.
+     *
+     * @param uuid   the player's UUID.
+     * @param amount the amount by which to modify the player's claim blocks.
+     */
     public synchronized void modifyClaimBlocks(UUID uuid, int amount) {
-        if(playerSessionCache.containsKey(uuid))
+        if (playerSessionCache.containsKey(uuid))
             playerSessionCache.get(uuid).addClaimBlocks(amount);
         else
             playerClaimBlocks.put(uuid, playerClaimBlocks.getOrDefault(uuid, 0) + amount);
@@ -740,24 +930,24 @@ public class DataManager implements Listener {
         // Load data for each world
         try {
             File regionsFile = new File(rootDir.getAbsolutePath() + File.separator + "regions.dat");
-            if(!regionsFile.exists())
+            if (!regionsFile.exists())
                 regionsFile.createNewFile();
-            else{
+            else {
                 Decoder decoder = new Decoder(new FileInputStream(regionsFile));
                 int format = decoder.read();
-                if(format != REGION_FORMAT_VERSION)
+                if (format != REGION_FORMAT_VERSION)
                     throw new RuntimeException("Could not load regions file since it uses format version " + format +
                             " and is not up to date.");
                 int worldCount = decoder.read();
-                while(worldCount > 0) {
+                while (worldCount > 0) {
                     WorldData wd = new WorldData(null);
                     wd.deserialize(decoder);
                     wd.regions.forEach(region -> addRegionToLookupTable(region, true));
                     worlds.put(wd.worldUid, wd);
-                    -- worldCount;
+                    --worldCount;
                 }
             }
-        }catch(Throwable ex) {
+        } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file: " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -765,21 +955,21 @@ public class DataManager implements Listener {
         // Load player data
         try {
             File playerDataFile = new File(rootDir.getAbsolutePath() + File.separator + "playerdata.dat");
-            if(!playerDataFile.exists())
+            if (!playerDataFile.exists())
                 playerDataFile.createNewFile();
-            else{
+            else {
                 Decoder decoder = new Decoder(new FileInputStream(playerDataFile));
                 int format = decoder.read();
-                if(format != PLAYER_DATA_FORMAT_VERSION)
+                if (format != PLAYER_DATA_FORMAT_VERSION)
                     throw new RuntimeException("Could not load player data file since it uses format version " +
                             format + " and is not up to date.");
                 int len = decoder.readCompressedUint();
-                while(len > 0) {
+                while (len > 0) {
                     playerClaimBlocks.put(decoder.readUuid(), decoder.readCompressedUint());
-                    -- len;
+                    --len;
                 }
             }
-        }catch(Throwable ex) {
+        } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file: " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -794,35 +984,35 @@ public class DataManager implements Listener {
         // Save world data
         try {
             File regionsFile = new File(rootDir.getAbsolutePath() + File.separator + "regions.dat");
-            if(!regionsFile.exists())
+            if (!regionsFile.exists())
                 regionsFile.createNewFile();
             Encoder encoder = new Encoder(new FileOutputStream(regionsFile));
             encoder.write(REGION_FORMAT_VERSION);
             encoder.write(worlds.size());
-            for(WorldData wd : worlds.values())
+            for (WorldData wd : worlds.values())
                 wd.serialize(encoder);
-        }catch(IOException ex) {
+        } catch (IOException ex) {
             RegionProtection.error("Failed to save regions file: " + ex.getMessage());
             ex.printStackTrace();
         }
 
         // Save player data
+
         // Dump the cache data into the serialized map
         playerSessionCache.forEach((uuid, ps) -> playerClaimBlocks.put(uuid, ps.getClaimBlocks()));
-
         // Actually save the data to disc
         try {
             File playerDataFile = new File(rootDir.getAbsolutePath() + File.separator + "playerdata.dat");
-            if(!playerDataFile.exists())
+            if (!playerDataFile.exists())
                 playerDataFile.createNewFile();
             Encoder encoder = new Encoder(new FileOutputStream(playerDataFile));
             encoder.write(PLAYER_DATA_FORMAT_VERSION);
             encoder.writeCompressedUint(playerClaimBlocks.size());
-            for(Map.Entry<UUID, Integer> entry : playerClaimBlocks.entrySet()) {
+            for (Map.Entry<UUID, Integer> entry : playerClaimBlocks.entrySet()) {
                 encoder.writeUuid(entry.getKey());
                 encoder.writeCompressedUint(entry.getValue());
             }
-        }catch(IOException ex) {
+        } catch (IOException ex) {
             RegionProtection.error("Failed to save player data file: " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -833,24 +1023,24 @@ public class DataManager implements Listener {
     private void addRegionToLookupTable(Region region, boolean includeChildren) {
         Map<Long, List<Region>> worldTable = lookupTable.get(region.getWorld().getUID());
         Long key;
-        for(int x = region.getMin().getBlockX() >> 7;x <= region.getMax().getBlockX() >> 7;++ x) {
-            for(int z = region.getMin().getBlockZ() >> 7;z <= region.getMax().getBlockZ() >> 7;++ z) {
-                key = ((long)x) << 32 | (((long)z & 0xFFFFFFFFL));
-                if(!worldTable.containsKey(key))
+        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
+            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
+                key = ((long) x) << 32 | (((long) z & 0xFFFFFFFFL));
+                if (!worldTable.containsKey(key))
                     worldTable.put(key, new ArrayList<>());
                 worldTable.get(key).add(region);
             }
         }
 
-        if(includeChildren)
+        if (includeChildren)
             region.getChildren().forEach(r -> addRegionToLookupTable(r, false));
     }
 
     private void readdRegionToLookupTable(Region region, Pair<Location, Location> oldBounds) {
         // Remove the old claim from the lookup table
-        for(int x = oldBounds.getFirst().getBlockX() >> 7;x <= oldBounds.getSecond().getBlockX() >> 7;++ x) {
-            for(int z = oldBounds.getFirst().getBlockZ() >> 7;z <= oldBounds.getSecond().getBlockZ() >> 7;++ z) {
-                lookupTable.get(region.getWorld().getUID()).get((((long)x) << 32) | ((long)z & 0xFFFFFFFFL))
+        for (int x = oldBounds.getFirst().getBlockX() >> 7; x <= oldBounds.getSecond().getBlockX() >> 7; ++x) {
+            for (int z = oldBounds.getFirst().getBlockZ() >> 7; z <= oldBounds.getSecond().getBlockZ() >> 7; ++z) {
+                lookupTable.get(region.getWorld().getUID()).get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL))
                         .remove(region);
             }
         }
@@ -874,7 +1064,7 @@ public class DataManager implements Listener {
             encoder.writeUuid(worldUid);
             super.serialize(encoder);
             encoder.writeCompressedUint(regions.size());
-            for(Region region : regions)
+            for (Region region : regions)
                 region.serialize(encoder);
         }
 
@@ -884,11 +1074,11 @@ public class DataManager implements Listener {
             super.deserialize(decoder);
             World world = Bukkit.getWorld(worldUid);
             int len = decoder.readCompressedUint();
-            while(len > 0) {
+            while (len > 0) {
                 Region region = new Region(world);
                 region.deserialize(decoder);
                 regions.add(region);
-                -- len;
+                --len;
             }
         }
     }

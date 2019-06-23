@@ -1,6 +1,7 @@
 package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
+import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.ChatColor;
@@ -8,11 +9,16 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Allow players to view a list of the claims they have in their current world, including the x and z location as well
+ * as the number of claim blocks the take up. Players with OP can specify which player's claim list they wish to view.
+ */
 public class CommandClaimList extends Command {
     CommandClaimList() {
-        super("claimlist", "Show the list of claims that you own.", "/claimlist", "claimslist");
+        super("claimlist", "Show the list of claims that you own.", "/claimlist [player]", "claimslist");
     }
 
     @Override
@@ -23,12 +29,17 @@ public class CommandClaimList extends Command {
             return true;
         }
 
-        List<Region> claimlist = RegionProtection.getDataManager().getRegionsInWorld(((Player)sender).getWorld())
-                .stream().filter(region -> !region.isAdminOwned() && region.isOwner((Player)sender))
-                .collect(Collectors.toList());
+        // Get the owner in question
+        UUID uuid = args.length > 0 && sender.isOp() ? DataManager.uuidForUsername(args[0])
+                : ((Player)sender).getUniqueId();
 
-        TextUtils.sendFormatted(sender, "&(gold)You have {&(aqua)%0} $(inflect,noun,0,claim) in this world:",
-                claimlist.size());
+        // Build the list
+        List<Region> claimlist = RegionProtection.getDataManager().getRegionsInWorld(((Player)sender).getWorld())
+                .stream().filter(region -> !region.isAdminOwned() && region.isOwner(uuid)).collect(Collectors.toList());
+
+        // Format the list and send it to the player
+        TextUtils.sendFormatted(sender, "&(gold)%0 {&(aqua)%1} $(inflect,noun,1,claim) in this world:",
+                uuid.equals(((Player)sender).getUniqueId()) ? "You have" : args[0] + " has", claimlist.size());
         claimlist.forEach(region -> TextUtils.sendFormatted(sender, "&(gold)%0x, %1z: %2 claim blocks",
                 (int)(0.5 * (region.getMin().getX() + region.getMax().getX())),
                 (int)(0.5 * (region.getMin().getZ() + region.getMax().getZ())),

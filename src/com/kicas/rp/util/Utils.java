@@ -12,6 +12,8 @@ import java.util.function.Function;
  * Contains various unrelated utility functions.
  */
 public final class Utils {
+    public static final UUID UUID_00 = new UUID(0, 0);
+
     private static final Map<String, String> WORLD_NAME_ALIASES = new HashMap<>();
 
     static {
@@ -62,7 +64,7 @@ public final class Utils {
     @SuppressWarnings("unchecked")
     public static <E extends Enum<E>> E valueOfFormattedName(String name, Class<E> clazz) {
         return (E)safeValueOf(enumName -> ReflectionHelper.invoke("valueOf", clazz, null, enumName),
-                name.replaceAll("\\-", "_").toUpperCase());
+                name.replaceAll("-", "_").toUpperCase());
     }
 
     /**
@@ -92,19 +94,6 @@ public final class Utils {
                 split[i] = Character.toUpperCase(split[i].charAt(0)) + split[i].substring(1).toLowerCase();
         }
         return String.join(" ", split);
-    }
-
-    /**
-     * Returns the UUID associated with the given username, or null if the given username is invalid.
-     *
-     * @param username the username.
-     * @return the UUID associated with the given username, or null if the given username is invalid.
-     */
-    @SuppressWarnings("deprecation")
-    public static UUID uuidForUsername(String username) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(username);
-        // This is the only check that appears to work to validate a username
-        return Bukkit.getOfflinePlayer(op.getUniqueId()).getName() == null ? null : op.getUniqueId();
     }
 
     /**

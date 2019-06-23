@@ -84,7 +84,7 @@ public abstract class Command extends org.bukkit.command.Command {
     }
 
     protected void showUsage(CommandSender sender) {
-        sender.sendMessage("Usage: " + getUsage());
+        sender.sendMessage(ChatColor.RED + "Usage: " + getUsage());
     }
 
     /**
@@ -93,8 +93,7 @@ public abstract class Command extends org.bukkit.command.Command {
      * @return a list of the currently online players whose name starts with the given partial name.
      */
     public static List<String> getOnlinePlayers(String partialName) {
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName)
-                .filter(name -> name.toLowerCase().startsWith(partialName.toLowerCase())).collect(Collectors.toList());
+        return filterStartingWith(partialName, Bukkit.getOnlinePlayers().stream().map(Player::getName));
     }
 
     /**
@@ -111,11 +110,25 @@ public abstract class Command extends org.bukkit.command.Command {
         return String.join(delim, data);
     }
 
+    /**
+     * Filters the given stream by removing null or empty strings, or strings who do not start with the given prefix
+     * (ignoring case).
+     * @param prefix the prefix to match.
+     * @param stream the stream to filter.
+     * @return the list of values left after the stream has been filtered.
+     */
     public static List<String> filterStartingWith(String prefix, Stream<String> stream) {
         return stream.filter(s -> s != null && !s.isEmpty() && s.toLowerCase().startsWith(prefix.toLowerCase()))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Filters the given string list by removing null or empty strings, or strings who do not start with the given
+     * prefix (ignoring case). This method is equivalent to calling filterStartingWith(prefix, strings.stream()).
+     * @param prefix the prefix to match.
+     * @param strings the strings to filter.
+     * @return the list of values left after the strings have been filtered.
+     */
     public static List<String> filterStartingWith(String prefix, Collection<String> strings) {
         return filterStartingWith(prefix, strings.stream());
     }

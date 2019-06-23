@@ -11,6 +11,9 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Allows a player to take ownership of an expired claim if they have enough claim blocks.
+ */
 public class CommandSteal extends Command {
     CommandSteal() {
         super("steal", "Take ownership of an expired claim if you have enough claim blocks.", "/steal");

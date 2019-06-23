@@ -124,6 +124,7 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("general.minimum-claim-size", 100);
         config.addDefault("general.minimum-subdivision-size", 25);
         config.addDefault("general.minimum-subdivision-height", 5);
+        config.addDefault("general.starting-claim-blocks", 100);
         config.addDefault("general.claim-blocks-gained-per-hour", 512);
         config.addDefault("general.claim-expiration-time", 60);
         config.addDefault("general.enable-claim-stealing", false);

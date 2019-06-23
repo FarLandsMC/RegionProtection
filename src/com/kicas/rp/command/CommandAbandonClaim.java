@@ -6,7 +6,6 @@ import com.kicas.rp.data.PlayerSession;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionHighlighter;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -44,7 +43,7 @@ public class CommandAbandonClaim extends Command {
             }
 
             // Make sure the player has permission
-            if (!claim.isOwner(player)) {
+            if (!claim.isEffectiveOwner(player)) {
                 sender.sendMessage(ChatColor.RED + "You do not have permission to delete this claim.");
                 return true;
             }
@@ -55,13 +54,13 @@ public class CommandAbandonClaim extends Command {
                         : " You now have " + ps.getClaimBlocks() + " claim blocks."));
                 ps.setRegionHighlighter(null);
             } else { // Failed deletion due to subclaims present, show those claims
-                ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), Material.GLOWSTONE,
-                        Material.NETHERRACK, false));
+                ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), null, null, false));
             }
         } else { // Abandon all claims including their subdivisions
-            dm.tryDeleteRegions(player, region -> region.isOwner(player) && !region.isAdminOwned(), true);
+            dm.tryDeleteRegions(player, player.getWorld(), region -> region.isEffectiveOwner(player) &&
+                    !region.isAdminOwned() && !ps.isIgnoringTrust(), true);
 
-            sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in your current world. You now have " +
+            sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in this world. You now have " +
                     ps.getClaimBlocks() + " claim blocks.");
         }
 

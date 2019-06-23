@@ -22,14 +22,12 @@ import java.util.List;
  * * send to the nearest unclaimed block
  */
 public class CommandExpel extends Command {
-    
     CommandExpel() {
         super("expel", "Expel a player from your claim.", "/expel <player>");
     }
     
     @Override
     protected boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
-    
         // Sender check
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
@@ -51,11 +49,10 @@ public class CommandExpel extends Command {
         }
     
         // Make sure the owner isn't trying to expel themselves
-        if (claim.isOwner((Player) sender) && sender.getName().equals(args[0])) {
+        if (claim.isEffectiveOwner((Player) sender) && sender.getName().equals(args[0])) {
             sender.sendMessage(ChatColor.RED + "You cannot expel yourself from your own claim.");
             return true;
         }
-        
 
         // Check the player exists
         Player player = Bukkit.getPlayer(args[0]);
@@ -64,14 +61,15 @@ public class CommandExpel extends Command {
             return true;
         }
         
-        // find a safe place to send the player
+        // Find a safe place to send the player
         int w = claim.getMax().getBlockX() - claim.getMin().getBlockX(),
                 l = claim.getMax().getBlockZ() - claim.getMin().getBlockZ();
-        Location ejection = claim.getMin().add(w >> 1, 0, l >> 1); // center x,z of the claim
+        Location ejection = claim.getMin().clone().add(w >> 1, 0, l >> 1); // center x,z of the claim
         
-        // expel the player
+        // Expel the player
         player.teleport(walk(ejection, ejection.getBlockX() < 0 ? w : -w, ejection.getBlockZ() < 0 ? l : -l));
         sender.sendMessage("Expelled player " + player.getName() + " from your claim");
+
         return true;
     }
     
@@ -83,21 +81,24 @@ public class CommandExpel extends Command {
     
     private static Location walk(Location location, int dx, int dz) {
         Location temp = findSafe(location.add(dx, 0, dz));
-        while (temp == null) {
+        while (temp == null)
             temp = findSafe(location.add(dx, 0, dz));
-        }
         return temp;
     }
     
     private static boolean doesDamage(Block b) {
-        return b.getType().isSolid() || b.isLiquid() || Arrays.asList(Material.FIRE, Material.CACTUS).contains(b.getType());
+        return b.getType().isSolid() || b.isLiquid() || Arrays.asList(Material.FIRE, Material.CACTUS)
+                .contains(b.getType());
     }
+
     private static boolean canStand(Block b) { // if a player can safely stand here
         // (you can drown in water but you can also float and for this case swimming is safe enough)
         return !(b.isPassable() || Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(b.getType())) ||
                 b.getType().equals(Material.WATER);
     }
-    private static boolean isSafe(Location l) { // if block below is solid and 2 blocks in player collision do not do damage
+
+    // if block below is solid and 2 blocks in player collision do not do damage
+    private static boolean isSafe(Location l) {
         return !(doesDamage(l.add(0, 1, 0).getBlock()) || doesDamage(l.add(0, 1, 0).getBlock()));
     }
     
@@ -107,6 +108,7 @@ public class CommandExpel extends Command {
         return findSafe(l, Math.max(1, l.getBlockY() - 8), Math.min(l.getBlockY() + 7,
                 l.getWorld().getName().equals("world_nether") ? 126 : 254));
     }
+
     private static Location findSafe(final Location origin, int s, int e) {
         Location safe = origin.clone();
         if (canStand(safe.getBlock()) && isSafe(safe.clone()))

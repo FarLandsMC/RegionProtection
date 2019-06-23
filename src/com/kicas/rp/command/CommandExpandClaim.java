@@ -37,7 +37,7 @@ public class CommandExpandClaim extends Command {
         }
 
         // Permission check
-        if(!claim.isOwner((Player)sender)) {
+        if(!claim.isEffectiveOwner((Player)sender)) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to expand this claim.");
             return true;
         }

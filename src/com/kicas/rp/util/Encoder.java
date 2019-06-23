@@ -177,9 +177,9 @@ public class Encoder implements Flushable, Closeable {
     }
 
     /**
-     * Writes a compressed length (unsigned integer) to the output stream. This algorithm precedes the bytes
-     * representing the length with various markers dictating how long the number is, allowing the length to take up
-     * less space if its numerical value is relatively small. The length will be mapped like so:
+     * Writes an unsigned integer to the output stream after it is compressed. This algorithm precedes the bytes
+     * representing the integer with various markers dictating how long the number is, allowing the integer to take up
+     * less space if its numerical value is relatively small. The given integer will be mapped like so:
      * <ul>
      * <li>i &lt; 64 -&gt; 1 byte</li>
      * <li>i &lt; 16,384 -&gt; 2 bytes</li>
@@ -187,7 +187,7 @@ public class Encoder implements Flushable, Closeable {
      * <li>else -&gt; 4 bytes</li>
      * </ul>
      *
-     * @param i the length to write.
+     * @param i the unsigned integer to write.
      * @throws IOException If an I/O error occurs.
      */
     public void writeCompressedUint(int i) throws IOException {
@@ -214,23 +214,50 @@ public class Encoder implements Flushable, Closeable {
         }
     }
 
+    /**
+     * Writes a signed integer to the output stream after it is compressed. This algorithm precedes the bytes
+     * representing the integer with various markers dictating how long the number is, allowing the integer to take up
+     * less space if its numerical value is relatively small. The given integer will be mapped like so:
+     * <ul>
+     * <li>|i| &lt; 32 -&gt; 1 byte</li>
+     * <li>|i| &lt; 8,192 -&gt; 2 bytes</li>
+     * <li>|i| &lt; 2,097,152 -&gt; 3 bytes</li>
+     * <li>else -&gt; 4 bytes</li>
+     * </ul>
+     *
+     * @param i the unsigned integer to write.
+     * @throws IOException If an I/O error occurs.
+     */
     public void writeCompressedInt(int i) throws IOException {
-        int absi = i < 0 ? ~i : i;
-        int sb = i < 0 ? 0x20 : 0;
-        if (absi < 0x20) {
-            out.write(sb | absi & 0x1F);
-        }else if (absi < 0x2000) {
-            out.write(0x40 | sb | absi >>> 8);
-            out.write(absi & 0xFF);
-        } else if (absi < 0x200000) {
-            out.write(0x80 | sb | absi >>> 16 & 0x1F);
-            out.write(absi >> 8 & 0xFF);
-            out.write(absi & 0xFF);
+        /* Format of first byte in sequence (x is an unknown bit)
+         * length   format
+         * 1 byte:  00sxxxxx
+         * 2 bytes: 01sxxxxx
+         * 3 bytes: 10sxxxxx
+         * 4 bytes: 11sxxxxx
+         * s: sign bit */
+
+        // Sign bit
+        int sb = 0;
+        if (i < 0) {
+            i = ~i;
+            sb = 0x20;
+        }
+
+        if (i < 0x20) {
+            out.write(sb | i & 0x1F);
+        } else if (i < 0x2000) {
+            out.write(0x40 | sb | i >>> 8);
+            out.write(i & 0xFF);
+        } else if (i < 0x200000) {
+            out.write(0x80 | sb | i >>> 16 & 0x1F);
+            out.write(i >> 8 & 0xFF);
+            out.write(i & 0xFF);
         } else {
-            out.write(0xC0 | sb | absi >>> 24 & 0x1F);
-            out.write(absi >> 16 & 0xFF);
-            out.write(absi >> 8 & 0xFF);
-            out.write(absi & 0xFF);
+            out.write(0xC0 | sb | i >>> 24 & 0x1F);
+            out.write(i >> 16 & 0xFF);
+            out.write(i >> 8 & 0xFF);
+            out.write(i & 0xFF);
         }
     }
 

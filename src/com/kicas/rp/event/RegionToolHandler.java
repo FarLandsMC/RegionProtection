@@ -89,7 +89,7 @@ public class RegionToolHandler implements Listener {
                             ps.setLastClickedBlock(null);
                             event.setCancelled(true);
                             return;
-                        }else if (!region.isOwner(player)) { // Actions on the parent claim require ownership
+                        }else if (!region.isEffectiveOwner(player)) { // Actions on the parent claim require ownership
                             player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
                             ps.setLastClickedBlock(null);
                             event.setCancelled(true);

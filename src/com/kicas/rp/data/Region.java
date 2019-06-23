@@ -41,7 +41,7 @@ public class Region extends FlagContainer implements Serializable {
 
     // Create an admin region
     public Region(Location min, Location max) {
-        this(null, 0, new UUID(0, 0), min, max, null);
+        this(null, 0, Utils.UUID_00, min, max, null);
     }
 
     // For deserialization
@@ -119,6 +119,12 @@ public class Region extends FlagContainer implements Serializable {
 
     public void setParent(Region parent) {
         this.parent = parent;
+    }
+
+    @Override
+    public void setOwner(UUID owner) {
+        super.setOwner(owner);
+        children.forEach(child -> child.setOwner(owner));
     }
 
     /**
@@ -322,18 +328,6 @@ public class Region extends FlagContainer implements Serializable {
     /**
      * Sets the flag of this region and child regions of the same priority to the given value.
      * @param flag the flag.
-     * @param allow the value.
-     */
-    @Override
-    public void setFlag(RegionFlag flag, boolean allow) {
-        super.setFlag(flag, allow);
-        children.stream().filter(region -> priority == region.getPriority())
-                .forEach(region -> region.setFlag(flag, allow));
-    }
-
-    /**
-     * Sets the flag of this region and child regions of the same priority to the given value.
-     * @param flag the flag.
      * @param meta the value.
      */
     @Override
@@ -351,8 +345,9 @@ public class Region extends FlagContainer implements Serializable {
     @Override
     public void serialize(Encoder encoder) throws IOException {
         encoder.writeUTF8Raw(name == null ? "" : name);
-        encoder.write(priority);
-        if(parent == null)
+        int meta = (isAdminOwned() ? 0x80 : 0) | Utils.constrain(priority, 0, 127);
+        encoder.write(meta);
+        if(parent == null && !isAdminOwned())
             encoder.writeUuid(owner);
 
         encoder.writeCompressedInt(min.getBlockX());
@@ -374,9 +369,10 @@ public class Region extends FlagContainer implements Serializable {
     @Override
     public void deserialize(Decoder decoder) throws IOException {
         name = decoder.readUTF8Raw();
-        priority = decoder.read();
+        int meta = decoder.read();
+        priority = meta & 0x7F;
         if(parent == null)
-            owner = decoder.readUuid();
+            owner = (meta & 0x80) != 0 ? Utils.UUID_00 : decoder.readUuid();
 
         min = new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());
         max = new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());

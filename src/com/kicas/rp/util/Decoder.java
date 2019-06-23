@@ -154,7 +154,7 @@ public class Decoder implements Closeable {
     /**
      * Decompresses an unsigned integer as encoded by the <code>writeCompressedUint</code> method in the encoder class.
      *
-     * @return the decoded length.
+     * @return the decoded unsigned integer.
      * @throws IOException If an I/O error occurs.
      */
     public int readCompressedUint() throws IOException {
@@ -173,6 +173,13 @@ public class Decoder implements Closeable {
         }
     }
 
+    /**
+     * Decompresses a signed integer from the input stream as encoded by the <code>writeCompressedInt</code> method in
+     * the encoder class.
+     *
+     * @return the decoded integer.
+     * @throws IOException if an I/O error occurs.
+     */
     public int readCompressedInt() throws IOException {
         int b0 = in.read();
         int val;
