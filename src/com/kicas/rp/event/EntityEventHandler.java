@@ -155,6 +155,7 @@ public class EntityEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
         if(flags == null)
             return;
+
         event.setCancelled(event.getEntity() instanceof Tameable && ((Tameable) event.getEntity()).isTamed() &&
                 !flags.isAllowed(RegionFlag.FOLLOW));
     }
@@ -168,9 +169,11 @@ public class EntityEventHandler implements Listener {
     public void onEntityTarget(EntityTargetEvent event) {
         if (event.getTarget() == null)
             return;
+
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTarget().getLocation());
         if(flags == null)
             return;
+
         event.setCancelled(flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_AGGRO).isAllowed(event.getEntity().getType()));
     }
 }

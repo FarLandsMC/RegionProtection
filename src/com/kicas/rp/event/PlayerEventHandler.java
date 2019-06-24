@@ -40,7 +40,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerBreakBlock(BlockBreakEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if(flags == null)
+        if(flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
         
         // Check admin flag first
@@ -78,6 +78,9 @@ public class PlayerEventHandler implements Listener {
 
             return;
         }
+
+        if(flags.isEffectiveOwner(event.getPlayer()))
+            return;
 
         // Check admin flag first
         if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_PLACE).isAllowed(event.getBlock().getType())) {
@@ -117,8 +120,9 @@ public class PlayerEventHandler implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         if(event.getClickedBlock() == null)
             return;
+
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
-        if(flags == null)
+        if(flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
     
         Material blockType = event.getClickedBlock().getType();
@@ -272,7 +276,7 @@ public class PlayerEventHandler implements Listener {
         // Messages are only sent if the main-hand is used to prevent duplicate message sending
 
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getRightClicked().getLocation());
-        if(flags == null)
+        if(flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
         
         // Handle breaking leash hitches
@@ -372,27 +376,29 @@ public class PlayerEventHandler implements Listener {
 
         // Only check trust for non-hostile entities
         if(event.getDamager() instanceof Player) {
-            if (Entities.isHostile((Player) event.getDamager(), event.getEntity())) {
-                // OP flag to deny damage to hostiles
-                if(!flags.isAllowed(RegionFlag.HOSTILE_DAMAGE)) {
-                    event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
-                    event.setCancelled(true);
-                    return;
-                }
-                
-                // Build trust
-                if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(),
-                        TrustLevel.BUILD, flags)) {
-                    event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-                    event.setCancelled(true);
-                    return;
-                }
-            } else if (Entities.isPassive((Player) event.getDamager(), event.getEntity())) {
-                // OP flag to deny damage to non-hostiles
-                if(!flags.isAllowed(RegionFlag.ANIMAL_DAMAGE)) {
-                    event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
-                    event.setCancelled(true);
-                    return;
+            if(!flags.isEffectiveOwner((Player)event.getDamager())) {
+                if (Entities.isHostile((Player) event.getDamager(), event.getEntity())) {
+                    // OP flag to deny damage to hostiles
+                    if (!flags.isAllowed(RegionFlag.HOSTILE_DAMAGE)) {
+                        event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
+                        event.setCancelled(true);
+                        return;
+                    }
+
+                    // Build trust
+                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(),
+                            TrustLevel.BUILD, flags)) {
+                        event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                        event.setCancelled(true);
+                        return;
+                    }
+                } else if (Entities.isPassive((Player) event.getDamager(), event.getEntity())) {
+                    // OP flag to deny damage to non-hostiles
+                    if (!flags.isAllowed(RegionFlag.ANIMAL_DAMAGE)) {
+                        event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
+                        event.setCancelled(true);
+                        return;
+                    }
                 }
             }
 
@@ -434,7 +440,7 @@ public class PlayerEventHandler implements Listener {
         if(flags == null)
             return;
 
-        if(event.getAttacker() instanceof Player) {
+        if(event.getAttacker() instanceof Player && !flags.isEffectiveOwner((Player)event.getAttacker())) {
             if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
                     .isAllowed(Materials.forEntity(event.getVehicle()))) {
                 event.getAttacker().sendMessage(ChatColor.RED + "You can't break that here.");
@@ -481,7 +487,8 @@ public class PlayerEventHandler implements Listener {
             return;
 
         if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
-                .isAllowed(Materials.forEntity(event.getEntity()))) {
+                .isAllowed(Materials.forEntity(event.getEntity())) && !(event.getRemover() instanceof Player &&
+                flags.isEffectiveOwner((Player)event.getRemover()))) {
             if(event.getRemover() instanceof Player)
                 event.getRemover().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
@@ -539,7 +546,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerBedEnter(PlayerBedEnterEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBed().getLocation());
-        if (flags == null)
+        if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
         
         if (!flags.isAllowed(RegionFlag.BED_ENTER)) {
