@@ -80,8 +80,14 @@ public class RegionToolHandler implements Listener {
                                     "your claim.");
                         }
                     }else{ // Modify the region at the clicked location
-                        // Permissions check
+                        // Admin regions should be modified through the region command
+                        if(region.isAdminOwned()) {
+                            player.sendMessage(ChatColor.RED + "Administrator-owned regions should be modified " +
+                                    "through the /region command.");
+                            return;
+                        }
 
+                        // Permissions check
                         // Resizing of sub-claims only requires management trust
                         if(region.hasParent() && !region.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player,
                                 TrustLevel.MANAGEMENT, region)) {
@@ -102,7 +108,7 @@ public class RegionToolHandler implements Listener {
                             ps.setCurrentSelectedRegion(region);
                             player.sendMessage(ChatColor.GOLD + "Claim corner selected. Select another block to " +
                                     "resize the claim.");
-                        }else{
+                        }else{ // Subdividing
                             // Make sure they're not subdividing a subdivision
                             if(region.hasParent())
                                 player.sendMessage(ChatColor.RED + "You cannot subdivide this claim further here.");

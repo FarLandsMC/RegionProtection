@@ -18,6 +18,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Manages the storing, querying, serialization, and deserialization of all plugin data except the config.
@@ -59,11 +60,11 @@ public class DataManager implements Listener {
      * @param username the username.
      * @return the UUID associated with the given username, or null if no such UUID could be found.
      */
-    @SuppressWarnings("deprecation")
     public static UUID uuidForUsername(String username) {
         // Check to see if they've joined before
-        OfflinePlayer op = Bukkit.getOfflinePlayer(username);
-        if (op.hasPlayedBefore())
+        OfflinePlayer op = Stream.of(Bukkit.getOfflinePlayers()).filter(p -> username.equals(p.getName())).findAny()
+                .orElse(null);
+        if (op != null)
             return op.getUniqueId();
 
         // They have not joined before therefore we'll use the Mojang API
@@ -104,8 +105,9 @@ public class DataManager implements Listener {
      */
     public static String currentUsernameForUuid(UUID uuid) {
         // Check to see if they've joined before
-        OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
-        if (op.hasPlayedBefore())
+        OfflinePlayer op = Stream.of(Bukkit.getOfflinePlayers()).filter(p -> uuid.equals(p.getUniqueId())).findAny()
+                .orElse(null);
+        if (op != null)
             return op.getName();
 
         // They have not joined before therefore we'll use the Mojang API
