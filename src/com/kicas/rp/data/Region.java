@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

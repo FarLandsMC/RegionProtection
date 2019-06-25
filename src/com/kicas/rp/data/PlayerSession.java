@@ -98,4 +98,11 @@ public class PlayerSession {
     public void setLastClickedBlock(Location lastClickedBlock) {
         this.lastClickedBlock = lastClickedBlock;
     }
+
+    /**
+     * Represents the actions players can be doing regarding regions.
+     */
+    public enum PlayerRegionAction {
+        CREATE_REGION, RESIZE_REGION, SUBDIVIDE_REGION
+    }
 }

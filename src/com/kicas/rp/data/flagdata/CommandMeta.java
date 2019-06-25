@@ -1,4 +1,4 @@
-package com.kicas.rp.data;
+package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.util.Decoder;

@@ -1,7 +1,7 @@
 package com.kicas.rp.event;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.data.EnumFilter;
+import com.kicas.rp.data.flagdata.EnumFilter;
 import com.kicas.rp.data.FlagContainer;
 import com.kicas.rp.data.RegionFlag;
 import com.kicas.rp.util.Entities;

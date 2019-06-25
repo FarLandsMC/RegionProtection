@@ -4,7 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionFlag;
 import com.kicas.rp.data.TrustLevel;
-import com.kicas.rp.data.TrustMeta;
+import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;

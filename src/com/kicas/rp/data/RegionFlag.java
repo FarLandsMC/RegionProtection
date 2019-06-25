@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.data.flagdata.*;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;

@@ -2,6 +2,7 @@ package com.kicas.rp.event;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.data.flagdata.*;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 

@@ -3,6 +3,8 @@ package com.kicas.rp.event;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 
+import com.kicas.rp.data.flagdata.EnumFilter;
+import com.kicas.rp.data.flagdata.TrustMeta;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;

@@ -2,6 +2,7 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.data.flagdata.TrustMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

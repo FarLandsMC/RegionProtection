@@ -1,6 +1,7 @@
-package com.kicas.rp.data;
+package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.RegionProtection;
+import com.kicas.rp.data.*;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Serializable;
@@ -45,8 +46,10 @@ public class TrustMeta implements Serializable {
      * @return true if the given player has the given level of trust, false other wise.
      */
     public boolean hasTrust(Player player, TrustLevel trust, FlagContainer container) {
-        if(container.isEffectiveOwner(player) || RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust())
+        if(container.isEffectiveOwner(player) || RegionProtection.getDataManager().getPlayerSession(player)
+                .isIgnoringTrust()) {
             return true;
+        }
 
         if(container instanceof Region) {
             Region region = (Region)container;

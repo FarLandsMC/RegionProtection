@@ -1,6 +1,7 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.RegionProtection;
+import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Pair;
