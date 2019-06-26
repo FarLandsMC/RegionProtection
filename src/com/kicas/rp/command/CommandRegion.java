@@ -349,6 +349,11 @@ public class CommandRegion extends Command {
                                 .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
                                         ? "!" : "") + Utils.formattedName(e)));
 
+                    case DENY_USE:
+                        return filterStartingWith(args[3], Stream.of(Material.values()).filter(Material::isInteractable)
+                                .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
+                                        ? "!" : "") + Utils.formattedName(e)));
+
                     case ENTER_COMMAND:
                     case EXIT_COMMAND: {
                         // Suggest the allowed senders

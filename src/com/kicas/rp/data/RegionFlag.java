@@ -41,7 +41,8 @@ public enum RegionFlag {
     DENY_COMMAND(StringFilter.class),
     FOLLOW, // prevent pet tp
     DENY_AGGRO(EnumFilter.class), // prevent certain mobs from targeting the player
-    GROWTH; // vine growth grass spread etc
+    GROWTH, // vine growth grass spread etc
+    DENY_USE(EnumFilter.class);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
@@ -88,9 +89,9 @@ public enum RegionFlag {
 
         if(flag.isBoolean())
             metaString = (boolean)meta ? "allow" : "deny";
-        else if(flag == DENY_SPAWN)
+        else if(flag == DENY_SPAWN || flag == DENY_AGGRO)
             metaString = ((EnumFilter)meta).toString(EntityType.class);
-        else if(flag == DENY_PLACE || flag == DENY_BREAK)
+        else if(flag == DENY_PLACE || flag == DENY_BREAK || flag == DENY_USE)
             metaString = ((EnumFilter)meta).toString(Material.class);
         else
             metaString = meta.toString();
@@ -104,13 +105,16 @@ public enum RegionFlag {
                 return TrustMeta.fromString(metaString);
 
             case DENY_SPAWN:
+            case DENY_AGGRO:
                 return EnumFilter.fromString(metaString, EntityType.class);
 
             case DENY_BREAK:
             case DENY_PLACE:
+            case DENY_USE:
                 return EnumFilter.fromString(metaString, Material.class);
 
             case GREETING:
+            case FAREWELL:
                 // The TextUtils.SyntaxException is caught by the execution method wrapping this method
                 return new TextMeta(metaString);
 
@@ -177,5 +181,6 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(FOLLOW, true);
         DEFAULT_VALUES.put(DENY_AGGRO, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(GROWTH, true);
+        DEFAULT_VALUES.put(DENY_USE, EnumFilter.EMPTY_FILTER);
     }
 }

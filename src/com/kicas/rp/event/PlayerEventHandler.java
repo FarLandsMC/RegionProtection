@@ -203,6 +203,13 @@ public class PlayerEventHandler implements Listener {
                 // Handle the opening of block inventory holders
                 if(Materials.isInventoryHolder(blockType) || blockType == Material.ANVIL ||
                         blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
+                    if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_USE).isAllowed(blockType)) {
+                        if(EquipmentSlot.HAND.equals(event.getHand()))
+                            event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+                        event.setCancelled(true);
+                        return;
+                    }
+
                     // Container trust
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER,
                             flags)) {
@@ -216,6 +223,13 @@ public class PlayerEventHandler implements Listener {
 
                 // Handle "doors", redstone inputs
                 if(Materials.changesOnInteraction(blockType)) {
+                    if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_USE).isAllowed(blockType)) {
+                        if(EquipmentSlot.HAND.equals(event.getHand()))
+                            event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+                        event.setCancelled(true);
+                        return;
+                    }
+
                     // Access trust
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
