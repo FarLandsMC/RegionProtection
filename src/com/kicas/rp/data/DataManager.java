@@ -11,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.*;
@@ -138,27 +137,16 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Creates a new player session for the player if one is not already present.
-     *
-     * @param event the event.
-     */
-    @EventHandler(priority = EventPriority.HIGH)
-    public synchronized void onPlayerPreJoin(AsyncPlayerPreLoginEvent event) {
-        playerClaimBlocks.putIfAbsent(event.getUniqueId(),
-                RegionProtection.getRPConfig().getInt("general.starting-claim-blocks"));
-        playerSessionCache.put(event.getUniqueId(), new PlayerSession(event.getUniqueId(),
-                playerClaimBlocks.get(event.getUniqueId())));
-    }
-
-    /**
      * Deletes the cached player session for the given player.
      *
      * @param event the event.
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public synchronized void onPlayerQuit(PlayerQuitEvent event) {
-        playerClaimBlocks.put(event.getPlayer().getUniqueId(), playerSessionCache.remove(event.getPlayer()
-                .getUniqueId()).getClaimBlocks());
+        if(playerSessionCache.containsKey(event.getPlayer().getUniqueId())) {
+            playerClaimBlocks.put(event.getPlayer().getUniqueId(), playerSessionCache.remove(event.getPlayer()
+                    .getUniqueId()).getClaimBlocks());
+        }
     }
 
     /**
@@ -394,7 +382,7 @@ public class DataManager implements Listener {
             return null;
 
         // Check claim blocks
-        PlayerSession ps = playerSessionCache.get(creator.getUniqueId());
+        PlayerSession ps = getPlayerSession(creator);
         long area = region.area();
         if (area > ps.getClaimBlocks()) {
             creator.sendMessage(ChatColor.RED + "You need " + (area - ps.getClaimBlocks()) +
@@ -660,7 +648,7 @@ public class DataManager implements Listener {
         // Check collisions
         if (!collisions.isEmpty()) {
             delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
-            playerSessionCache.get(delegate.getUniqueId()).setRegionHighlighter(new RegionHighlighter(delegate,
+            getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate,
                     collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
             return null;
         }
@@ -838,8 +826,8 @@ public class DataManager implements Listener {
                 region.setBounds(bounds);
                 delegate.sendMessage(ChatColor.RED + "You cannot resize your claim here since some subdivisions are " +
                         "not completely within the parent region.");
-                playerSessionCache.get(delegate.getUniqueId()).setRegionHighlighter(new RegionHighlighter(delegate,
-                        exclaves, Material.GLOWSTONE, Material.NETHERRACK, false));
+                getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, exclaves,
+                        Material.GLOWSTONE, Material.NETHERRACK, false));
                 return false;
             }
 
@@ -851,8 +839,7 @@ public class DataManager implements Listener {
                 region.setBounds(bounds);
                 delegate.sendMessage(ChatColor.RED + "You cannot resize this subdivision here since it exits the " +
                         "parent claim.");
-                playerSessionCache.get(delegate.getUniqueId()).setRegionHighlighter(new RegionHighlighter(delegate,
-                        region.getParent()));
+                getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, region.getParent()));
                 return false;
             }
 
@@ -889,8 +876,8 @@ public class DataManager implements Listener {
 
         if (!collisions.isEmpty()) {
             delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
-            playerSessionCache.get(delegate.getUniqueId()).setRegionHighlighter(new RegionHighlighter(delegate,
-                    collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
+            getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, collisions,
+                    Material.GLOWSTONE, Material.NETHERRACK, false));
             return false;
         }
 
@@ -916,20 +903,29 @@ public class DataManager implements Listener {
      * @return a player session for the given player.
      */
     public synchronized PlayerSession getPlayerSession(Player player) {
-        return playerSessionCache.get(player.getUniqueId());
+        if(playerSessionCache.containsKey(player.getUniqueId()))
+            return playerSessionCache.get(player.getUniqueId());
+        else{
+            playerClaimBlocks.putIfAbsent(player.getUniqueId(),
+                    RegionProtection.getRPConfig().getInt("general.starting-claim-blocks"));
+            PlayerSession ps = new PlayerSession(player.getUniqueId(), playerClaimBlocks.get(player.getUniqueId()));
+            playerSessionCache.put(player.getUniqueId(), ps);
+            return ps;
+        }
     }
 
     /**
      * Returns the current number of claim blocks associated with the given UUID. If no claim blocks are associated with
-     * the given uuid, then 0 is returned.
+     * the given uuid, then the default starting amount is returned.
      *
      * @param uuid the player's UUID.
-     * @return the number of claim blocks associated with the given UUID, or 0 if there are no claim blocks associated
-     * with the given UUID.
+     * @return the number of claim blocks associated with the given UUID, or the default amount if there are no claim
+     * blocks associated with the given UUID.
      */
     public synchronized int getClaimBlocks(UUID uuid) {
         return playerSessionCache.containsKey(uuid) ? playerSessionCache.get(uuid).getClaimBlocks()
-                : playerClaimBlocks.getOrDefault(uuid, 0);
+                : playerClaimBlocks.getOrDefault(uuid, RegionProtection.getRPConfig()
+                        .getInt("general.starting-claim-blocks"));
     }
 
     /**
@@ -942,8 +938,10 @@ public class DataManager implements Listener {
     public synchronized void modifyClaimBlocks(UUID uuid, int amount) {
         if (playerSessionCache.containsKey(uuid))
             playerSessionCache.get(uuid).addClaimBlocks(amount);
-        else
-            playerClaimBlocks.put(uuid, playerClaimBlocks.getOrDefault(uuid, 0) + amount);
+        else {
+            playerClaimBlocks.put(uuid, playerClaimBlocks.getOrDefault(uuid,
+                    RegionProtection.getRPConfig().getInt("general.starting-claim-blocks")) + amount);
+        }
     }
 
     /**

@@ -47,7 +47,7 @@ public class StringFilter implements Serializable {
             return "~";
 
         String base = isWhitelist ? "*" : "";
-        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*,") + String.join(", ", filter.stream()
+        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*, ") + String.join(", ", filter.stream()
                 .map(string -> (isWhitelist ? "!" : "") + string).toArray(String[]::new));
     }
 

@@ -57,7 +57,7 @@ public class EnumFilter implements Serializable {
 
         String base = isWhitelist ? "*" : "";
         Enum<E>[] values = (Enum<E>[])ReflectionHelper.invoke("values", clazz, null);
-        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*,") + String.join(", ", filter.stream()
+        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*, ") + String.join(", ", filter.stream()
                 .map(ordinal -> (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal]))
                 .toArray(String[]::new));
     }
