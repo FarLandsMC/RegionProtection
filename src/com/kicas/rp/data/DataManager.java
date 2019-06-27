@@ -411,30 +411,21 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Simply creates an administrator-owned region with the given vertices. This method checks to ensure that there is
-     * no overlap with other regions that do not allow overlap. This method does not register the region, this should be
-     * done in the tryRegisterRegion method.
+     * Simply creates an administrator-owned region with the given vertices. This method does not register the region,
+     * this should be done in the tryRegisterRegion method.
      *
-     * @param delegate the creator of the region.
      * @param vertex1  the first vertex.
      * @param vertex2  the second vertex.
      * @return the region, or null if the region could not be created.
      */
-    public Region tryCreateAdminRegion(Player delegate, Location vertex1, Location vertex2) {
+    public Region tryCreateAdminRegion(Location vertex1, Location vertex2) {
         // Convert the given verticies into a minimum and maximum vertex
         Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
                 Math.min(vertex1.getY(), vertex2.getY()), Math.min(vertex1.getZ(), vertex2.getZ()));
         Location max = new Location(vertex1.getWorld(), Math.max(vertex1.getX(), vertex2.getX()),
                 Math.max(vertex1.getY(), vertex2.getY()), Math.max(vertex1.getZ(), vertex2.getZ()));
 
-        // Create the region
-        Region region = new Region(min, max);
-
-        // checkCollisions sends an error message to the creator
-        if (!checkCollisions(delegate, region))
-            return null;
-
-        return region;
+        return new Region(min, max);
     }
 
     /**
@@ -468,12 +459,9 @@ public class DataManager implements Listener {
         // Do most of the registration
         region.setName(name);
         region.setPriority(priority);
-        addRegionToLookupTable(region, true);
 
         // Adding it to the region list is only needed if it's not a child region
-        if (parentName == null)
-            worlds.get(region.getWorld().getUID()).regions.add(region);
-        else { // Have the parent region manage this region
+        if (parentName != null) { // Have the parent region manage this region
             // Check to make sure the name is valid
             Region parent = getRegionByName(region.getWorld(), parentName);
             if (parent == null) {
@@ -489,6 +477,17 @@ public class DataManager implements Listener {
 
             associate(parent, region);
         }
+
+        // checkCollisions sends an error message to the creator
+        if (!checkCollisions(delegate, region)) {
+            if(region.hasParent())
+                region.getParent().getChildren().remove(region);
+            return false;
+        }
+
+        if(!region.hasParent())
+            worlds.get(region.getWorld().getUID()).regions.add(region);
+        addRegionToLookupTable(region, false);
 
         return true;
     }
