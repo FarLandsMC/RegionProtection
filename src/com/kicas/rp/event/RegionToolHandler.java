@@ -130,7 +130,7 @@ public class RegionToolHandler implements Listener {
                     switch (ps.getAction()) {
                         case CREATE_REGION: {
                             if (ps.isInAdminRegionMode()) { // Make an admin region
-                                Region region = dm.tryCreateAdminRegion(player, vertex, clickedLocation);
+                                Region region = dm.tryCreateAdminRegion(vertex, clickedLocation);
                                 if (region != null) {
                                     player.sendMessage(ChatColor.GREEN + "Region bounds set. Use the command " +
                                             "\"/region create\" to finish creating the region.");
