@@ -31,6 +31,7 @@ public class CommandHandler implements Listener {
         // Alphabetical order
         registerCommand(new CommandAbandonClaim());
         registerCommand(new CommandAdminRegion());
+        registerCommand(new CommandClaim());
         registerCommand(new CommandClaimBlocks());
         registerCommand(new CommandClaimHeight());
         registerCommand(new CommandClaimList());
