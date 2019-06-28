@@ -69,9 +69,7 @@ public class RegionProtection extends JavaPlugin {
             // Check every hour
             Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
                 Bukkit.getWorlds().forEach(world -> {
-                    dataManager.getRegionsInWorld(world).stream().filter(region ->
-                            region.hasExpired(claimExpirationTime)).forEach(region ->
-                            dataManager.tryDeleteRegion(null, region, true));
+                    dataManager.tryDeleteRegions(null, world, region -> region.hasExpired(claimExpirationTime), true);
                 });
             }, 100L, 60L * 60L * 20L);
         }
