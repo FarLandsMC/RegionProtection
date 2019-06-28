@@ -312,6 +312,8 @@ public class Region extends FlagContainer implements Serializable {
 
             for (UUID uuid : entry.getValue()) {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+                if(offlinePlayer.isOnline())
+                    return false;
                 if (offlinePlayer.getLastPlayed() > mostRecentLogin)
                     mostRecentLogin = offlinePlayer.getLastPlayed();
             }
@@ -319,6 +321,8 @@ public class Region extends FlagContainer implements Serializable {
 
         // Don't forget the owner
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
+        if(offlinePlayer.isOnline())
+            return false;
         if (offlinePlayer.getLastPlayed() > mostRecentLogin)
             mostRecentLogin = offlinePlayer.getLastPlayed();
 
