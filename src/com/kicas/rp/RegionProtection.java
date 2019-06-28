@@ -55,7 +55,7 @@ public class RegionProtection extends JavaPlugin {
 
         // Automatic claim block gaining
         if(claimBlocksGainedPerMinute > 0) {
-            Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
                 Bukkit.getOnlinePlayers().stream().map(dataManager::getPlayerSession)
                         .forEach(ps -> ps.addClaimBlocks(claimBlocksGainedPerMinute));
             }, 0L, 60L * 20L);
