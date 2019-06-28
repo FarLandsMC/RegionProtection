@@ -160,7 +160,8 @@ public class WorldEventHandler implements Listener {
     public void onPortalCreated(PortalCreateEvent event) {
         if(event.getReason() == PortalCreateEvent.CreateReason.NETHER_PAIR) {
             event.setCancelled(event.getBlocks().stream().map(state -> RegionProtection.getDataManager().getFlagsAt(
-                    state.getLocation())).anyMatch(flags -> !flags.isAllowed(RegionFlag.PORTAL_PAIR_FORMATION)));
+                    state.getLocation())).anyMatch(flags -> flags != null &&
+                    !flags.isAllowed(RegionFlag.PORTAL_PAIR_FORMATION)));
         }
     }
 }
