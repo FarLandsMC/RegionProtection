@@ -550,8 +550,11 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerHunger(FoodLevelChangeEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        event.setCancelled(event.getEntity() instanceof Player && flags != null &&
-                flags.isAllowed(RegionFlag.INVINCIBLE));
+        if(flags != null && flags.isAllowed(RegionFlag.INVINCIBLE)) {
+            ((Player)event.getEntity()).setFoodLevel(20);
+            ((Player)event.getEntity()).setSaturation(20.0F);
+            event.setCancelled(true);
+        }
     }
     
     /**

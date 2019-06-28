@@ -173,9 +173,7 @@ public class EntityEventHandler implements Listener {
             return;
 
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTarget().getLocation());
-        if(flags == null)
-            return;
-
-        event.setCancelled(flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_AGGRO).isAllowed(event.getEntity().getType()));
+        event.setCancelled(flags != null &&
+                flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_AGGRO).isAllowed(event.getEntity().getType()));
     }
 }
