@@ -400,7 +400,7 @@ public class DataManager implements Listener {
         // Modify claim blocks
         ps.subtractClaimBlocks((int) area);
         // The default is full-trust, so make sure no one has trust
-        region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST);
+        region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST.copy());
         // Make sure overlap is not allowed
         region.setFlag(RegionFlag.OVERLAP, false);
         // Register the claim
@@ -696,7 +696,7 @@ public class DataManager implements Listener {
         }
 
         if (!transferTrust) {
-            region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST);
+            region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST.copy());
             region.getChildren().forEach(child -> child.deleteFlag(RegionFlag.TRUST));
         }
 

@@ -34,6 +34,12 @@ public class TrustMeta implements Serializable {
         this.publicTrustLevel = publicTrustLevel;
     }
 
+    public TrustMeta copy() {
+        TrustMeta copy = new TrustMeta(publicTrustLevel);
+        copy.trustData.putAll(trustData);
+        return copy;
+    }
+
     /**
      * Returns whether or not the given player has the specified level of trust for the given flag container. If the
      * player's trust level is explicitly defined in this object, then that value is used otherwise it defaults to the
@@ -197,7 +203,7 @@ public class TrustMeta implements Serializable {
         // Trim off any excess whitespace and check for an empty string, resulting in an empty trust meta
         string = string.trim();
         if(string.isEmpty())
-            return NO_TRUST;
+            return NO_TRUST.copy();
 
         // Create the metadata and begin parsing the individual trust levels
         TrustMeta meta = new TrustMeta();
