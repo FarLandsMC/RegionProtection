@@ -148,7 +148,7 @@ public class RegionHighlighter {
 
     // Adds or overwrites the change for the given location and also stores the original data if it's not already stored
     private void putChange(Location location, Material replacement) {
-        if(!location.getChunk().isLoaded())
+        if(player.getLocation().distanceSquared(location) > 10000)
             return;
 
         location = findReplacementLocation(location.clone());
