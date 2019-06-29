@@ -27,6 +27,8 @@ public class EntityEventHandler implements Listener {
      */
     @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        if (event.getEntityType() == EntityType.FALLING_BLOCK)
+            return;
         DataManager dm = RegionProtection.getDataManager();
         FlagContainer flags = dm.getFlagsAt(event.getBlock().getLocation());
         if(flags == null)
