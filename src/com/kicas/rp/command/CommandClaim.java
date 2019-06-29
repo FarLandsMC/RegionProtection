@@ -23,7 +23,7 @@ public class CommandClaim extends Command {
 
         int width = (int)Math.ceil(Math.sqrt(RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) / 2);
         Location center = ((Player)sender).getLocation();
-        Location min = center.clone().subtract(width, 0, width), max = center.clone().add(width, 0, width);
+        Location min = center.clone().subtract(width - 1, 0, width - 1), max = center.clone().add(width, 0, width);
         Region region = RegionProtection.getDataManager().tryCreateClaim((Player)sender, min, max);
         if(region != null) {
             sender.sendMessage(ChatColor.GREEN + "Created a claim at your location.");

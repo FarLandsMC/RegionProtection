@@ -207,7 +207,7 @@ public class Encoder implements Flushable, Closeable {
             out.write(i >>> 8 & 0xFF);
             out.write(i & 0xFF);
         } else {
-            out.write(0xC0 | i >>> 24);
+            out.write(0xC0 | i >>> 24 & 0x3F);
             out.write(i >>> 16 & 0xFF);
             out.write(i >>> 8 & 0xFF);
             out.write(i & 0xFF);
@@ -245,12 +245,12 @@ public class Encoder implements Flushable, Closeable {
         }
 
         if (i < 0x20) {
-            out.write(sb | i & 0x1F);
+            out.write(sb | i);
         } else if (i < 0x2000) {
             out.write(0x40 | sb | i >>> 8);
             out.write(i & 0xFF);
         } else if (i < 0x200000) {
-            out.write(0x80 | sb | i >>> 16 & 0x1F);
+            out.write(0x80 | sb | i >>> 16);
             out.write(i >> 8 & 0xFF);
             out.write(i & 0xFF);
         } else {

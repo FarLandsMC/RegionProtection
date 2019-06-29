@@ -57,7 +57,7 @@ public class RegionHighlighter {
     public void remove() {
         if(player.isOnline()) {
             changes.keySet().forEach(loc -> {
-                if(loc.getChunk().isLoaded()) {
+                if(player.getLocation().distanceSquared(loc) < 10000) {
                     Block block = loc.getBlock();
                     if(block != null)
                         player.sendBlockChange(loc, block.getBlockData());
@@ -66,10 +66,6 @@ public class RegionHighlighter {
         }
 
         Bukkit.getScheduler().cancelTask(removalTaskId);
-    }
-
-    public boolean isComplete() {
-        return complete;
     }
 
     // Initialize the changes and save the original blocks. If the light source or block is null, the default materials
@@ -92,26 +88,26 @@ public class RegionHighlighter {
             putChange(region.getMax().clone().subtract(1, 0, 0), bk);
             putChange(region.getMax().clone().subtract(0, 0, 1), bk);
 
-            Location vertex = new Location(region.getMin().getWorld(), region.getMin().getX(), 0,
+            Location vertex = new Location(region.getWorld(), region.getMin().getX(), 0,
                     region.getMax().getZ());
             putChange(vertex, ls);
             putChange(vertex.clone().add(1, 0, 0), bk);
             putChange(vertex.clone().subtract(0, 0, 1), bk);
 
-            vertex = new Location(region.getMin().getWorld(), region.getMax().getX(), 0, region.getMin().getZ());
+            vertex = new Location(region.getWorld(), region.getMax().getX(), 0, region.getMin().getZ());
             putChange(vertex, ls);
             putChange(vertex.clone().subtract(1, 0, 0), bk);
             putChange(vertex.clone().add(0, 0, 1), bk);
 
             // Sides
             for(int i = region.getMin().getBlockX() + 10;i < region.getMax().getBlockX() - 5;i += 10) {
-                putChange(new Location(region.getMin().getWorld(), i, 0, region.getMin().getZ()), bk);
-                putChange(new Location(region.getMin().getWorld(), i, 0, region.getMax().getZ()), bk);
+                putChange(new Location(region.getWorld(), i, 0, region.getMin().getZ()), bk);
+                putChange(new Location(region.getWorld(), i, 0, region.getMax().getZ()), bk);
             }
 
             for(int i = region.getMin().getBlockZ() + 10;i < region.getMax().getBlockZ() - 5;i += 10) {
-                putChange(new Location(region.getMin().getWorld(), region.getMin().getX(), 0, i), bk);
-                putChange(new Location(region.getMin().getWorld(), region.getMax().getX(), 0, i), bk);
+                putChange(new Location(region.getWorld(), region.getMin().getX(), 0, i), bk);
+                putChange(new Location(region.getWorld(), region.getMax().getX(), 0, i), bk);
             }
 
             if(includeChildren)
@@ -124,14 +120,14 @@ public class RegionHighlighter {
      */
     public void showBlocks() {
         changes.forEach((loc, mat) -> {
-            if(loc.getChunk().isLoaded())
+            if(player.getLocation().distanceSquared(loc) < 10000)
                 player.sendBlockChange(loc, mat.createBlockData());
         });
 
         removalTaskId = Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), () -> {
             if(player.isOnline()) {
                 changes.keySet().forEach(loc -> {
-                    if(loc.getChunk().isLoaded()) {
+                    if(player.getLocation().distanceSquared(loc) < 10000) {
                         Block block = loc.getBlock();
                         if(block != null)
                             player.sendBlockChange(loc, block.getBlockData());
@@ -142,12 +138,19 @@ public class RegionHighlighter {
         }, 20L * 60L).getTaskId();
     }
 
+    public boolean isComplete() {
+        return complete;
+    }
+
     private void setComplete() {
         complete = true;
     }
 
     // Adds or overwrites the change for the given location and also stores the original data if it's not already stored
     private void putChange(Location location, Material replacement) {
+        if(!location.getChunk().isLoaded())
+            return;
+
         location = findReplacementLocation(location.clone());
         changes.put(location, replacement);
     }
