@@ -62,7 +62,7 @@ public class RegionToolHandler implements Listener {
                     ps.setLastClickedBlock(clickedLocation);
 
                     // Subdivisions will be selected first
-                    Region region = dm.getHighestPriorityRegionAt(clickedLocation);
+                    Region region = dm.getHighestPriorityRegionAtIgnoreY(clickedLocation);
 
                     // No region here, make a new one
                     if (region == null || ps.isInAdminRegionMode()) {
