@@ -16,10 +16,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.entity.PlayerLeashEntityEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
@@ -542,7 +539,36 @@ public class PlayerEventHandler implements Listener {
         event.setCancelled(event.getEntity() instanceof Player && flags != null &&
                 flags.isAllowed(RegionFlag.INVINCIBLE));
     }
-    
+
+    /**
+     * Handle the keep inventory and keep xp flags.
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+
+        if(flags != null) {
+            if(flags.hasFlag(RegionFlag.KEEP_INVENTORY))
+                event.setKeepInventory(flags.isAllowed(RegionFlag.KEEP_INVENTORY));
+
+            if(flags.hasFlag(RegionFlag.KEEP_XP))
+                event.setKeepLevel(flags.isAllowed(RegionFlag.KEEP_XP));
+        }
+    }
+
+    /**
+     * Handles artificial respawn location.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW)
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+
+        if(flags != null && flags.hasFlag(RegionFlag.RESPAWN_LOCATION))
+            event.setRespawnLocation(flags.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation());
+    }
+
     /**
      * Handles player hunger for Invincible flag.
      * @param event the event.

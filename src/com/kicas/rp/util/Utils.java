@@ -26,6 +26,11 @@ public final class Utils {
     private Utils() {
     }
 
+    public static String doubleToString(double d, int precision) {
+        int rounder = 10 * precision;
+        return Double.toString(((int)(d * rounder + 0.5)) / (double)rounder);
+    }
+
     public static int constrain(int n, int min, int max) {
         return n < min ? min : (n > max ? max : n);
     }

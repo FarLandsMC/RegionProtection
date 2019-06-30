@@ -1,7 +1,10 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.data.flagdata.*;
+import com.kicas.rp.util.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 
@@ -42,7 +45,10 @@ public enum RegionFlag {
     FOLLOW, // prevent pet tp
     DENY_AGGRO(EnumFilter.class), // prevent certain mobs from targeting the player
     GROWTH, // vine growth grass spread etc
-    DENY_USE(EnumFilter.class);
+    DENY_USE(EnumFilter.class),
+    KEEP_INVENTORY,
+    KEEP_XP,
+    RESPAWN_LOCATION(LocationMeta.class);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
@@ -136,6 +142,52 @@ public enum RegionFlag {
             case DENY_COMMAND:
                 return StringFilter.fromString(metaString);
 
+            // x, y, z, yaw, pitch, world
+            case RESPAWN_LOCATION: {
+                String[] args = metaString.split(" ");
+
+                if(args.length == 1)
+                    throw new IllegalArgumentException("Please provide a y and z value.");
+                else if(args.length == 2)
+                    throw new IllegalArgumentException("Please provide a z value.");
+
+                double x, y, z;
+                try {
+                    x = Double.parseDouble(args[0]);
+                    y = Double.parseDouble(args[1]);
+                    z = Double.parseDouble(args[2]);
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException("Failed to parse coordinate values.");
+                }
+
+                if(args.length == 3)
+                    return new LocationMeta(Bukkit.getWorld("world"), x, y, z);
+
+                if(args.length == 4) {
+                    World world = Bukkit.getWorld(Utils.getWorldName(args[3]));
+                    if(world == null)
+                        throw new IllegalArgumentException("Invalid world name: " + args[3]);
+                    return new LocationMeta(world, x, y, z);
+                }
+
+                float yaw, pitch;
+                try {
+                    yaw = Float.parseFloat(args[3]);
+                    pitch = Float.parseFloat(args[4]);
+                }catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException("Failed to parse rotation values.");
+                }
+
+                if(args.length == 5)
+                    return new LocationMeta(Bukkit.getWorld("world"), x, y, z, yaw, pitch);
+
+                World world = Bukkit.getWorld(Utils.getWorldName(args[5]));
+                if(world == null)
+                    throw new IllegalArgumentException("Invalid world name: " + args[5]);
+
+                return new LocationMeta(world, x, y, z, yaw, pitch);
+            }
+
             default:
                 metaString = metaString.trim();
                 if ("allow".equalsIgnoreCase(metaString) || "yes".equalsIgnoreCase(metaString) ||
@@ -164,7 +216,7 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(HOSTILE_DAMAGE, true);
         DEFAULT_VALUES.put(ANIMAL_DAMAGE, true);
         DEFAULT_VALUES.put(POTION_SPLASH, true);
-        DEFAULT_VALUES.put(FORCE_CHEST_ACCESS, true);
+        DEFAULT_VALUES.put(FORCE_CHEST_ACCESS, false);
         DEFAULT_VALUES.put(PVP, config.getBoolean("player.pvp"));
         DEFAULT_VALUES.put(BED_ENTER, true);
         DEFAULT_VALUES.put(WATER_FLOW, true);
@@ -182,5 +234,8 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(DENY_AGGRO, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(GROWTH, true);
         DEFAULT_VALUES.put(DENY_USE, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(KEEP_INVENTORY, false);
+        DEFAULT_VALUES.put(KEEP_XP, false);
+        DEFAULT_VALUES.put(RESPAWN_LOCATION, null);
     }
 }
