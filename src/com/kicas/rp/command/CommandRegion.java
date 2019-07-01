@@ -5,10 +5,7 @@ import com.kicas.rp.data.*;
 import com.kicas.rp.util.ReflectionHelper;
 import com.kicas.rp.util.TextUtils;
 import com.kicas.rp.util.Utils;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.SimpleCommandMap;
@@ -384,6 +381,26 @@ public class CommandRegion extends Command {
                                         (args[3].contains("*") ? "!" : "") + command));
                     }
 
+                    case RESPAWN_LOCATION: {
+                        switch(args.length) {
+                            case 1:
+                                return Collections.singletonList(Integer.toString(location.getBlockX()));
+                            case 2:
+                                return Collections.singletonList(Integer.toString(location.getBlockY()));
+                            case 3:
+                                return Collections.singletonList(Integer.toString(location.getBlockZ()));
+                            case 4:
+                                if(args[3].matches("[\\d.]+"))
+                                    return Collections.singletonList(Integer.toString((int)location.getYaw()));
+                                else
+                                    return filterStartingWith(args[3], Bukkit.getWorlds().stream().map(World::getName));
+                            case 5:
+                                return Collections.singletonList(Integer.toString((int)location.getPitch()));
+                            case 6:
+                                return filterStartingWith(args[3], Bukkit.getWorlds().stream().map(World::getName));
+                        }
+                    }
+
                     // Boolean flags
                     default:
                         return filterStartingWith(args[3], ALLOW_DENY);
@@ -401,9 +418,8 @@ public class CommandRegion extends Command {
 
     // Convert the flags and their meta in the given container into a readable format
     private static String formatFlags(FlagContainer flags) {
-        return flags.getFlags().entrySet().stream().map(entry -> {
-            return "- " + Utils.formattedName(entry.getKey()) + ": {&(gray)" +
-                    RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n";
-        }).reduce("", String::concat).trim();
+        return flags.getFlags().entrySet().stream().map(entry -> "- " + Utils.formattedName(entry.getKey()) +
+                ": {&(gray)" + RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n").reduce("",
+                String::concat).trim();
     }
 }
