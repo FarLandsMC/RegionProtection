@@ -396,18 +396,18 @@ public class PlayerEventHandler implements Listener {
                         event.setCancelled(true);
                         return;
                     }
-
-                    // Build trust
-                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(),
-                            TrustLevel.BUILD, flags)) {
-                        event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-                        event.setCancelled(true);
-                        return;
-                    }
                 } else if (Entities.isPassive((Player) event.getDamager(), event.getEntity())) {
                     // OP flag to deny damage to non-hostiles
                     if (!flags.isAllowed(RegionFlag.ANIMAL_DAMAGE)) {
                         event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
+                        event.setCancelled(true);
+                        return;
+                    }
+    
+                    // Build trust
+                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(),
+                            TrustLevel.BUILD, flags)) {
+                        event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                         event.setCancelled(true);
                         return;
                     }

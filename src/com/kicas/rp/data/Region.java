@@ -146,8 +146,8 @@ public class Region extends FlagContainer implements Serializable {
      * @return true if the given location is in this region ignoring the y-axis, false otherwise.
      */
     public boolean containsIgnoreY(Location loc) {
-        return loc.getBlockX() >= min.getBlockX() && loc.getBlockZ() >= min.getBlockZ() &&
-                loc.getBlockX() <= max.getBlockX() && loc.getBlockZ() <= max.getBlockZ();
+        return min.getBlockX() <= loc.getBlockX() && loc.getBlockX() <= max.getBlockX() &&
+                min.getBlockZ() <= loc.getBlockZ() && loc.getBlockZ() <= max.getBlockZ();
     }
 
     /**

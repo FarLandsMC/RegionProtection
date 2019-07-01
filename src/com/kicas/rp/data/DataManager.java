@@ -249,7 +249,7 @@ public class DataManager implements Listener {
      * Identical to the getRegionsAt method except this method does not take into account y-axis restrictions.
      *
      * @param location the location.
-     * @return a list of regions the contain the x and z value of the given location.
+     * @return a list of regions that contain the x and z value of the given location.
      */
     public synchronized List<Region> getRegionsAtIgnoreY(Location location) {
         List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
@@ -280,6 +280,18 @@ public class DataManager implements Listener {
      */
     public synchronized Region getHighestPriorityRegionAt(Location location) {
         List<Region> regions = getRegionsAt(location);
+        return regions.isEmpty() ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority))
+                .orElse(null);
+    }
+    
+    /**
+     * Returns the highest priority region at the given location.
+     *
+     * @param location the location.
+     * @return the highest priority region at the given location.
+     */
+    public synchronized Region getHighestPriorityRegionAtIgnoreY(Location location) {
+        List<Region> regions = getRegionsAtIgnoreY(location);
         return regions.isEmpty() ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority))
                 .orElse(null);
     }

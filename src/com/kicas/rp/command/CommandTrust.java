@@ -57,7 +57,7 @@ public class CommandTrust extends Command {
         }
 
         // Make sure the sender is actually standing in a claim
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player)sender).getLocation());
+        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player)sender).getLocation());
         if(claim == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the claim where you wish to trust this person.");
             return true;

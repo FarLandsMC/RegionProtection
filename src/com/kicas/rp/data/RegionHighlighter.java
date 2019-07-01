@@ -52,7 +52,7 @@ public class RegionHighlighter {
     }
 
     /**
-     * Cancles the automatic removal task and removes the client-side changes if the player is online.
+     * Cancels the automatic removal task and removes the client-side changes if the player is online.
      */
     public void remove() {
         if(player.isOnline()) {
