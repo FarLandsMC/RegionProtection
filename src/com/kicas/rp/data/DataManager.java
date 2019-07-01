@@ -629,9 +629,9 @@ public class DataManager implements Listener {
         Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
                 claim.getMin().getBlockY(), Math.min(vertex1.getZ(), vertex2.getZ()));
         Location max = new Location(vertex1.getWorld(), Math.max(vertex1.getX(), vertex2.getX()),
-                vertex1.getWorld().getMaxHeight(), Math.max(vertex1.getZ(), vertex2.getZ()));
+                claim.getMax().getY(), Math.max(vertex1.getZ(), vertex2.getZ()));
 
-        // Create the region add associate it
+        // Create the region and associate it
         Region region = new Region(null, claim.getPriority() + 1, claim.getOwner(), min, max, claim);
 
         // Check for complete containment
