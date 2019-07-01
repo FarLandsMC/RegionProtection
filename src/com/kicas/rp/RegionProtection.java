@@ -73,6 +73,10 @@ public class RegionProtection extends JavaPlugin {
                 });
             }, 100L, 60L * 60L * 20L);
         }
+
+        // Periodically save data in case of crashes (5 minutes)
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, dataManager::save, 5L * 60L * 20L,
+                5L * 60L * 20L);
     }
 
     @Override
