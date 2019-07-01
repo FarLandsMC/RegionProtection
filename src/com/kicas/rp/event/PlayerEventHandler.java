@@ -411,6 +411,14 @@ public class PlayerEventHandler implements Listener {
                         event.setCancelled(true);
                         return;
                     }
+                } else if (Entities.isInventoryHolder(event.getEntityType())) {
+                    // Container trust
+                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getDamager(),
+                            TrustLevel.CONTAINER, flags)) {
+                        event.getDamager().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+                        event.setCancelled(true);
+                        return;
+                    }
                 }
             }
 

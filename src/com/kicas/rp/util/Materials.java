@@ -29,6 +29,7 @@ public class Materials {
         INVENTORY_HOLDERS.addAll(materialsEndingWith("SHULKER_BOX"));
 
         USABLES.addAll(Arrays.asList(BONE_MEAL, ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, PAINTING, ITEM_FRAME));
+        USABLES.addAll(materialsEndingWith("BUCKET"));
         USABLES.addAll(materialsEndingWith("BOAT"));
         USABLES.addAll(materialsEndingWith("MINECART"));
         Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
@@ -118,8 +119,7 @@ public class Materials {
      * @return true if the given material changes when the given tool is used on it, false otherwise.
      */
     public static boolean changesOnUse(Material material, Material tool) {
-        if (CAKE.equals(material) || material.name().endsWith("BUCKET") ||
-                (END_PORTAL_FRAME.equals(material) && ENDER_EYE.equals(tool)))
+        if (CAKE.equals(material) || END_PORTAL_FRAME.equals(material) && ENDER_EYE.equals(tool))
             return true;
 
         if (tool.name().endsWith("AXE"))
