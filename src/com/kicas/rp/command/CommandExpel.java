@@ -5,15 +5,14 @@ import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionFlag;
 import com.kicas.rp.data.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
+import com.kicas.rp.util.Utils;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -66,9 +65,9 @@ public class CommandExpel extends Command {
                 l = claim.getMax().getBlockZ() - claim.getMin().getBlockZ();
         Location ejection = claim.getMin().clone().add(w >> 1, 0, l >> 1); // center x,z of the claim
         
-        // Expel the player
-        player.teleport(walk(ejection, ejection.getBlockX() < 0 ? w : -w, ejection.getBlockZ() < 0 ? l : -l));
-        sender.sendMessage("Expelled player " + player.getName() + " from your claim");
+        // Expel the player // dx dz tend to 0 ~ 0 to avoid world border issues
+        player.teleport(Utils.walk(ejection, ejection.getBlockX() < 0 ? w : -w, ejection.getBlockZ() < 0 ? l : -l));
+        sender.sendMessage(ChatColor.GREEN + "Expelled player " + player.getName() + " from your claim");
 
         return true;
     }
@@ -78,52 +77,4 @@ public class CommandExpel extends Command {
             throws IllegalArgumentException {
         return args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList();
     }
-    
-    private static Location walk(Location location, int dx, int dz) {
-        Location temp = findSafe(location.add(dx, 0, dz));
-        while (temp == null)
-            temp = findSafe(location.add(dx, 0, dz));
-        return temp;
-    }
-    
-    private static boolean doesDamage(Block b) {
-        return b.getType().isSolid() || b.isLiquid() || Arrays.asList(Material.FIRE, Material.CACTUS)
-                .contains(b.getType());
-    }
-
-    private static boolean canStand(Block b) { // if a player can safely stand here
-        // (you can drown in water but you can also float and for this case swimming is safe enough)
-        return !(b.isPassable() || Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(b.getType())) ||
-                b.getType().equals(Material.WATER);
-    }
-
-    // if block below is solid and 2 blocks in player collision do not do damage
-    private static boolean isSafe(Location l) {
-        return !(doesDamage(l.add(0, 1, 0).getBlock()) || doesDamage(l.add(0, 1, 0).getBlock()));
-    }
-    
-    private static Location findSafe(final Location l) {
-        l.setX(l.getBlockX() + .5);
-        l.setZ(l.getBlockZ() + .5);
-        return findSafe(l, Math.max(1, l.getBlockY() - 8), Math.min(l.getBlockY() + 7,
-                l.getWorld().getName().equals("world_nether") ? 126 : 254));
-    }
-
-    private static Location findSafe(final Location origin, int s, int e) {
-        Location safe = origin.clone();
-        if (canStand(safe.getBlock()) && isSafe(safe.clone()))
-            return safe.add(0, .5, 0);
-        do {
-            safe.setY((s + e) >> 1);
-            if (canStand(safe.getBlock())) {
-                if (isSafe(safe.clone()))
-                    return safe.add(0, 1, 0);
-                s = safe.getBlockY();
-            } else
-                e = safe.getBlockY();
-        } while (e - s > 1);
-        safe.getChunk().unload();
-        return null;
-    }
-    
 }

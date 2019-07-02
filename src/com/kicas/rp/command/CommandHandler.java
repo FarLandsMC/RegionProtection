@@ -1,6 +1,7 @@
 package com.kicas.rp.command;
 
 import com.kicas.rp.util.Utils;
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
@@ -42,6 +43,7 @@ public class CommandHandler implements Listener {
         registerCommand(new CommandSteal());
         registerCommand(new CommandClaimTnt());
         registerCommand(new CommandTransferClaim());
+        registerCommand(new CommandTrapped());
         registerCommand(new CommandTrust());
         registerCommand(new CommandTrustList());
     }
