@@ -122,7 +122,8 @@ public class PlayerEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
         if(flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
-    
+
+        Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
         Material blockType = event.getClickedBlock().getType();
         switch(event.getAction()) {
             // Disable fire extinguishing and dragon egg punching.
@@ -166,8 +167,6 @@ public class PlayerEventHandler implements Listener {
                     }
                     return;
                 }
-    
-                Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
 
                 if((heldItem == Material.FLINT_AND_STEEL || heldItem == Material.FIRE_CHARGE) &&
                         blockType == Material.TNT && !flags.isAllowed(RegionFlag.TNT)) {
@@ -178,7 +177,7 @@ public class PlayerEventHandler implements Listener {
                 
                 // Handle the placing of entities and other items as well as other changes that happen when the player's
                 // held item is used on the clicked block.
-                if(Materials.isUsable(heldItem) || Materials.changesOnUse(blockType, heldItem)) {
+                if(Materials.isPlaceable(heldItem) || Materials.changesOnUse(blockType, heldItem)) {
                     // Deny placement of boats, paintings, etc.
                     if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_PLACE).isAllowed(heldItem)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
@@ -200,13 +199,6 @@ public class PlayerEventHandler implements Listener {
                 // Handle the opening of block inventory holders
                 if(Materials.isInventoryHolder(blockType) || blockType == Material.ANVIL ||
                         blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
-                    if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_USE).isAllowed(blockType)) {
-                        if(EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
-                        event.setCancelled(true);
-                        return;
-                    }
-
                     // Container trust
                     if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER,
                             flags)) {
@@ -219,8 +211,8 @@ public class PlayerEventHandler implements Listener {
                 }
 
                 // Handle "doors", redstone inputs
-                if(Materials.changesOnInteraction(blockType)) {
-                    if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_USE).isAllowed(blockType)) {
+                if(blockType.isInteractable()) {
+                    if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isAllowed(blockType)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
                             event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
                         event.setCancelled(true);
@@ -228,7 +220,8 @@ public class PlayerEventHandler implements Listener {
                     }
 
                     // Access trust
-                    if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
+                    if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags) &&
+                            !(blockType == Material.CRAFTING_TABLE || blockType == Material.ENCHANTING_TABLE)) {
                         if(EquipmentSlot.HAND.equals(event.getHand()))
                             event.getPlayer().sendMessage(ChatColor.RED +
                                     "This belongs to " + flags.getOwnerName() + ".");
@@ -239,6 +232,14 @@ public class PlayerEventHandler implements Listener {
 
                 break;
             }
+
+            case RIGHT_CLICK_AIR:
+                if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isAllowed(heldItem)) {
+                    event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+                    event.setCancelled(true);
+                }
+
+                break;
 
             // Handle players stepping on things such as turtle eggs, tripwires, farmland, and pressure plates
             case PHYSICAL:
@@ -290,6 +291,13 @@ public class PlayerEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getRightClicked().getLocation());
         if(flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
+
+        if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isAllowed(event.getRightClicked().getType())) {
+            if(EquipmentSlot.HAND.equals(event.getHand()))
+                event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+            event.setCancelled(true);
+            return;
+        }
         
         // Handle breaking leash hitches
         if(event.getRightClicked().getType() == EntityType.LEASH_HITCH) {
@@ -389,6 +397,13 @@ public class PlayerEventHandler implements Listener {
         // Only check trust for non-hostile entities
         if(event.getDamager() instanceof Player) {
             if(!flags.isEffectiveOwner((Player)event.getDamager())) {
+                if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isAllowed(Materials.stackType(
+                        Materials.heldItem((Player)event.getDamager(), EquipmentSlot.HAND)))) {
+                    event.getDamager().sendMessage(ChatColor.RED + "You cannot use that weapon here.");
+                    event.setCancelled(true);
+                    return;
+                }
+
                 if (Entities.isHostile((Player) event.getDamager(), event.getEntity())) {
                     // OP flag to deny damage to hostiles
                     if (!flags.isAllowed(RegionFlag.HOSTILE_DAMAGE)) {

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class Materials {
     // Some useful collections of Materials
     private static final List<Material> INVENTORY_HOLDERS = new ArrayList<>();
-    private static final List<Material> USABLES = new ArrayList<>();
+    private static final List<Material> PLACEABLES = new ArrayList<>();
     private static final List<Material> CORALS = new ArrayList<>();
 
     // Initialize categories
@@ -28,10 +28,10 @@ public class Materials {
                 DISPENSER, HOPPER, BREWING_STAND, BARREL, CAMPFIRE, COMPOSTER, CAULDRON));
         INVENTORY_HOLDERS.addAll(materialsEndingWith("SHULKER_BOX"));
 
-        USABLES.addAll(Arrays.asList(BONE_MEAL, ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, PAINTING, ITEM_FRAME));
-        USABLES.addAll(materialsEndingWith("BUCKET"));
-        USABLES.addAll(materialsEndingWith("BOAT"));
-        USABLES.addAll(materialsEndingWith("MINECART"));
+        PLACEABLES.addAll(Arrays.asList(BONE_MEAL, ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, PAINTING, ITEM_FRAME));
+        PLACEABLES.addAll(materialsEndingWith("BUCKET"));
+        PLACEABLES.addAll(materialsEndingWith("BOAT"));
+        PLACEABLES.addAll(materialsEndingWith("MINECART"));
         Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
                 .forEach(c -> CORALS.addAll(materialsEndingWith(c)));
     }
@@ -71,13 +71,13 @@ public class Materials {
     }
 
     /**
-     * Returns whether or not the given material is usable, and if its usage causes a state change.
+     * Returns whether or not the given material is placeable, and if its usage causes a state change.
      *
      * @param material the material
-     * @return true if the material is usable, false otherwise.
+     * @return true if the material is placeable, false otherwise.
      */
-    public static boolean isUsable(Material material) {
-        return USABLES.contains(material);
+    public static boolean isPlaceable(Material material) {
+        return PLACEABLES.contains(material);
     }
     
     /**
@@ -99,16 +99,6 @@ public class Materials {
     public static boolean isPressureSensitive(Material material) {
         return material == TURTLE_EGG || material == TRIPWIRE ||
                 material.name().endsWith("PRESSURE_PLATE");
-    }
-
-    /**
-     * Returns whether or not the given material could change when being interacted with (right clicked) by a player.
-     *
-     * @param material the material.
-     * @return true if the material could change when being interacted with, false otherwise.
-     */
-    public static boolean changesOnInteraction(Material material) {
-        return material.isInteractable() && material != CRAFTING_TABLE && material != ENCHANTING_TABLE;
     }
 
     /**

@@ -45,10 +45,13 @@ public enum RegionFlag {
     FOLLOW, // prevent pet tp
     DENY_AGGRO(EnumFilter.class), // prevent certain mobs from targeting the player
     GROWTH, // vine growth grass spread etc
-    DENY_USE(EnumFilter.class),
+    DENY_BLOCK_USE(EnumFilter.class),
     KEEP_INVENTORY,
     KEEP_XP,
-    RESPAWN_LOCATION(LocationMeta.class);
+    RESPAWN_LOCATION(LocationMeta.class),
+    DENY_ENTITY_USE(EnumFilter.class),
+    DENY_ITEM_USE(EnumFilter.class),
+    DENY_WEAPON_USE(EnumFilter.class);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
@@ -95,9 +98,10 @@ public enum RegionFlag {
 
         if(flag.isBoolean())
             metaString = (boolean)meta ? "allow" : "deny";
-        else if(flag == DENY_SPAWN || flag == DENY_AGGRO)
+        else if(flag == DENY_SPAWN || flag == DENY_AGGRO || flag == DENY_ENTITY_USE)
             metaString = ((EnumFilter)meta).toString(EntityType.class);
-        else if(flag == DENY_PLACE || flag == DENY_BREAK || flag == DENY_USE)
+        else if(flag == DENY_PLACE || flag == DENY_BREAK || flag == DENY_BLOCK_USE || flag == DENY_ITEM_USE ||
+                flag == DENY_WEAPON_USE)
             metaString = ((EnumFilter)meta).toString(Material.class);
         else
             metaString = meta.toString();
@@ -112,11 +116,13 @@ public enum RegionFlag {
 
             case DENY_SPAWN:
             case DENY_AGGRO:
+            case DENY_ENTITY_USE:
                 return EnumFilter.fromString(metaString, EntityType.class);
 
             case DENY_BREAK:
             case DENY_PLACE:
-            case DENY_USE:
+            case DENY_BLOCK_USE:
+            case DENY_ITEM_USE:
                 return EnumFilter.fromString(metaString, Material.class);
 
             case GREETING:
@@ -233,9 +239,12 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(FOLLOW, true);
         DEFAULT_VALUES.put(DENY_AGGRO, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(GROWTH, true);
-        DEFAULT_VALUES.put(DENY_USE, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(DENY_BLOCK_USE, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(KEEP_INVENTORY, false);
         DEFAULT_VALUES.put(KEEP_XP, false);
         DEFAULT_VALUES.put(RESPAWN_LOCATION, null);
+        DEFAULT_VALUES.put(DENY_ENTITY_USE, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(DENY_ITEM_USE, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(DENY_WEAPON_USE, EnumFilter.EMPTY_FILTER);
     }
 }
