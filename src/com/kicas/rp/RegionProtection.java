@@ -1,6 +1,6 @@
 package com.kicas.rp;
 
-import com.kicas.rp.command.CommandHandler;
+import com.kicas.rp.command.*;
 import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.RegionFlag;
 import com.kicas.rp.event.EntityEventHandler;
@@ -11,6 +11,8 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -25,7 +27,6 @@ import java.util.stream.Collectors;
  * accessed through this class.
  */
 public class RegionProtection extends JavaPlugin {
-    private final CommandHandler commandHandler;
     private final DataManager dataManager;
 
     private Material claimCreationTool, claimViewer;
@@ -35,7 +36,6 @@ public class RegionProtection extends JavaPlugin {
     private static RegionProtection instance;
 
     public RegionProtection() {
-        this.commandHandler = new CommandHandler();
         this.dataManager = new DataManager(getDataFolder());
         instance = this;
     }
@@ -43,40 +43,10 @@ public class RegionProtection extends JavaPlugin {
     @Override
     public void onEnable() {
         initConfig();
-        commandHandler.registerCommands();
         dataManager.load();
-
-        Bukkit.getPluginManager().registerEvents(commandHandler, this);
-        Bukkit.getPluginManager().registerEvents(dataManager, this);
-        Bukkit.getPluginManager().registerEvents(new RegionToolHandler(), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerEventHandler(), this);
-        Bukkit.getPluginManager().registerEvents(new EntityEventHandler(), this);
-        Bukkit.getPluginManager().registerEvents(new WorldEventHandler(), this);
-
-        // Automatic claim block gaining
-        if(claimBlocksGainedPerMinute > 0) {
-            Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
-                Bukkit.getOnlinePlayers().stream().map(dataManager::getPlayerSession)
-                        .forEach(ps -> ps.addClaimBlocks(claimBlocksGainedPerMinute));
-            }, 0L, 60L * 20L);
-        }
-
-        // Expire claims if they are older then the time given in the config (in days). The age of a claim is determined
-        // by subtracting the last login time of the most recently active trustee with at least container trust from the
-        // current time.
-        final long claimExpirationTime = getConfig().getInt("general.claim-expiration-time") * 24L * 60L * 60L * 1000L;
-        if(claimExpirationTime > 0 && !getConfig().getBoolean("general.enable-claim-stealing")) {
-            // Check every hour
-            Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
-                Bukkit.getWorlds().forEach(world -> {
-                    dataManager.tryDeleteRegions(null, world, region -> region.hasExpired(claimExpirationTime), true);
-                });
-            }, 100L, 60L * 60L * 20L);
-        }
-
-        // Periodically save data in case of crashes (5 minutes)
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, dataManager::save, 5L * 60L * 20L,
-                5L * 60L * 20L);
+        registerCommands();
+        registerEventHandlers();
+        scheduleTasks();
     }
 
     @Override
@@ -172,5 +142,65 @@ public class RegionProtection extends JavaPlugin {
 
         // Register default region flag values
         RegionFlag.registerDefaults(config);
+    }
+
+    private void registerCommand(String name, Object impl) {
+        getCommand(name).setExecutor((CommandExecutor)impl);
+        if(impl instanceof TabCompleter)
+            getCommand(name).setTabCompleter((TabCompleter)impl);
+    }
+
+    private void registerCommands() {
+        registerCommand("abandonclaim", new CommandAbandonClaim());
+        registerCommand("adminregion", new CommandAdminRegion());
+        registerCommand("claim", new CommandClaim());
+        registerCommand("claimblocks", new CommandClaimBlocks());
+        registerCommand("claimheight", new CommandClaimHeight());
+        registerCommand("claimlist", new CommandClaimList());
+        registerCommand("claimtnt", new CommandClaimTnt());
+        registerCommand("expandclaim", new CommandExpandClaim());
+        registerCommand("expel", new CommandExpel());
+        registerCommand("ignoretrust", new CommandIgnoreTrust());
+        registerCommand("region", new CommandRegion());
+        registerCommand("steal", new CommandSteal());
+        registerCommand("transferclaim", new CommandTransferClaim());
+        registerCommand("trapped", new CommandTrapped());
+        registerCommand("trust", new CommandTrust());
+        registerCommand("trustlist", new CommandTrustList());
+    }
+
+    private void registerEventHandlers() {
+        Bukkit.getPluginManager().registerEvents(dataManager, this);
+        Bukkit.getPluginManager().registerEvents(new RegionToolHandler(), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerEventHandler(), this);
+        Bukkit.getPluginManager().registerEvents(new EntityEventHandler(), this);
+        Bukkit.getPluginManager().registerEvents(new WorldEventHandler(), this);
+    }
+
+    private void scheduleTasks() {
+        // Automatic claim block gaining
+        if(claimBlocksGainedPerMinute > 0) {
+            Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+                Bukkit.getOnlinePlayers().stream().map(dataManager::getPlayerSession)
+                        .forEach(ps -> ps.addClaimBlocks(claimBlocksGainedPerMinute));
+            }, 0L, 60L * 20L);
+        }
+
+        // Expire claims if they are older then the time given in the config (in days). The age of a claim is determined
+        // by subtracting the last login time of the most recently active trustee with at least container trust from the
+        // current time.
+        final long claimExpirationTime = getConfig().getInt("general.claim-expiration-time") * 24L * 60L * 60L * 1000L;
+        if(claimExpirationTime > 0 && !getConfig().getBoolean("general.enable-claim-stealing")) {
+            // Check every hour
+            Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+                Bukkit.getWorlds().forEach(world -> {
+                    dataManager.tryDeleteRegions(null, world, region -> region.hasExpired(claimExpirationTime), true);
+                });
+            }, 100L, 60L * 60L * 20L);
+        }
+
+        // Periodically save data in case of crashes (5 minutes)
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, dataManager::save, 5L * 60L * 20L,
+                5L * 60L * 20L);
     }
 }

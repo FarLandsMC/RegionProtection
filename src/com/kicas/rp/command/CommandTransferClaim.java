@@ -4,7 +4,8 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.Region;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -15,13 +16,9 @@ import java.util.UUID;
 /**
  * Allows the owner of a claim to give someone else ownership of one of their claims.
  */
-public class CommandTransferClaim extends Command {
-    CommandTransferClaim() {
-        super("transferclaim", "Transfer the ownership of your claim to another person.", "/transferclaim <newOwner>");
-    }
-
+public class CommandTransferClaim extends TabCompletorBase implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Args check
         if(args.length == 0)
             return false;
@@ -55,8 +52,7 @@ public class CommandTransferClaim extends Command {
     }
 
     @Override
-        public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
-            throws IllegalArgumentException {
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         // Online players
         return args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList();
     }

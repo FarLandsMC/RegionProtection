@@ -40,7 +40,8 @@ public class RegionToolHandler implements Listener {
         // Handle right-clicking with the claim viewer while holding shift. This will tell the player how many claims
         // are within 100 blocks of them and highlight those claims for them.
         if ((event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) &&
-                player.isSneaking() && event.getMaterial() == RegionProtection.getClaimViewerTool()) {
+                player.isSneaking() && event.getMaterial() == RegionProtection.getClaimViewerTool() &&
+                player.hasPermission("rp.claims.inquiry")) {
             List<Region> regions = dm.getRegionsInWorld(player.getWorld()).stream()
                     .filter(region -> region.distanceFromEdge(player.getLocation()) < 100 &&
                             !region.isAllowed(RegionFlag.OVERLAP)).collect(Collectors.toList());
@@ -57,6 +58,11 @@ public class RegionToolHandler implements Listener {
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             // Claim creation, resizing, and subdividing
             if (RegionProtection.getClaimCreationTool().equals(event.getMaterial())) {
+                if(!ps.isInAdminRegionMode() && !player.hasPermission("rp.claims.create")) {
+                    player.sendMessage(ChatColor.RED + "You do not have permission to create claims on this server.");
+                    return;
+                }
+
                 // Setting the first location
                 if (ps.getLastClickedBlock() == null) {
                     ps.setLastClickedBlock(clickedLocation);
@@ -172,9 +178,11 @@ public class RegionToolHandler implements Listener {
                 }
 
                 event.setCancelled(true);
-            } else if (event.getMaterial() == RegionProtection.getClaimViewerTool()) // Claim viewer
+            } else if (event.getMaterial() == RegionProtection.getClaimViewerTool() &&
+                    player.hasPermission("rp.claims.inquiry")) { // Claim viewer
                 detailClaimAt(player, clickedLocation);
-        } else if (event.getAction() == Action.RIGHT_CLICK_AIR &&
+            }
+        } else if (event.getAction() == Action.RIGHT_CLICK_AIR && player.hasPermission("rp.claims.inquiry") &&
                 event.getMaterial() == RegionProtection.getClaimViewerTool()) { // Long-range claim viewer
             // Limit it to 100 blocks
             RayTraceResult result = player.rayTraceBlocks(100);
@@ -199,16 +207,20 @@ public class RegionToolHandler implements Listener {
         // Scrolling to the creation tool. Only execute if they're not in admin region mode
         if (Materials.stackType(event.getPlayer().getInventory().getItem(event.getNewSlot())) ==
                 RegionProtection.getClaimCreationTool() && !ps.isInAdminRegionMode()) {
-            // Notify the player of their claim block count
-            event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + ps.getClaimBlocks() +
-                    " more blocks.");
+            if(event.getPlayer().hasPermission("rp.claims.create")) {
+                // Notify the player of their claim block count
+                event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + ps.getClaimBlocks() +
+                        " more blocks.");
+            }
 
-            // Highlight regions within 100 blocks of the player
-            List<Region> regions = RegionProtection.getDataManager().getRegionsInWorld(event.getPlayer().getWorld())
-                    .stream().filter(region -> region.distanceFromEdge(event.getPlayer().getLocation()) < 100 &&
-                            !region.isAllowed(RegionFlag.OVERLAP)).collect(Collectors.toList());
-            if (!regions.isEmpty())
-                ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions, true));
+            if(event.getPlayer().hasPermission("rp.claims.inquiry")) {
+                // Highlight regions within 100 blocks of the player
+                List<Region> regions = RegionProtection.getDataManager().getRegionsInWorld(event.getPlayer().getWorld())
+                        .stream().filter(region -> region.distanceFromEdge(event.getPlayer().getLocation()) < 100 &&
+                                !region.isAllowed(RegionFlag.OVERLAP)).collect(Collectors.toList());
+                if (!regions.isEmpty())
+                    ps.setRegionHighlighter(new RegionHighlighter(event.getPlayer(), regions, true));
+            }
         } else if (Materials.stackType(event.getPlayer().getInventory().getItem(event.getPreviousSlot())) ==
                 RegionProtection.getClaimCreationTool()) { // Scrolling away from the claim creation tool
             // Clear action values

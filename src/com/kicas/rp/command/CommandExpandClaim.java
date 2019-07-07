@@ -6,19 +6,17 @@ import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionHighlighter;
 import org.bukkit.ChatColor;
 import org.bukkit.block.BlockFace;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
  * Allow players to expand their claim without needing to walk to a corner with a claim tool.
  */
-public class CommandExpandClaim extends Command {
-    CommandExpandClaim() {
-        super("expandclaim", "Expand your claim in the direction you are facing.", "/expandclaim <amount>");
-    }
-
+public class CommandExpandClaim implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         if(args.length == 0)
             return false;
 

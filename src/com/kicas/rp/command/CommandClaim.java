@@ -5,16 +5,14 @@ import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionHighlighter;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class CommandClaim extends Command {
-    CommandClaim() {
-        super("claim", "Make a minimum-sized claim centered at where you are standing.", "/claim");
-    }
-
+public class CommandClaim implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check
         if(!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");

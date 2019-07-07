@@ -5,7 +5,8 @@ import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -14,7 +15,7 @@ import java.util.*;
 /**
  * Allows players to grant or deny certain permissions for other players in their claim.
  */
-public class CommandTrust extends Command {
+public class CommandTrust extends TabCompletorBase implements CommandExecutor {
     private static final Map<String, String> HELP_MESSAGES = new HashMap<>();
     private static final String ACCESS_HELP = ChatColor.GOLD + "Grant access to buttons, levers, switches, villager " +
             "trade, crafting and enchant tables, sheep shearing, and animal breeding.";
@@ -37,13 +38,8 @@ public class CommandTrust extends Command {
         HELP_MESSAGES.put("untrust", UNTRUST_HELP);
     }
 
-    CommandTrust() {
-        super("trust", "Give players levels of access to your claim.", "/trust <player>", "accesstrust", "at",
-                "containertrust", "ct", "managementtrust", "mt", "untrust");
-    }
-
     @Override
-    protected boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Send the help messages
         if(args.length == 0) {
             sender.sendMessage(HELP_MESSAGES.get(alias.toLowerCase()));
@@ -72,16 +68,26 @@ public class CommandTrust extends Command {
 
         // Find the trust level based on the alias used
         TrustLevel trust;
-        if("accesstrust".equals(alias) || "at".equals(alias))
-            trust = TrustLevel.ACCESS;
-        else if("containertrust".equals(alias) || "ct".equals(alias))
-            trust = TrustLevel.CONTAINER;
-        else if("trust".equals(alias))
-            trust = TrustLevel.BUILD;
-        else if("managementtrust".equals(alias) || "mt".equals(alias))
-            trust = TrustLevel.MANAGEMENT;
-        else
-            trust = TrustLevel.NONE;
+        switch (alias) {
+            case "accesstrust":
+            case "at":
+                trust = TrustLevel.ACCESS;
+                break;
+            case "containertrust":
+            case "ct":
+                trust = TrustLevel.CONTAINER;
+                break;
+            case "trust":
+                trust = TrustLevel.BUILD;
+                break;
+            case "managementtrust":
+            case "mt":
+                trust = TrustLevel.MANAGEMENT;
+                break;
+            default:
+                trust = TrustLevel.NONE;
+                break;
+        }
 
         // Grant the trust and notify the sender
         if("public".equals(args[0])) {
@@ -128,7 +134,7 @@ public class CommandTrust extends Command {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
         // Online players
         return args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList();

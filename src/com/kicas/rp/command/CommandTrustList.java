@@ -7,6 +7,8 @@ import com.kicas.rp.data.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -15,13 +17,9 @@ import java.util.Map;
 /**
  * Shows the sender what levels of trust various players have on the claim they are standing in.
  */
-public class CommandTrustList extends Command {
-    CommandTrustList() {
-        super("trustlist", "Show who has trust in your claim.", "/trustlist");
-    }
-
+public class CommandTrustList implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check
         if(!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");

@@ -6,19 +6,17 @@ import com.kicas.rp.data.PlayerSession;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionHighlighter;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
  * Allows players to delete one, or all of their claims in their current world.
  */
-public class CommandAbandonClaim extends Command {
-    CommandAbandonClaim() {
-        super("abandonclaim", "Abandon the claim you are currently standing in.", "/abandonclaim", "abandonallclaims");
-    }
-
+public class CommandAbandonClaim implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");

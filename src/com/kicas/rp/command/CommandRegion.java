@@ -8,8 +8,7 @@ import com.kicas.rp.util.TextUtils;
 import com.kicas.rp.util.Utils;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.SimpleCommandMap;
+import org.bukkit.command.*;
 import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -26,19 +25,15 @@ import java.util.stream.Stream;
  * Allows administrators to register and delete regions, as well as modify and view their flags. The size of a region
  * can also be adjusted through this command as well.
  */
-public class CommandRegion extends Command {
+public class CommandRegion extends TabCompletorBase implements CommandExecutor {
     private static final List<String> SUB_COMMANDS = Arrays.asList("flag", "create", "expand", "retract", "delete",
             "info");
     private static final List<String> ALLOW_DENY = Arrays.asList("allow", "deny");
     private static final List<String> EXPANSION_DIRECTIONS = Arrays.asList("vert", "top", "bottom", "north", "south",
             "east", "west");
 
-    CommandRegion() {
-        super("region", "Modify a region.", "/region <info|flag|create|expand|retract|delete> [name] [args...]", "rg");
-    }
-
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Args check
         if (args.length < 1)
             return false;
@@ -291,8 +286,16 @@ public class CommandRegion extends Command {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
+        Location location;
+        if(sender instanceof Player)
+            location = ((Player)sender).getLocation();
+        else if(sender instanceof BlockCommandSender)
+            location = ((BlockCommandSender)sender).getBlock().getLocation();
+        else
+            location = new Location(Bukkit.getWorlds().get(0), 0, 0, 0);
+
         // Show sub-commands
         if (args.length == 1)
             return filterStartingWith(args[0], SUB_COMMANDS);
@@ -404,8 +407,8 @@ public class CommandRegion extends Command {
                                                     .getCommandMap());
 
                             return filterStartingWith(args[3], knownCommands.keySet().stream()
-                                    .filter(command -> !command.contains(":"))
-                                    .map(command -> prefix + command.toLowerCase()));
+                                    .filter(cmd -> !cmd.contains(":"))
+                                    .map(cmd -> prefix + cmd.toLowerCase()));
                         }
                     }
 

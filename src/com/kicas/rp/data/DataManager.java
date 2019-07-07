@@ -987,7 +987,7 @@ public class DataManager implements Listener {
                 }
             }
         } catch (Throwable ex) {
-            RegionProtection.error("Failed to load regions file: " + ex.getMessage());
+            RegionProtection.error("Failed to load regions file:\n" + ex.getClass().getName() + ": " + ex.getMessage());
             ex.printStackTrace();
         }
 

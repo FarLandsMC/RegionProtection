@@ -3,4 +3,97 @@ main: com.kicas.rp.RegionProtection
 name: RegionProtection
 description: To be determined
 author: [xCassyx, Kishiko73]
-version: 1
+version: 1.0
+commands:
+  abandonclaim:
+    description: Abandon the claim you are currently standing in.
+    usage: /abandonclaim
+    aliases: [abandonallclaims]
+  adminregion:
+    description: Change into or out of admin region creation mode.
+    usage: /adminregion
+    permission: rp.command.adminregion
+  claim:
+    description: Make a minimum-sized claim centered at where you are standing.
+    usage: /claim
+    permission: rp.claims.create
+  claimblocks:
+    description: Add to, remove from, or view someone's claim blocks.
+    usage: /claimblocks <add|remove|view> <name> [amount]
+    permission: rp.command.claimblocks
+  claimheight:
+    description: Change the hight of a claim.
+    usage: /claimheight <get|set> <top|bottom> [amount]
+  claimlist:
+    description: Show the list of claims that you own.
+    usage: /claimlist [player]
+    aliases: [claimslist]
+  claimtnt:
+    description: Toggle on or off TNT in your claim.
+    usage: /claimtnt
+  expandclaim:
+    description: Expand your claim in the direction you are facing.
+    usage: /expandclaim <amount>
+    permission: rp.claims
+  expel:
+    description: Expel a player from your claim.
+    usage: /expel <player>
+    permission: rp.claims
+  ignoretrust:
+    description: Allows the user to ignore the trust flag in all regions.
+    usage: /ignoretrust
+    permission: rp.command.ignoretrust
+  region:
+    description: Modify a region.
+    usage: /region <info|flag|create|expand|retract|delete> [name] [args...]
+    aliases: [rg]
+    permission: rp.command.region
+  steal:
+    description: Take ownership of an expired claim if you have enough claim blocks.
+    usage: /steal
+    permission: rp.command.steal
+  transferclaim:
+    description: Transfer the ownership of your claim to another person.
+    usage: /transferclaim <newOwner>
+    permission: rp.claims
+  trapped:
+    description: Get yourself out of a sticky situation.
+    usage: /trapped
+    aliases: [stuck]
+  trust:
+    description: Give players levels of access to your claim.
+    usage: /trust
+    aliases: [accesstrust, at, containertrust, ct, managementtrust, mt, untrust]
+    permission: rp.claims
+  trustlist:
+    description: Show who has trust in your claim.
+    usage: /trustlist
+    permission: rp.claims
+permissions:
+  rp.claims.create:
+    description: Allows a player to steal a claim
+    default: true
+  rp.claims.inquiry:
+    description: Allows a player to highlight regions
+    default: true
+  rp.command.adminregion:
+    description: Allows a player to use /adminregion
+    default: op
+  rp.command.claimblocks:
+    description: Allows a player to use /claimblocks
+    default: op
+  rp.command.externalclaimlist:
+    description: Allows a player to view another person's claim list
+    default: op
+  rp.command.ignoretrust:
+    description: Allows a player to use /ignoretrust
+    default: op
+  rp.command.region:
+    description: Allows a player to use /region
+    default: op
+  rp.command.steal:
+    description: Allows a player to use /steal
+    default: true
+  rp.command.expel:
+    description: Allows a player to use /expel
+    default: true

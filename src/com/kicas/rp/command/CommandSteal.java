@@ -5,6 +5,8 @@ import com.kicas.rp.data.PlayerSession;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionHighlighter;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -14,13 +16,9 @@ import java.util.stream.Collectors;
 /**
  * Allows a player to take ownership of an expired claim if they have enough claim blocks.
  */
-public class CommandSteal extends Command {
-    CommandSteal() {
-        super("steal", "Take ownership of an expired claim if you have enough claim blocks.", "/steal");
-    }
-
+public class CommandSteal implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check
         if(!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");

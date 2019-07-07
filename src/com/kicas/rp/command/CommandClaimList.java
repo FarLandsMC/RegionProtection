@@ -5,6 +5,8 @@ import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -16,13 +18,9 @@ import java.util.stream.Collectors;
  * Allow players to view a list of the claims they have in their current world, including the x and z location as well
  * as the number of claim blocks the take up. Players with OP can specify which player's claim list they wish to view.
  */
-public class CommandClaimList extends Command {
-    CommandClaimList() {
-        super("claimlist", "Show the list of claims that you own.", "/claimlist [player]", "claimslist");
-    }
-
+public class CommandClaimList implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check
         if(!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
@@ -30,8 +28,8 @@ public class CommandClaimList extends Command {
         }
 
         // Get the owner in question
-        UUID uuid = args.length > 0 && sender.isOp() ? DataManager.uuidForUsername(args[0])
-                : ((Player)sender).getUniqueId();
+        UUID uuid = args.length > 0 && sender.hasPermission("rp.command.externalclaimlist")
+                ? DataManager.uuidForUsername(args[0]) : ((Player)sender).getUniqueId();
 
         // Build the list
         List<Region> claimlist = RegionProtection.getDataManager().getRegionsInWorld(((Player)sender).getWorld())

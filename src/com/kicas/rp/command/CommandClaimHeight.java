@@ -7,6 +7,8 @@ import com.kicas.rp.data.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -18,16 +20,12 @@ import java.util.List;
 /**
  * Allows players to modify the height of their claim or subdivision to some extent.
  */
-public class CommandClaimHeight extends Command {
+public class CommandClaimHeight extends TabCompletorBase implements CommandExecutor {
     private static final List<String> SUB_COMMANDS = Arrays.asList("get", "set");
     private static final List<String> SIDES = Arrays.asList("top", "bottom");
 
-    CommandClaimHeight() {
-        super("claimheight", "Change the hight of a claim.", "/claimheight <get|set> <top|bottom> [amount]");
-    }
-
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Args check
         if(args.length < 2)
             return false;
@@ -162,7 +160,7 @@ public class CommandClaimHeight extends Command {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
         switch(args.length) {
             case 1:

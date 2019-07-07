@@ -10,6 +10,8 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -20,13 +22,9 @@ import java.util.List;
  * Allows players to kick* certain players from their claim.
  * * send to the nearest unclaimed block
  */
-public class CommandExpel extends Command {
-    CommandExpel() {
-        super("expel", "Expel a player from your claim.", "/expel <player>");
-    }
-    
+public class CommandExpel extends TabCompletorBase implements CommandExecutor {
     @Override
-    protected boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
@@ -73,7 +71,7 @@ public class CommandExpel extends Command {
     }
     
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
         return args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList();
     }

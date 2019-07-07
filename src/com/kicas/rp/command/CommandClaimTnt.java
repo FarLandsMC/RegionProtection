@@ -4,19 +4,17 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.data.RegionFlag;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
  * Allows a player to toggle on or off tnt in their claim.
  */
-public class CommandClaimTnt extends Command{
-    CommandClaimTnt() {
-        super("claimtnt", "Toggle on or off TNT in your claim.", "/claimtnt");
-    }
-
+public class CommandClaimTnt implements CommandExecutor {
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check
         if(!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");

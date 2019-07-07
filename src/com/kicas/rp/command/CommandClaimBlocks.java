@@ -3,7 +3,8 @@ package com.kicas.rp.command;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.DataManager;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import java.util.Arrays;
@@ -14,16 +15,11 @@ import java.util.UUID;
 /**
  * Allows server operators to view and adjust the claim blocks for a given player.
  */
-public class CommandClaimBlocks extends Command {
+public class CommandClaimBlocks extends TabCompletorBase implements CommandExecutor {
     private static final List<String> SUB_COMMANDS = Arrays.asList("add", "remove", "view");
 
-    CommandClaimBlocks() {
-        super("claimblocks", "Add to, remove from, or view someone\'s claim blocks.",
-                "/claimblocks <add|remove|view> <name> [amount]");
-    }
-
     @Override
-    public boolean executeUnsafe(CommandSender sender, String alias, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Args check
         if(args.length < 2)
             return false;
@@ -82,7 +78,7 @@ public class CommandClaimBlocks extends Command {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location)
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
         switch (args.length) {
             case 1:
@@ -92,10 +88,5 @@ public class CommandClaimBlocks extends Command {
             default:
                 return Collections.emptyList();
         }
-    }
-
-    @Override
-    public boolean isOpOnly() {
-        return true;
     }
 }
