@@ -7,7 +7,6 @@ import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,7 @@ import java.util.UUID;
  * a priority greater than or equal to the parent region. If their priority is equal to the parent region, then they
  * will adopt the flags of the parent region and are updated whenever the parent's flags change.
  */
-public class Region extends FlagContainer implements Serializable {
+public class Region extends FlagContainer {
     // Can be null, such as in claims
     private String name;
     private int priority;
@@ -58,11 +57,11 @@ public class Region extends FlagContainer implements Serializable {
     }
 
     // For child creation in deserialization
-    Region(Region parent) {
+    public Region(Region parent) {
         super(parent.getOwner());
         this.name = null;
         this.priority = 0;
-        this.world = parent.getMin().getWorld();
+        this.world = parent.getWorld();
         this.min = null;
         this.max = null;
         this.parent = parent;
@@ -345,53 +344,5 @@ public class Region extends FlagContainer implements Serializable {
     @Override
     public boolean equals(Object other) {
         return other == this;
-    }
-
-    @Override
-    public void serialize(Encoder encoder) throws IOException {
-        encoder.writeUTF8Raw(name == null ? "" : name);
-        int meta = (isAdminOwned() ? 0x80 : 0) | Utils.constrain(priority, 0, 127);
-        encoder.write(meta);
-        if(parent == null && !isAdminOwned())
-            encoder.writeUuid(owner);
-
-        encoder.writeIntCompressed(min.getBlockX());
-        encoder.write(Utils.constrain(min.getBlockY(), 0, 255));
-        encoder.writeIntCompressed(min.getBlockZ());
-        encoder.writeIntCompressed(max.getBlockX());
-        encoder.write(Utils.constrain(max.getBlockY(), 0, 255));
-        encoder.writeIntCompressed(max.getBlockZ());
-
-        super.serialize(encoder); // flags
-
-        if(parent == null) {
-            encoder.writeUintCompressed(children.size());
-            for(Region region : children)
-                region.serialize(encoder);
-        }
-    }
-
-    @Override
-    public void deserialize(Decoder decoder) throws IOException {
-        name = decoder.readUTF8Raw();
-        int meta = decoder.read();
-        priority = meta & 0x7F;
-        if(parent == null)
-            owner = (meta & 0x80) != 0 ? Utils.UUID_00 : decoder.readUuid();
-
-        min = new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());
-        max = new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());
-
-        super.deserialize(decoder); // flags
-
-        if(parent == null) {
-            int len = decoder.readCompressedUint();
-            while(len > 0) {
-                Region assoc = new Region(this);
-                assoc.deserialize(decoder);
-                children.add(assoc);
-                -- len;
-            }
-        }
     }
 }

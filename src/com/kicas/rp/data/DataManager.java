@@ -2,8 +2,6 @@ package com.kicas.rp.data;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.TrustMeta;
-import com.kicas.rp.util.Decoder;
-import com.kicas.rp.util.Encoder;
 import com.kicas.rp.util.Pair;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
@@ -33,7 +31,7 @@ public class DataManager implements Listener {
     // location's x-value divided by 128, and set the 4 least significant bytes to be the z-value divided by 128.
     private final Map<UUID, Map<Long, List<Region>>> lookupTable;
     // Used to create player sessions
-    private final Map<UUID, Integer> playerClaimBlocks;
+    private final Map<UUID, PersistentPlayerData> playerData;
     private final Map<UUID, PlayerSession> playerSessionCache;
 
     // These values are used to keep consistency in the serialized data
@@ -47,7 +45,7 @@ public class DataManager implements Listener {
         this.rootDir = rootDir;
         this.worlds = new HashMap<>();
         this.lookupTable = new HashMap<>();
-        this.playerClaimBlocks = new HashMap<>();
+        this.playerData = new HashMap<>();
         this.playerSessionCache = new HashMap<>();
     }
 
@@ -144,7 +142,7 @@ public class DataManager implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public synchronized void onPlayerQuit(PlayerQuitEvent event) {
         if(playerSessionCache.containsKey(event.getPlayer().getUniqueId())) {
-            playerClaimBlocks.put(event.getPlayer().getUniqueId(), playerSessionCache.remove(event.getPlayer()
+            playerData.get(event.getPlayer().getUniqueId()).setClaimBlocks(playerSessionCache.remove(event.getPlayer()
                     .getUniqueId()).getClaimBlocks());
         }
     }
@@ -157,7 +155,7 @@ public class DataManager implements Listener {
      * @param child  the child region.
      */
     public synchronized void associate(Region parent, Region child) {
-        worlds.get(child.getWorld().getUID()).regions.remove(child);
+        worlds.get(child.getWorld().getUID()).getRegions().remove(child);
         if (child.getPriority() < parent.getPriority())
             child.setPriority(parent.getPriority());
         if (child.getPriority() == parent.getPriority())
@@ -174,7 +172,7 @@ public class DataManager implements Listener {
      * @return all the regions in a given world without a parent.
      */
     public List<Region> getRegionsInWorld(World world) {
-        return worlds.get(world.getUID()).regions;
+        return worlds.get(world.getUID()).getRegions();
     }
 
     public FlagContainer getWorldFlags(World world) {
@@ -198,7 +196,7 @@ public class DataManager implements Listener {
             names.add(GLOBAL_FLAG_NAME);
 
         // Add the filtered names
-        worlds.get(world.getUID()).regions.stream().filter(region -> region.getRawName() != null &&
+        worlds.get(world.getUID()).getRegions().stream().filter(region -> region.getRawName() != null &&
                 !region.getRawName().isEmpty()).forEach(region -> {
             names.add(region.getRawName());
             // Add the children's names
@@ -216,7 +214,7 @@ public class DataManager implements Listener {
      * @return the region with the given name in the given world, or null if it could not be found.
      */
     public synchronized Region getRegionByName(World world, String name) {
-        for (Region region : worlds.get(world.getUID()).regions) {
+        for (Region region : worlds.get(world.getUID()).getRegions()) {
             if (Objects.equals(region.getRawName(), name))
                 return region;
 
@@ -416,7 +414,7 @@ public class DataManager implements Listener {
         // Make sure overlap is not allowed
         region.setFlag(RegionFlag.OVERLAP, false);
         // Register the claim
-        worlds.get(creator.getWorld().getUID()).regions.add(region);
+        worlds.get(creator.getWorld().getUID()).getRegions().add(region);
         addRegionToLookupTable(region, false);
 
         return region;
@@ -498,7 +496,7 @@ public class DataManager implements Listener {
         }
 
         if(!region.hasParent())
-            worlds.get(region.getWorld().getUID()).regions.add(region);
+            worlds.get(region.getWorld().getUID()).getRegions().add(region);
         addRegionToLookupTable(region, false);
 
         return true;
@@ -745,7 +743,7 @@ public class DataManager implements Listener {
      */
     public synchronized void tryDeleteRegions(Player delegate, World world, Predicate<Region> filter,
                                               boolean includeChildren) {
-        Iterator<Region> itr = worlds.get(world.getUID()).regions.iterator();
+        Iterator<Region> itr = worlds.get(world.getUID()).getRegions().iterator();
         Region region;
         while (itr.hasNext()) {
             region = itr.next();
@@ -774,7 +772,7 @@ public class DataManager implements Listener {
                 region.getParent().getChildren().remove(region);
         } else {
             if (unregister)
-                worlds.get(region.getWorld().getUID()).regions.remove(region);
+                worlds.get(region.getWorld().getUID()).getRegions().remove(region);
             if (!region.isAdminOwned())
                 modifyClaimBlocks(region.getOwner(), (int) region.area());
         }
@@ -917,9 +915,8 @@ public class DataManager implements Listener {
         if(playerSessionCache.containsKey(player.getUniqueId()))
             return playerSessionCache.get(player.getUniqueId());
         else{
-            playerClaimBlocks.putIfAbsent(player.getUniqueId(),
-                    RegionProtection.getRPConfig().getInt("general.starting-claim-blocks"));
-            PlayerSession ps = new PlayerSession(player.getUniqueId(), playerClaimBlocks.get(player.getUniqueId()));
+            playerData.putIfAbsent(player.getUniqueId(), new PersistentPlayerData(player));
+            PlayerSession ps = new PlayerSession(playerData.get(player.getUniqueId()));
             playerSessionCache.put(player.getUniqueId(), ps);
             return ps;
         }
@@ -934,9 +931,15 @@ public class DataManager implements Listener {
      * blocks associated with the given UUID.
      */
     public synchronized int getClaimBlocks(UUID uuid) {
-        return playerSessionCache.containsKey(uuid) ? playerSessionCache.get(uuid).getClaimBlocks()
-                : playerClaimBlocks.getOrDefault(uuid, RegionProtection.getRPConfig()
-                        .getInt("general.starting-claim-blocks"));
+        if(playerSessionCache.containsKey(uuid))
+            return playerSessionCache.get(uuid).getClaimBlocks();
+        else if(playerData.containsKey(uuid))
+            return playerData.get(uuid).getClaimBlocks();
+        else{
+            PersistentPlayerData ppd = new PersistentPlayerData(uuid);
+            playerData.put(uuid, ppd);
+            return ppd.getClaimBlocks();
+        }
     }
 
     /**
@@ -949,9 +952,12 @@ public class DataManager implements Listener {
     public synchronized void modifyClaimBlocks(UUID uuid, int amount) {
         if (playerSessionCache.containsKey(uuid))
             playerSessionCache.get(uuid).addClaimBlocks(amount);
-        else {
-            playerClaimBlocks.put(uuid, playerClaimBlocks.getOrDefault(uuid,
-                    RegionProtection.getRPConfig().getInt("general.starting-claim-blocks")) + amount);
+        else if(playerData.containsKey(uuid))
+            playerData.get(uuid).addClaimBlocks(amount);
+        else{
+            PersistentPlayerData ppd = new PersistentPlayerData(uuid);
+            ppd.addClaimBlocks(amount);
+            playerData.put(uuid, ppd);
         }
     }
 
@@ -972,19 +978,8 @@ public class DataManager implements Listener {
             if (!regionsFile.exists())
                 regionsFile.createNewFile();
             else {
-                Decoder decoder = new Decoder(new FileInputStream(regionsFile));
-                int format = decoder.read();
-                if (format != REGION_FORMAT_VERSION)
-                    throw new RuntimeException("Could not load regions file since it uses format version " + format +
-                            " and is not up to date.");
-                int worldCount = decoder.read();
-                while (worldCount > 0) {
-                    WorldData wd = new WorldData(null);
-                    wd.deserialize(decoder);
-                    wd.regions.forEach(region -> addRegionToLookupTable(region, true));
-                    worlds.put(wd.worldUid, wd);
-                    --worldCount;
-                }
+                Deserializer deserializer = new Deserializer(regionsFile, REGION_FORMAT_VERSION);
+                worlds.putAll(deserializer.readWorldData());
             }
         } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file:\n" + ex.getClass().getName() + ": " + ex.getMessage());
@@ -997,16 +992,8 @@ public class DataManager implements Listener {
             if (!playerDataFile.exists())
                 playerDataFile.createNewFile();
             else {
-                Decoder decoder = new Decoder(new FileInputStream(playerDataFile));
-                int format = decoder.read();
-                if (format != PLAYER_DATA_FORMAT_VERSION)
-                    throw new RuntimeException("Could not load player data file since it uses format version " +
-                            format + " and is not up to date.");
-                int len = decoder.readCompressedUint();
-                while (len > 0) {
-                    playerClaimBlocks.put(decoder.readUuid(), decoder.readCompressedUint());
-                    --len;
-                }
+                Deserializer deserializer = new Deserializer(playerDataFile, PLAYER_DATA_FORMAT_VERSION);
+                playerData.putAll(deserializer.readPlayerData());
             }
         } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file: " + ex.getMessage());
@@ -1025,11 +1012,8 @@ public class DataManager implements Listener {
             File regionsFile = new File(rootDir.getAbsolutePath() + File.separator + "regions.dat");
             if (!regionsFile.exists())
                 regionsFile.createNewFile();
-            Encoder encoder = new Encoder(new FileOutputStream(regionsFile));
-            encoder.write(REGION_FORMAT_VERSION);
-            encoder.write(worlds.size());
-            for (WorldData wd : worlds.values())
-                wd.serialize(encoder);
+            Serializer serializer = new Serializer(regionsFile, REGION_FORMAT_VERSION);
+            serializer.writeWorldData(worlds.values());
         } catch (IOException ex) {
             RegionProtection.error("Failed to save regions file: " + ex.getMessage());
             ex.printStackTrace();
@@ -1038,19 +1022,14 @@ public class DataManager implements Listener {
         // Save player data
 
         // Dump the cache data into the serialized map
-        playerSessionCache.forEach((uuid, ps) -> playerClaimBlocks.put(uuid, ps.getClaimBlocks()));
+        playerSessionCache.forEach((uuid, ps) -> playerData.get(uuid).setClaimBlocks(ps.getClaimBlocks()));
         // Actually save the data to disc
         try {
             File playerDataFile = new File(rootDir.getAbsolutePath() + File.separator + "playerdata.dat");
             if (!playerDataFile.exists())
                 playerDataFile.createNewFile();
-            Encoder encoder = new Encoder(new FileOutputStream(playerDataFile));
-            encoder.write(PLAYER_DATA_FORMAT_VERSION);
-            encoder.writeUintCompressed(playerClaimBlocks.size());
-            for (Map.Entry<UUID, Integer> entry : playerClaimBlocks.entrySet()) {
-                encoder.writeUuid(entry.getKey());
-                encoder.writeUintCompressed(entry.getValue());
-            }
+            Serializer serializer = new Serializer(playerDataFile, PLAYER_DATA_FORMAT_VERSION);
+            serializer.writePlayerData(playerData.values());
         } catch (IOException ex) {
             RegionProtection.error("Failed to save player data file: " + ex.getMessage());
             ex.printStackTrace();
@@ -1086,39 +1065,5 @@ public class DataManager implements Listener {
 
         // Re-add the claim to the lookup table
         addRegionToLookupTable(region, false);
-    }
-
-    // Object for storing world data
-    private static class WorldData extends FlagContainer {
-        UUID worldUid;
-        final List<Region> regions;
-
-        WorldData(UUID uuid) {
-            this.worldUid = uuid;
-            this.regions = new ArrayList<>();
-        }
-
-        @Override
-        public void serialize(Encoder encoder) throws IOException {
-            encoder.writeUuid(worldUid);
-            super.serialize(encoder);
-            encoder.writeUintCompressed(regions.size());
-            for (Region region : regions)
-                region.serialize(encoder);
-        }
-
-        @Override
-        public void deserialize(Decoder decoder) throws IOException {
-            worldUid = decoder.readUuid();
-            super.deserialize(decoder);
-            World world = Bukkit.getWorld(worldUid);
-            int len = decoder.readCompressedUint();
-            while (len > 0) {
-                Region region = new Region(world);
-                region.deserialize(decoder);
-                regions.add(region);
-                --len;
-            }
-        }
     }
 }

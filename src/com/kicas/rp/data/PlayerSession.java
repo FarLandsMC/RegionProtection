@@ -20,9 +20,9 @@ public class PlayerSession {
     private Region currentSelectedRegion;
     private Location lastClickedBlock;
 
-    public PlayerSession(UUID uuid, int claimBlocks) {
-        this.uuid = uuid;
-        this.claimBlocks = claimBlocks;
+    public PlayerSession(PersistentPlayerData playerData) {
+        this.uuid = playerData.getUuid();
+        this.claimBlocks = playerData.getClaimBlocks();
         this.currentHighlighter = null;
         this.action = null;
         this.isInAdminRegionMode = false;

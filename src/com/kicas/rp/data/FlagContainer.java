@@ -14,7 +14,7 @@ import java.util.UUID;
  * Acts as a general container for region flags. All flag containers have an owner which is stored as a UUID. If the
  * most significant bits and least significant bits of the UUID are all 0, then the container is considered admin owned.
  */
-public class FlagContainer implements Serializable {
+public class FlagContainer {
     protected final Map<RegionFlag, Object> flags;
     protected UUID owner;
 
@@ -138,35 +138,6 @@ public class FlagContainer implements Serializable {
     public void setFlags(Map<RegionFlag, Object> flags) {
         this.flags.clear();
         this.flags.putAll(flags);
-    }
-
-    @Override
-    public void serialize(Encoder encoder) throws IOException {
-        encoder.writeUintCompressed(flags.size());
-        for(Map.Entry<RegionFlag, Object> entry : flags.entrySet()) {
-            encoder.write(entry.getKey().ordinal());
-            if(entry.getKey().isBoolean())
-                encoder.writeBoolean((boolean)entry.getValue());
-            else
-                ((Serializable)entry.getValue()).serialize(encoder);
-        }
-    }
-
-    @Override
-    public void deserialize(Decoder decoder) throws IOException {
-        int len = decoder.readCompressedUint();
-        while(len > 0) {
-            RegionFlag flag = RegionFlag.VALUES[decoder.read()];
-            Object meta;
-            if(flag.isBoolean())
-                meta = decoder.readBoolean();
-            else{
-                meta = ReflectionHelper.instantiate(flag.getMetaClass());
-                ((Serializable)meta).deserialize(decoder);
-            }
-            flags.put(flag, meta);
-            -- len;
-        }
     }
 
     @Override

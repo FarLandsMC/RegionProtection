@@ -2,19 +2,15 @@ package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
-import com.kicas.rp.util.Decoder;
-import com.kicas.rp.util.Encoder;
-import com.kicas.rp.util.Serializable;
 import com.kicas.rp.util.Utils;
 import org.bukkit.entity.Player;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
  * The metadata class for the trust region flag.
  */
-public class TrustMeta implements Serializable {
+public class TrustMeta {
     // Key: player UUID, value: trust level
     private final Map<UUID, TrustLevel> trustData;
     private TrustLevel publicTrustLevel;
@@ -28,8 +24,7 @@ public class TrustMeta implements Serializable {
         this.publicTrustLevel = TrustLevel.NONE;
     }
 
-    // Just used for the FULL_TRUST field
-    private TrustMeta(TrustLevel publicTrustLevel) {
+    public TrustMeta(TrustLevel publicTrustLevel) {
         this.trustData = new HashMap<>();
         this.publicTrustLevel = publicTrustLevel;
     }
@@ -101,6 +96,14 @@ public class TrustMeta implements Serializable {
         publicTrustLevel = trust;
     }
 
+    public TrustLevel getPublicTrustLevel() {
+        return publicTrustLevel;
+    }
+
+    public Map<UUID, TrustLevel> getRawTrustData() {
+        return trustData;
+    }
+
     /**
      * Returns a mapping of every trust level to a list of the UUIDs with that trust level.
      * @return the trust list as described above.
@@ -141,26 +144,6 @@ public class TrustMeta implements Serializable {
         });
 
         return list;
-    }
-
-    @Override
-    public void serialize(Encoder encoder) throws IOException {
-        encoder.write(publicTrustLevel.ordinal());
-        encoder.writeUintCompressed(trustData.size());
-        for(Map.Entry<UUID, TrustLevel> trust : trustData.entrySet()) {
-            encoder.writeUuid(trust.getKey());
-            encoder.write(trust.getValue().ordinal());
-        }
-    }
-
-    @Override
-    public void deserialize(Decoder decoder) throws IOException {
-        publicTrustLevel = TrustLevel.VALUES[decoder.read()];
-        int len = decoder.readCompressedUint();
-        while(len > 0) {
-            trustData.put(decoder.readUuid(), TrustLevel.VALUES[decoder.read()]);
-            -- len;
-        }
     }
 
     @Override

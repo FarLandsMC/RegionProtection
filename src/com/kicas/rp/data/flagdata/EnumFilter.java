@@ -2,26 +2,30 @@ package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.util.*;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Can act as a blacklist or whitelist for any given enum.
  */
-public class EnumFilter implements Serializable {
+public class EnumFilter {
+    private boolean isWhitelist;
     // List of ordinals
     private final List<Integer> filter;
-    private boolean isWhitelist;
 
     /**
      * Default filter value.
      */
-    public static final EnumFilter EMPTY_FILTER = new EnumFilter(false);
+    public static final EnumFilter EMPTY_FILTER = new EnumFilter(false, Collections.emptyList());
+
+    public EnumFilter(boolean isWhitelist, List<Integer> filter) {
+        this.isWhitelist = isWhitelist;
+        this.filter = filter;
+    }
     
     public EnumFilter(boolean isWhitelist) {
-        this.filter = new ArrayList<>();
-        this.isWhitelist = isWhitelist;
+        this(isWhitelist, new ArrayList<>());
     }
 
     public EnumFilter() {
@@ -31,23 +35,13 @@ public class EnumFilter implements Serializable {
     public boolean isAllowed(Enum e) {
         return isWhitelist == filter.contains(e.ordinal());
     }
-    
-    @Override
-    public void serialize(Encoder encoder) throws IOException {
-        encoder.writeBoolean(isWhitelist);
-        encoder.writeUintCompressed(filter.size());
-        for(Integer ordinal : filter)
-            encoder.writeUintCompressed(ordinal);
+
+    public List<Integer> getFilter() {
+        return filter;
     }
-    
-    @Override
-    public void deserialize(Decoder decoder) throws IOException {
-        isWhitelist = decoder.readBoolean();
-        int len = decoder.readCompressedUint();
-        while(len > 0) {
-            filter.add(decoder.readCompressedUint());
-            -- len;
-        }
+
+    public boolean isWhitelist() {
+        return isWhitelist;
     }
 
     @SuppressWarnings("unchecked")

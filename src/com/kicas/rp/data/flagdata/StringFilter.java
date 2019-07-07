@@ -1,24 +1,26 @@
 package com.kicas.rp.data.flagdata;
 
-import com.kicas.rp.util.*;
-
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class StringFilter implements Serializable {
+public class StringFilter {
     // List of ordinals
-    private final List<String> filter;
     private boolean isWhitelist;
+    private final List<String> filter;
 
     /**
      * Default filter value.
      */
-    public static final StringFilter EMPTY_FILTER = new StringFilter(false);
+    public static final StringFilter EMPTY_FILTER = new StringFilter(false, Collections.emptyList());
+
+    public StringFilter(boolean isWhitelist, List<String> filter) {
+        this.isWhitelist = isWhitelist;
+        this.filter = filter;
+    }
 
     public StringFilter(boolean isWhitelist) {
-        this.filter = new ArrayList<>();
-        this.isWhitelist = isWhitelist;
+        this(isWhitelist, new ArrayList<>());
     }
 
     public StringFilter() {
@@ -29,16 +31,12 @@ public class StringFilter implements Serializable {
         return isWhitelist == filter.contains(string);
     }
 
-    @Override
-    public void serialize(Encoder encoder) throws IOException {
-        encoder.writeBoolean(isWhitelist);
-        encoder.writeArray(filter, String.class);
+    public List<String> getFilter() {
+        return filter;
     }
 
-    @Override
-    public void deserialize(Decoder decoder) throws IOException {
-        isWhitelist = decoder.readBoolean();
-        filter.addAll(decoder.readArrayAsList(String.class));
+    public boolean isWhitelist() {
+        return isWhitelist;
     }
 
     @Override
