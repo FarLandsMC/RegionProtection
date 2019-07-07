@@ -34,7 +34,12 @@ public class LocationMeta implements Serializable {
     }
 
     public LocationMeta() {
-        this(null, 0, 0, 0, 0F, 0F);
+        this.world = null;
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
+        this.yaw = 0F;
+        this.pitch = 0F;
     }
 
     public Location getLocation() {

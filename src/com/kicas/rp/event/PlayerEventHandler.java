@@ -14,6 +14,7 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
@@ -125,6 +126,15 @@ public class PlayerEventHandler implements Listener {
 
         Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
         Material blockType = event.getClickedBlock().getType();
+
+        if(event.getAction() != Action.PHYSICAL && !heldItem.isBlock() &&
+                !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isAllowed(heldItem)) {
+            if(event.getHand() == EquipmentSlot.HAND)
+                event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+            event.setCancelled(true);
+            return;
+        }
+
         switch(event.getAction()) {
             // Disable fire extinguishing and dragon egg punching.
             case LEFT_CLICK_BLOCK:
@@ -232,14 +242,6 @@ public class PlayerEventHandler implements Listener {
 
                 break;
             }
-
-            case RIGHT_CLICK_AIR:
-                if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isAllowed(heldItem)) {
-                    event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
-                    event.setCancelled(true);
-                }
-
-                break;
 
             // Handle players stepping on things such as turtle eggs, tripwires, farmland, and pressure plates
             case PHYSICAL:
@@ -397,9 +399,11 @@ public class PlayerEventHandler implements Listener {
         // Only check trust for non-hostile entities
         if(event.getDamager() instanceof Player) {
             if(!flags.isEffectiveOwner((Player)event.getDamager())) {
-                if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isAllowed(Materials.stackType(
-                        Materials.heldItem((Player)event.getDamager(), EquipmentSlot.HAND)))) {
-                    event.getDamager().sendMessage(ChatColor.RED + "You cannot use that weapon here.");
+                Material weapon = Materials.stackType(Materials.heldItem((Player)event.getDamager(),
+                        EquipmentSlot.HAND));
+                if(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isAllowed(weapon)) {
+                    if(weapon != Material.AIR)
+                        event.getDamager().sendMessage(ChatColor.RED + "You cannot use that weapon here.");
                     event.setCancelled(true);
                     return;
                 }

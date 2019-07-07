@@ -55,16 +55,7 @@ public class RegionHighlighter {
      * Cancels the automatic removal task and removes the client-side changes if the player is online.
      */
     public void remove() {
-        if(player.isOnline()) {
-            changes.keySet().forEach(loc -> {
-                if(player.getLocation().distanceSquared(loc) < 10000) {
-                    Block block = loc.getBlock();
-                    if(block != null)
-                        player.sendBlockChange(loc, block.getBlockData());
-                }
-            });
-        }
-
+        hideBlocks();
         Bukkit.getScheduler().cancelTask(removalTaskId);
     }
 
@@ -120,22 +111,26 @@ public class RegionHighlighter {
      */
     public void showBlocks() {
         changes.forEach((loc, mat) -> {
-            if(player.getLocation().distanceSquared(loc) < 10000)
+            if(distanceCheck(loc))
                 player.sendBlockChange(loc, mat.createBlockData());
         });
 
         removalTaskId = Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), () -> {
-            if(player.isOnline()) {
-                changes.keySet().forEach(loc -> {
-                    if(player.getLocation().distanceSquared(loc) < 10000) {
-                        Block block = loc.getBlock();
-                        if(block != null)
-                            player.sendBlockChange(loc, block.getBlockData());
-                    }
-                });
-            }
+            hideBlocks();
             setComplete();
         }, 20L * 60L).getTaskId();
+    }
+
+    private void hideBlocks() {
+        if(player.isOnline()) {
+            changes.keySet().forEach(loc -> {
+                if (distanceCheck(loc)) {
+                    Block block = loc.getBlock();
+                    if (block != null)
+                        player.sendBlockChange(loc, block.getBlockData());
+                }
+            });
+        }
     }
 
     public boolean isComplete() {
@@ -148,11 +143,15 @@ public class RegionHighlighter {
 
     // Adds or overwrites the change for the given location and also stores the original data if it's not already stored
     private void putChange(Location location, Material replacement) {
-        if(player.getLocation().distanceSquared(location) > 10000)
-            return;
+        if(distanceCheck(location)) {
+            location = findReplacementLocation(location.clone());
+            changes.put(location, replacement);
+        }
+    }
 
-        location = findReplacementLocation(location.clone());
-        changes.put(location, replacement);
+    private boolean distanceCheck(Location location) {
+        double dx = location.getX() - player.getLocation().getX(), dz = location.getZ() - player.getLocation().getZ();
+        return dx * dx + dz * dz < 100 * 100;
     }
     
     /**
@@ -162,9 +161,6 @@ public class RegionHighlighter {
      */
     private Location findReplacementLocation(Location replacement) {
         replacement.setY(Math.min(player.getLocation().getBlockY(), player.getWorld().getMaxHeight()));
-        // aligning to .5 so no further action is required for barrier particles
-        replacement.setX(replacement.getBlockX() + .5);
-        replacement.setZ(replacement.getBlockZ() + .5);
         
         // We don't go from the max height down in case the player is inside a cave
         if (replacement.getBlock().getType().isSolid() || replacement.getBlock().isLiquid()) {

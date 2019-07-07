@@ -123,6 +123,7 @@ public enum RegionFlag {
             case DENY_PLACE:
             case DENY_BLOCK_USE:
             case DENY_ITEM_USE:
+            case DENY_WEAPON_USE:
                 return EnumFilter.fromString(metaString, Material.class);
 
             case GREETING:

@@ -2,6 +2,7 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.util.Materials;
 import com.kicas.rp.util.ReflectionHelper;
 import com.kicas.rp.util.TextUtils;
 import com.kicas.rp.util.Utils;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,7 +30,7 @@ public class CommandRegion extends Command {
     private static final List<String> SUB_COMMANDS = Arrays.asList("flag", "create", "expand", "retract", "delete",
             "info");
     private static final List<String> ALLOW_DENY = Arrays.asList("allow", "deny");
-    private static final List<String> EXPANSION_DIRECTIONS = Arrays.asList("vert", "up", "down", "north", "south",
+    private static final List<String> EXPANSION_DIRECTIONS = Arrays.asList("vert", "top", "bottom", "north", "south",
             "east", "west");
 
     CommandRegion() {
@@ -248,7 +250,15 @@ public class CommandRegion extends Command {
                 }
 
                 // Get and check the side
-                BlockFace side = Utils.valueOfFormattedName(args[2], BlockFace.class);
+                BlockFace side;
+
+                if("top".equalsIgnoreCase(args[2]))
+                    side = BlockFace.UP;
+                else if("bottom".equalsIgnoreCase(args[2]))
+                    side = BlockFace.DOWN;
+                else
+                    side = Utils.valueOfFormattedName(args[2], BlockFace.class);
+
                 if (side == null) {
                     sender.sendMessage(ChatColor.RED + "Invalid direction: " + args[2]);
                     return true;
@@ -322,42 +332,64 @@ public class CommandRegion extends Command {
             if (args.length == 3) {
                 return filterStartingWith(args[2], Stream.of(RegionFlag.VALUES).map(flag -> (args[2].startsWith("!")
                         ? "!" : "") + Utils.formattedName(flag)));
-            } else if (args.length == 4) { // Suggest flag values
+            } else { // Suggest flag values
                 RegionFlag flag = Utils.valueOfFormattedName(args[2], RegionFlag.class);
 
-                switch (flag) {
-                    // Too complex, not worth giving suggestions for
-                    case TRUST:
-                    case GREETING:
-                    case FAREWELL:
-                        return Collections.emptyList();
+                // Too complex, not worth giving suggestions for
+                if(flag == RegionFlag.TRUST || flag == RegionFlag.GREETING || flag == RegionFlag.FAREWELL)
+                    return Collections.emptyList();
 
+                // Special case flag(s) that can accept more that one argument
+                if(flag == RegionFlag.RESPAWN_LOCATION) {
+                    switch(args.length) {
+                        case 4:
+                            return Collections.singletonList(Integer.toString(location.getBlockX()));
+                        case 5:
+                            return Collections.singletonList(Integer.toString(location.getBlockY()));
+                        case 6:
+                            return Collections.singletonList(Integer.toString(location.getBlockZ()));
+                        case 7:
+                            if(sender instanceof Player && (args[6].isEmpty() || args[6].matches("(-)?[\\d.]+"))) {
+                                return Collections.singletonList(Integer.toString((int) ((Player) sender).getLocation()
+                                        .getYaw()));
+                            } else
+                                return filterStartingWith(args[6], Bukkit.getWorlds().stream().map(World::getName));
+                        case 8:
+                            if(sender instanceof Player) {
+                                return Collections.singletonList(Integer.toString((int) ((Player) sender).getLocation()
+                                        .getPitch()));
+                            }else{
+                                return filterStartingWith(args[7], Bukkit.getWorlds().stream().map(World::getName));
+                            }
+                        case 9:
+                            return filterStartingWith(args[8], Bukkit.getWorlds().stream().map(World::getName));
+                        default:
+                            return Collections.emptyList();
+                    }
+                }
+
+                // These flags only accept one argument
+                switch (flag) {
                     // Give suggestions following the enum filter format (entities)
                     case DENY_SPAWN:
                     case DENY_AGGRO:
                     case DENY_ENTITY_USE:
-                        return filterStartingWith(args[3], Stream.of(EntityType.values())
-                                .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
-                                        ? "!" : "") + Utils.formattedName(e)));
+                        return filterFormat(args[3], Stream.of(EntityType.values()), Utils::formattedName);
 
                     // Ibid (materials)
                     case DENY_BREAK:
                     case DENY_PLACE:
-                        return filterStartingWith(args[3], Stream.of(Material.values())
-                                .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
-                                        ? "!" : "") + Utils.formattedName(e)));
+                        return filterFormat(args[3], Stream.of(Material.values()).filter(mat ->
+                                Materials.isPlaceable(mat) || mat == Material.LEAD), Utils::formattedName);
 
                     case DENY_BLOCK_USE:
-                        return filterStartingWith(args[3], Stream.of(Material.values())
-                                .filter(material -> material.isInteractable() && material.isBlock())
-                                .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
-                                        ? "!" : "") + Utils.formattedName(e)));
+                        return filterFormat(args[3], Stream.of(Material.values()).filter(mat ->
+                                mat.isInteractable() && mat.isBlock()), Utils::formattedName);
 
                     case DENY_ITEM_USE:
                     case DENY_WEAPON_USE:
-                        return filterStartingWith(args[3], Stream.of(Material.values()).filter(Material::isItem)
-                                .map(e -> args[3].substring(0, args[3].lastIndexOf(',') + 1) + (args[3].contains("*")
-                                        ? "!" : "") + Utils.formattedName(e)));
+                        return filterFormat(args[3], Stream.of(Material.values()).filter(mat -> !mat.isBlock()),
+                                Utils::formattedName);
 
                     case ENTER_COMMAND:
                     case EXIT_COMMAND: {
@@ -384,29 +416,8 @@ public class CommandRegion extends Command {
                                         ("knownCommands", SimpleCommandMap.class, ((CraftServer) Bukkit.getServer())
                                                 .getCommandMap());
 
-                        return filterStartingWith(args[3], knownCommands.keySet().stream().filter(s -> !s.contains(":"))
-                                .map(command -> args[3].substring(0, args[3].lastIndexOf(',') + 1) +
-                                        (args[3].contains("*") ? "!" : "") + command));
-                    }
-
-                    case RESPAWN_LOCATION: {
-                        switch(args.length) {
-                            case 1:
-                                return Collections.singletonList(Integer.toString(location.getBlockX()));
-                            case 2:
-                                return Collections.singletonList(Integer.toString(location.getBlockY()));
-                            case 3:
-                                return Collections.singletonList(Integer.toString(location.getBlockZ()));
-                            case 4:
-                                if(args[3].matches("[\\d.]+"))
-                                    return Collections.singletonList(Integer.toString((int)location.getYaw()));
-                                else
-                                    return filterStartingWith(args[3], Bukkit.getWorlds().stream().map(World::getName));
-                            case 5:
-                                return Collections.singletonList(Integer.toString((int)location.getPitch()));
-                            case 6:
-                                return filterStartingWith(args[3], Bukkit.getWorlds().stream().map(World::getName));
-                        }
+                        return filterFormat(args[3], knownCommands.keySet().stream().filter(s -> !s.contains(":")),
+                                null);
                     }
 
                     // Boolean flags
@@ -424,10 +435,15 @@ public class CommandRegion extends Command {
         return Collections.emptyList();
     }
 
-    // Convert the flags and their meta in the given container into a readable format
+    // Convert the flags and their meta in the given container into a readable encoding
     private static String formatFlags(FlagContainer flags) {
         return flags.getFlags().entrySet().stream().map(entry -> "- " + Utils.formattedName(entry.getKey()) +
                 ": {&(gray)" + RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n").reduce("",
                 String::concat).trim();
+    }
+
+    private static <T> List<String> filterFormat(String prefix, Stream<T> stream, Function<T, String> toString) {
+        return filterStartingWith(prefix, stream.map(x -> prefix.substring(0, prefix.lastIndexOf(',') + 1) +
+                (prefix.contains("*") ? "!" : "") + (toString == null ? (String)x : toString.apply(x))));
     }
 }

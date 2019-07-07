@@ -32,10 +32,10 @@ public final class Utils {
     }
 
     public static String doubleToString(double d, int precision) {
-        int rounder = 10 * precision;
-        return Double.toString(((int)(d * rounder + 0.5)) / (double)rounder);
+        String fp = Double.toString(d);
+        return fp.contains(".") ? fp.substring(0, Math.min(fp.lastIndexOf('.') + precision + 1, fp.length())) +
+                (fp.contains("E") ? fp.substring(fp.lastIndexOf('E')) : "") : fp;
     }
-
     public static int constrain(int n, int min, int max) {
         return n < min ? min : (n > max ? max : n);
     }
