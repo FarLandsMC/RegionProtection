@@ -55,8 +55,8 @@ public class CommandAbandonClaim implements CommandExecutor {
                 ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), null, null, false));
             }
         } else { // Abandon all claims including their subdivisions
-            dm.tryDeleteRegions(player, player.getWorld(), region -> region.isEffectiveOwner(player) &&
-                    !region.isAdminOwned() && !ps.isIgnoringTrust(), true);
+            dm.tryDeleteRegions(player, player.getWorld(), region -> region.isOwner(player.getUniqueId()) &&
+                    !region.isAdminOwned(), true);
 
             sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in this world. You now have " +
                     ps.getClaimBlocks() + " claim blocks.");

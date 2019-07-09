@@ -26,10 +26,6 @@ public class DataManager implements Listener {
     private final File rootDir;
     // Key: worldUid, value: data about the regions and flags in a world
     private final Map<UUID, WorldData> worlds;
-    // Used to quickly find the regions in a certain area. Key: worldUid, value: that world's lookup table
-    // To generate a key for the lookup table from a certain location, set the 4 most significant bytes to be the
-    // location's x-value divided by 128, and set the 4 least significant bytes to be the z-value divided by 128.
-    private final Map<UUID, Map<Long, List<Region>>> lookupTable;
     // Used to create player sessions
     private final Map<UUID, PersistentPlayerData> playerData;
     private final Map<UUID, PlayerSession> playerSessionCache;
@@ -40,11 +36,11 @@ public class DataManager implements Listener {
     public static final String GLOBAL_FLAG_NAME = "__global__";
 
     private static final String MOJANG_API_BASE = "https://api.mojang.com";
+    private static final int LOOKUP_TABLE_SCALE = 7;
 
     public DataManager(File rootDir) {
         this.rootDir = rootDir;
         this.worlds = new HashMap<>();
-        this.lookupTable = new HashMap<>();
         this.playerData = new HashMap<>();
         this.playerSessionCache = new HashMap<>();
     }
@@ -234,13 +230,7 @@ public class DataManager implements Listener {
      * @return a list of regions that contain the specified location.
      */
     public synchronized List<Region> getRegionsAt(Location location) {
-        List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
-                ((long) (location.getBlockX() >> 7)) << 32 |
-                        ((long) (location.getBlockZ() >> 7) & 0xFFFFFFFFL)
-        );
-
-        return regions == null ? Collections.emptyList() : regions.stream().filter(region -> region.contains(location))
-                .collect(Collectors.toList());
+        return worlds.get(location.getWorld().getUID()).getLookupTable().getRegionsAt(location);
     }
 
     /**
@@ -250,13 +240,7 @@ public class DataManager implements Listener {
      * @return a list of regions that contain the x and z value of the given location.
      */
     public synchronized List<Region> getRegionsAtIgnoreY(Location location) {
-        List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
-                ((long) (location.getBlockX() >> 7)) << 32 |
-                        ((long) (location.getBlockZ() >> 7) & 0xFFFFFFFFL)
-        );
-
-        return regions == null ? Collections.emptyList() : regions.stream().filter(region ->
-                region.containsIgnoreY(location)).collect(Collectors.toList());
+        return worlds.get(location.getWorld().getUID()).getLookupTable().getRegionsAtIgnoreY(location);
     }
 
     /**
@@ -277,9 +261,7 @@ public class DataManager implements Listener {
      * @return the highest priority region at the given location.
      */
     public synchronized Region getHighestPriorityRegionAt(Location location) {
-        List<Region> regions = getRegionsAt(location);
-        return regions.isEmpty() ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority))
-                .orElse(null);
+        return worlds.get(location.getWorld().getUID()).getLookupTable().getHighestPriorityRegionAt(location);
     }
     
     /**
@@ -289,9 +271,7 @@ public class DataManager implements Listener {
      * @return the highest priority region at the given location.
      */
     public synchronized Region getHighestPriorityRegionAtIgnoreY(Location location) {
-        List<Region> regions = getRegionsAtIgnoreY(location);
-        return regions.isEmpty() ? null : regions.stream().max(Comparator.comparingInt(Region::getPriority))
-                .orElse(null);
+        return worlds.get(location.getWorld().getUID()).getLookupTable().getHighestPriorityRegionAtIgnoreY(location);
     }
 
     /**
@@ -301,8 +281,7 @@ public class DataManager implements Listener {
      * @return a list of the regions at the given location which do not have a parent.
      */
     public synchronized List<Region> getParentRegionsAt(Location location) {
-        List<Region> regions = getRegionsAt(location);
-        return regions.stream().filter(region -> !region.hasParent()).collect(Collectors.toList());
+        return worlds.get(location.getWorld().getUID()).getLookupTable().getParentRegionsAt(location);
     }
 
     /**
@@ -313,10 +292,7 @@ public class DataManager implements Listener {
      */
     public synchronized FlagContainer getFlagsAt(Location location) {
         FlagContainer worldFlags = worlds.get(location.getWorld().getUID());
-        List<Region> regions = lookupTable.get(location.getWorld().getUID()).get(
-                ((long) (location.getBlockX() >> 7)) << 32 |
-                        ((long) (location.getBlockZ() >> 7) & 0xFFFFFFFFL)
-        );
+        List<Region> regions = getRegionsAt(location);
 
         // Quick check for an absence of regions
         if (regions == null)
@@ -414,8 +390,7 @@ public class DataManager implements Listener {
         // Make sure overlap is not allowed
         region.setFlag(RegionFlag.OVERLAP, false);
         // Register the claim
-        worlds.get(creator.getWorld().getUID()).getRegions().add(region);
-        addRegionToLookupTable(region, false);
+        worlds.get(creator.getWorld().getUID()).addRegion(region);
 
         return region;
     }
@@ -495,9 +470,7 @@ public class DataManager implements Listener {
             return false;
         }
 
-        if(!region.hasParent())
-            worlds.get(region.getWorld().getUID()).getRegions().add(region);
-        addRegionToLookupTable(region, false);
+        worlds.get(region.getWorld().getUID()).addRegion(region);
 
         return true;
     }
@@ -538,7 +511,7 @@ public class DataManager implements Listener {
         if (!resizeChecks(delegate, claim, bounds))
             return false;
 
-        readdRegionToLookupTable(claim, bounds);
+        worlds.get(claim.getWorld().getUID()).getLookupTable().readd(claim, bounds);
 
         return true;
     }
@@ -594,7 +567,7 @@ public class DataManager implements Listener {
         // Make sure the bounds are still correct
         region.reevaluateBounds();
         // Re-add the claim to the lookup table
-        readdRegionToLookupTable(region, bounds);
+        worlds.get(region.getWorld().getUID()).getLookupTable().readd(region, bounds);
 
         return true;
     }
@@ -640,19 +613,9 @@ public class DataManager implements Listener {
 
         // Build the list of collisions ignoring the parent claim (this code is slightly different from the regular
         // checkCollisions method)
-        List<Region> collisions = new LinkedList<>();
-        // Build a list of collisions from the lookup table
-        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
-            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
-                List<Region> regions = lookupTable.get(region.getWorld().getUID())
-                        .get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL));
-                if (regions != null) {
-                    // Ignore associations to prevent conflict with subdivisions
-                    regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.overlaps(region) &&
-                            !r.equals(claim)).forEach(collisions::add);
-                }
-            }
-        }
+        Set<Region> collisions = worlds.get(claim.getWorld().getUID()).getLookupTable().getCollisions(region);
+        collisions.remove(claim);
+        collisions.removeIf(r -> r.isAllowed(RegionFlag.OVERLAP));
 
         // Check collisions
         if (!collisions.isEmpty()) {
@@ -675,7 +638,7 @@ public class DataManager implements Listener {
 
         // Register the subdivision
         associate(claim, region);
-        addRegionToLookupTable(region, false);
+        worlds.get(region.getWorld().getUID()).addRegion(region);
 
         return region;
     }
@@ -778,12 +741,7 @@ public class DataManager implements Listener {
         }
 
         // Remove the region from the lookup table
-        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
-            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
-                lookupTable.get(region.getWorld().getUID()).get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL))
-                        .remove(region);
-            }
-        }
+        worlds.get(region.getWorld().getUID()).getLookupTable().remove(region);
 
         return true;
     }
@@ -869,19 +827,8 @@ public class DataManager implements Listener {
     // The given delegate will be notified if overlap is detected and those regions will be highlighted
     // Returns true if no collisions were present
     private boolean checkCollisions(Player delegate, Region region) {
-        List<Region> collisions = new LinkedList<>();
-        // Build a list of collisions from the lookup table
-        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
-            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
-                List<Region> regions = lookupTable.get(region.getWorld().getUID())
-                        .get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL));
-                if (regions != null) {
-                    // Ignore associations to prevent conflict with subdivisions
-                    regions.stream().filter(r -> !r.isAllowed(RegionFlag.OVERLAP) && r.overlaps(region) &&
-                            !r.equals(region) && !r.isAssociated(region)).forEach(collisions::add);
-                }
-            }
-        }
+        Set<Region> collisions = worlds.get(region.getWorld().getUID()).getLookupTable().getCollisions(region);
+        collisions.removeIf(r -> r.isAllowed(RegionFlag.OVERLAP) || r.isAssociated(region));
 
         if (!collisions.isEmpty()) {
             delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
@@ -967,10 +914,9 @@ public class DataManager implements Listener {
      */
     public void load() {
         // Initialize tables
-        Bukkit.getWorlds().stream().map(World::getUID).forEach(uuid -> {
-            worlds.put(uuid, new WorldData(uuid)); // Just in case a new world is created
-            lookupTable.put(uuid, new HashMap<>());
-        });
+        Bukkit.getWorlds().stream().map(World::getUID).forEach(uuid ->
+            worlds.put(uuid, new WorldData(uuid)) // Just in case a new world is created
+        );
 
         // Load data for each world
         try {
@@ -980,6 +926,7 @@ public class DataManager implements Listener {
             else {
                 Deserializer deserializer = new Deserializer(regionsFile, REGION_FORMAT_VERSION);
                 worlds.putAll(deserializer.readWorldData());
+                worlds.values().forEach(wd -> wd.generateLookupTable(LOOKUP_TABLE_SCALE));
             }
         } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file:\n" + ex.getClass().getName() + ": " + ex.getMessage());
@@ -1034,36 +981,5 @@ public class DataManager implements Listener {
             RegionProtection.error("Failed to save player data file: " + ex.getMessage());
             ex.printStackTrace();
         }
-    }
-
-    // Adds the given region to the lookup table. The region could have references under multiple keys if it is large
-    // enough. The specified region will also add its child regions to the table recursively.
-    private void addRegionToLookupTable(Region region, boolean includeChildren) {
-        Map<Long, List<Region>> worldTable = lookupTable.get(region.getWorld().getUID());
-        Long key;
-        for (int x = region.getMin().getBlockX() >> 7; x <= region.getMax().getBlockX() >> 7; ++x) {
-            for (int z = region.getMin().getBlockZ() >> 7; z <= region.getMax().getBlockZ() >> 7; ++z) {
-                key = ((long) x) << 32 | (((long) z & 0xFFFFFFFFL));
-                if (!worldTable.containsKey(key))
-                    worldTable.put(key, new ArrayList<>());
-                worldTable.get(key).add(region);
-            }
-        }
-
-        if (includeChildren)
-            region.getChildren().forEach(r -> addRegionToLookupTable(r, false));
-    }
-
-    private void readdRegionToLookupTable(Region region, Pair<Location, Location> oldBounds) {
-        // Remove the old claim from the lookup table
-        for (int x = oldBounds.getFirst().getBlockX() >> 7; x <= oldBounds.getSecond().getBlockX() >> 7; ++x) {
-            for (int z = oldBounds.getFirst().getBlockZ() >> 7; z <= oldBounds.getSecond().getBlockZ() >> 7; ++z) {
-                lookupTable.get(region.getWorld().getUID()).get((((long) x) << 32) | ((long) z & 0xFFFFFFFFL))
-                        .remove(region);
-            }
-        }
-
-        // Re-add the claim to the lookup table
-        addRegionToLookupTable(region, false);
     }
 }
