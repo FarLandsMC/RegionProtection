@@ -298,7 +298,7 @@ public class Region extends FlagContainer {
      */
     public boolean hasExpired(long expirationTime) {
         // Obviously exempt admin regions
-        if (isAdminOwned())
+        if (isAdminOwned() || expirationTime == 0)
             return false;
 
         // Find the most recent login

@@ -266,7 +266,7 @@ public class RegionLookupTable {
     // Convers the given x and z parts to a valid index for the inner table array
     private int index(int x, int z) {
         // The & operation sets the sign bit to 0
-        return ((x ^ z) & 0x7FFFFFFF) % table.length;
+        return ((x ^ z) & Integer.MAX_VALUE) % table.length;
     }
 
     // Represents a node in the inner table, which will contain a region reference and could contain a reference to
