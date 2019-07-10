@@ -55,6 +55,10 @@ public class DataManager implements Listener {
      * @return the UUID associated with the given username, or null if no such UUID could be found.
      */
     public static UUID uuidForUsername(String username) {
+        Player player = Bukkit.getPlayer(username);
+        if(player != null)
+            return player.getUniqueId();
+
         // Check to see if they've joined before
         OfflinePlayer op = Stream.of(Bukkit.getOfflinePlayers()).filter(p -> username.equals(p.getName())).findAny()
                 .orElse(null);
@@ -98,6 +102,10 @@ public class DataManager implements Listener {
      * could be found.
      */
     public static String currentUsernameForUuid(UUID uuid) {
+        Player player = Bukkit.getPlayer(uuid);
+        if(player != null)
+            return player.getName();
+
         // Check to see if they've joined before
         OfflinePlayer op = Stream.of(Bukkit.getOfflinePlayers()).filter(p -> uuid.equals(p.getUniqueId())).findAny()
                 .orElse(null);
