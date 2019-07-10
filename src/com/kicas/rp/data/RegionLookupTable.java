@@ -44,12 +44,12 @@ public class RegionLookupTable {
     }
 
     /**
-     * Removes any reference to the region at the given old bounds of the region, and readds the region with its current
+     * Removes any reference to the region at the given old bounds of the region, and re-adds the region with its current
      * bounds.
-     * @param region the region to readd.
+     * @param region the region to re-add.
      * @param oldBounds the old bounds of the region.
      */
-    public void readd(Region region, Pair<Location, Location> oldBounds) {
+    public void reAdd(Region region, Pair<Location, Location> oldBounds) {
         remove(region, oldBounds);
         add(region);
     }
@@ -231,17 +231,19 @@ public class RegionLookupTable {
             for (int z = bounds.getFirst().getBlockZ() >> scale; z <= bounds.getSecond().getBlockZ() >> scale; ++z) {
                 // Remove the reference
                 int index = index(x, z);
-                if (table[index].region.equals(region))
-                    table[index] = table[index].link;
-                else
-                    table[index].remove(region);
+                if(table[index] != null) {
+                    if (table[index].region.equals(region))
+                        table[index] = table[index].link;
+                    else
+                        table[index].remove(region);
+                }
             }
         }
     }
 
     // Increases the size of the inner table by a factor of 1.35
     private void inflate() {
-        // Copy the regions to readd
+        // Copy the regions to re-add
         Set<Region> regions = new HashSet<>(size);
         for(Node node : table) {
             if(node != null) {

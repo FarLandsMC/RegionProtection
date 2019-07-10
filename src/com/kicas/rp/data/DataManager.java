@@ -511,7 +511,7 @@ public class DataManager implements Listener {
         if (!resizeChecks(delegate, claim, bounds))
             return false;
 
-        worlds.get(claim.getWorld().getUID()).getLookupTable().readd(claim, bounds);
+        worlds.get(claim.getWorld().getUID()).getLookupTable().reAdd(claim, bounds);
 
         return true;
     }
@@ -567,7 +567,7 @@ public class DataManager implements Listener {
         // Make sure the bounds are still correct
         region.reevaluateBounds();
         // Re-add the claim to the lookup table
-        worlds.get(region.getWorld().getUID()).getLookupTable().readd(region, bounds);
+        worlds.get(region.getWorld().getUID()).getLookupTable().reAdd(region, bounds);
 
         return true;
     }
