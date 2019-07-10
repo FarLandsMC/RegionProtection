@@ -383,7 +383,8 @@ public class CommandRegion extends TabCompletorBase implements CommandExecutor {
                     case DENY_BREAK:
                     case DENY_PLACE:
                         return filterFormat(args[3], Stream.of(Material.values()).filter(mat ->
-                                Materials.isPlaceable(mat) || mat == Material.LEAD), Utils::formattedName);
+                                Materials.isPlaceable(mat) || mat == Material.LEAD || mat.isBlock()),
+                                Utils::formattedName);
 
                     case DENY_BLOCK_USE:
                         return filterFormat(args[3], Stream.of(Material.values()).filter(mat ->
