@@ -114,6 +114,7 @@ public class CommandRegion extends TabCompletorBase implements CommandExecutor {
             PlayerSession ps = RegionProtection.getDataManager().getPlayerSession((Player) sender);
             int priority = 0;
             String parentName = null;
+            boolean force = false;
 
             // Skip the sub-command and region name and evaluate the rest of the arguments
             for (int i = 2; i < args.length; ++i) {
@@ -128,13 +129,15 @@ public class CommandRegion extends TabCompletorBase implements CommandExecutor {
                     }
                 } else if (args[i].toLowerCase().startsWith("parent:")) // Get the parent region's name
                     parentName = args[i].substring(args[i].indexOf(':') + 1);
+                else if(args[i].equalsIgnoreCase("force"))
+                    force = true;
                 else // Skip invalid tags
                     sender.sendMessage(ChatColor.RED + "Ignoring argument \"" + args[i] + "\" since it is invalid.");
             }
 
             // Attempt to register the region (parent name checked here)
             if (RegionProtection.getDataManager().tryRegisterRegion((Player) sender, ps.getCurrentSelectedRegion(),
-                    args[1], priority, parentName)) {
+                    args[1], priority, parentName, force)) {
                 sender.sendMessage(ChatColor.GREEN + "Created region " + args[1] + " with a priority of " +
                         ps.getCurrentSelectedRegion().getPriority() + " and " + (parentName == null ? "no parent."
                         : "parent " + parentName));
@@ -322,7 +325,7 @@ public class CommandRegion extends TabCompletorBase implements CommandExecutor {
                 return filterStartingWith(args[args.length - 1], RegionProtection.getDataManager()
                         .getRegionsInWorld(location.getWorld()).stream().map(region -> "parent:" + region.getRawName()));
             } else if (args[args.length - 1].indexOf(':') < 0) { // Suggest the tag prefixes that are left
-                return Stream.of("priority:", "parent:").filter(tag -> {
+                return Stream.of("priority:", "parent:", "force").filter(tag -> {
                     for (int i = 2; i < args.length; ++i) {
                         if (args[i].toLowerCase().startsWith(tag))
                             return false;

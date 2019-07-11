@@ -51,7 +51,8 @@ public enum RegionFlag {
     RESPAWN_LOCATION(LocationMeta.class),
     DENY_ENTITY_USE(EnumFilter.class),
     DENY_ITEM_USE(EnumFilter.class),
-    DENY_WEAPON_USE(EnumFilter.class);
+    DENY_WEAPON_USE(EnumFilter.class),
+    FLIGHT;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
@@ -247,5 +248,6 @@ public enum RegionFlag {
         DEFAULT_VALUES.put(DENY_ENTITY_USE, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(DENY_ITEM_USE, EnumFilter.EMPTY_FILTER);
         DEFAULT_VALUES.put(DENY_WEAPON_USE, EnumFilter.EMPTY_FILTER);
+        DEFAULT_VALUES.put(FLIGHT, false);
     }
 }

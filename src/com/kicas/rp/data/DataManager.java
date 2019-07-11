@@ -433,10 +433,11 @@ public class DataManager implements Listener {
      * @param name       the name of the region.
      * @param priority   the priority of the region.
      * @param parentName the name of the parent of the region, or null if the region should not have a parent.
+     * @param force      whether of not to force the registration of the given region.
      * @return true if the registration was successful, false otherwise.
      */
     public synchronized boolean tryRegisterRegion(Player delegate, Region region, String name, int priority,
-                                                  String parentName) {
+                                                  String parentName, boolean force) {
         // Make sure the name is free
         if (getRegionByName(region.getWorld(), name) != null) {
             delegate.sendMessage(ChatColor.RED + "A region with that name already exists.");
@@ -472,7 +473,7 @@ public class DataManager implements Listener {
         }
 
         // checkCollisions sends an error message to the creator
-        if (!checkCollisions(delegate, region)) {
+        if (!force && !checkCollisions(delegate, region)) {
             if(region.hasParent())
                 region.getParent().getChildren().remove(region);
             return false;

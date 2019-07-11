@@ -8,6 +8,7 @@ import com.kicas.rp.util.Materials;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -23,6 +24,8 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 
@@ -65,7 +68,7 @@ public class PlayerEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
 
         // Allow for dynamic region expansion downwards
-        if(flags == null) {
+        if(flags == null || flags instanceof WorldData) {
             // Find the region
             Region region = RegionProtection.getDataManager().getRegionsAtIgnoreY(event.getBlock().getLocation())
                     .stream().filter(r -> r.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
@@ -651,6 +654,16 @@ public class PlayerEventHandler implements Listener {
                     toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(event.getPlayer());
             }
 
+            if(event.getPlayer().getGameMode() == GameMode.SURVIVAL || event.getPlayer().getGameMode() == GameMode.ADVENTURE) {
+                boolean allowFlight = toFlags == null ? event.getPlayer().getServer().getAllowFlight()
+                        : toFlags.isAllowed(RegionFlag.FLIGHT);
+                event.getPlayer().setAllowFlight(allowFlight);
+                if(!allowFlight) {
+                    event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 200, 4,
+                            false, false, false));
+                }
+            }
+
             if(fromFlags != null) {
                 if(fromFlags.hasFlag(RegionFlag.FAREWELL)) {
                     event.getPlayer().spigot().sendMessage(fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL)
@@ -659,6 +672,15 @@ public class PlayerEventHandler implements Listener {
                 if(fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
                     fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(event.getPlayer());
             }
+        }
+    }
+
+    @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        if(!event.getPlayer().isOp()) {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+            if(flags != null)
+                event.getPlayer().setAllowFlight(flags.isAllowed(RegionFlag.FLIGHT));
         }
     }
 
