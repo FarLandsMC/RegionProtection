@@ -34,11 +34,11 @@ commands:
   expandclaim:
     description: Expand your claim in the direction you are facing.
     usage: /expandclaim <amount>
-    permission: rp.claims
+    permission: rp.claims.manage
   expel:
     description: Expel a player from your claim.
     usage: /expel <player>
-    permission: rp.claims
+    permission: rp.claims.manage
   ignoretrust:
     description: Allows the user to ignore the trust flag in all regions.
     usage: /ignoretrust
@@ -55,7 +55,7 @@ commands:
   transferclaim:
     description: Transfer the ownership of your claim to another person.
     usage: /transferclaim <newOwner>
-    permission: rp.claims
+    permission: rp.claims.manage
   trapped:
     description: Get yourself out of a sticky situation.
     usage: /trapped
@@ -75,6 +75,9 @@ permissions:
     default: true
   rp.claims.inquiry:
     description: Allows a player to highlight regions
+    default: true
+  rp.claims.manage:
+    description: Allows a player to use commands to modify a claim
     default: true
   rp.command.adminregion:
     description: Allows a player to use /adminregion
