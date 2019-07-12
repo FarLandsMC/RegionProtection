@@ -23,6 +23,11 @@ public class WorldData extends FlagContainer {
         return regions;
     }
 
+    @Override
+    public boolean isAllowed(RegionFlag flag) {
+        return flags.containsKey(flag) ? (boolean)flags.get(flag) : flag.getWorldDefaultValue();
+    }
+
     public void addRegion(Region region) {
         if(!region.hasParent())
             regions.add(region);

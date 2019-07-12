@@ -1,8 +1,10 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.data.flagdata.*;
+import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -55,7 +57,7 @@ public enum RegionFlag {
     FLIGHT;
 
     public static final RegionFlag[] VALUES = values();
-    private static final Map<RegionFlag, Object> DEFAULT_VALUES = new HashMap<>();
+    private static final Map<RegionFlag, Pair<Object, Object>> DEFAULT_VALUES = new HashMap<>();
 
     private final boolean adminOnly;
     private final Class<?> metaClass;
@@ -91,7 +93,12 @@ public enum RegionFlag {
 
     @SuppressWarnings("unchecked")
     public <T> T getDefaultValue() {
-        return (T)DEFAULT_VALUES.get(this);
+        return (T)DEFAULT_VALUES.get(this).getFirst();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getWorldDefaultValue() {
+        return (T)DEFAULT_VALUES.get(this).getSecond();
     }
 
     public static String toString(RegionFlag flag, Object meta) {
@@ -211,43 +218,53 @@ public enum RegionFlag {
 
     // Called when the plugin is enabled
     public static void registerDefaults(FileConfiguration config) {
-        DEFAULT_VALUES.put(TRUST, TrustMeta.FULL_TRUST);
-        DEFAULT_VALUES.put(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(DENY_BREAK, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(DENY_PLACE, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(MOB_GRIEF, config.getBoolean("entity.mob-grief"));
-        DEFAULT_VALUES.put(TNT, config.getBoolean("world.tnt-explosions"));
-        DEFAULT_VALUES.put(OVERLAP, false);
-        DEFAULT_VALUES.put(INVINCIBLE, false);
-        DEFAULT_VALUES.put(GREETING, TextMeta.EMPTY_TEXT);
-        DEFAULT_VALUES.put(FAREWELL, TextMeta.EMPTY_TEXT);
-        DEFAULT_VALUES.put(HOSTILE_DAMAGE, true);
-        DEFAULT_VALUES.put(ANIMAL_DAMAGE, true);
-        DEFAULT_VALUES.put(POTION_SPLASH, true);
-        DEFAULT_VALUES.put(FORCE_CHEST_ACCESS, false);
-        DEFAULT_VALUES.put(PVP, config.getBoolean("player.pvp"));
-        DEFAULT_VALUES.put(BED_ENTER, true);
-        DEFAULT_VALUES.put(WATER_FLOW, true);
-        DEFAULT_VALUES.put(LAVA_FLOW, true);
-        DEFAULT_VALUES.put(SNOW_CHANGE, config.getBoolean("world.snow-change"));
-        DEFAULT_VALUES.put(ICE_CHANGE, config.getBoolean("world.ice-change"));
-        DEFAULT_VALUES.put(CORAL_DEATH, config.getBoolean("world.coral-death"));
-        DEFAULT_VALUES.put(LEAF_DECAY, config.getBoolean("world.leaf-decay"));
-        DEFAULT_VALUES.put(LIGHTNING_MOB_DAMAGE, config.getBoolean("world.lightning-mob-damage"));
-        DEFAULT_VALUES.put(PORTAL_PAIR_FORMATION, config.getBoolean("world.portal-pair-formation"));
-        DEFAULT_VALUES.put(ENTER_COMMAND, CommandMeta.EMPTY_META);
-        DEFAULT_VALUES.put(EXIT_COMMAND, CommandMeta.EMPTY_META);
-        DEFAULT_VALUES.put(DENY_COMMAND, StringFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(FOLLOW, true);
-        DEFAULT_VALUES.put(DENY_AGGRO, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(GROWTH, true);
-        DEFAULT_VALUES.put(DENY_BLOCK_USE, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(KEEP_INVENTORY, false);
-        DEFAULT_VALUES.put(KEEP_XP, false);
-        DEFAULT_VALUES.put(RESPAWN_LOCATION, null);
-        DEFAULT_VALUES.put(DENY_ENTITY_USE, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(DENY_ITEM_USE, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(DENY_WEAPON_USE, EnumFilter.EMPTY_FILTER);
-        DEFAULT_VALUES.put(FLIGHT, false);
+        registerDefault(TRUST, TrustMeta.FULL_TRUST);
+        registerDefault(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
+        registerDefault(DENY_BREAK, EnumFilter.EMPTY_FILTER);
+        registerDefault(DENY_PLACE, EnumFilter.EMPTY_FILTER);
+        World sampleWorld = Bukkit.getWorlds().get(0);
+        registerDefault(MOB_GRIEF, config.getBoolean("entity.mob-grief"),
+                sampleWorld.getGameRuleValue(GameRule.DO_MOB_SPAWNING));
+        registerDefault(TNT, config.getBoolean("world.tnt-explosions"));
+        registerDefault(OVERLAP, false);
+        registerDefault(INVINCIBLE, false);
+        registerDefault(GREETING, TextMeta.EMPTY_TEXT);
+        registerDefault(FAREWELL, TextMeta.EMPTY_TEXT);
+        registerDefault(HOSTILE_DAMAGE, true);
+        registerDefault(ANIMAL_DAMAGE, true);
+        registerDefault(POTION_SPLASH, true);
+        registerDefault(FORCE_CHEST_ACCESS, false);
+        registerDefault(PVP, config.getBoolean("player.pvp"));
+        registerDefault(BED_ENTER, true);
+        registerDefault(WATER_FLOW, true);
+        registerDefault(LAVA_FLOW, true);
+        registerDefault(SNOW_CHANGE, config.getBoolean("world.snow-change"));
+        registerDefault(ICE_CHANGE, config.getBoolean("world.ice-change"));
+        registerDefault(CORAL_DEATH, config.getBoolean("world.coral-death"));
+        registerDefault(LEAF_DECAY, config.getBoolean("world.leaf-decay"));
+        registerDefault(LIGHTNING_MOB_DAMAGE, config.getBoolean("world.lightning-mob-damage"));
+        registerDefault(PORTAL_PAIR_FORMATION, config.getBoolean("world.portal-pair-formation"), true);
+        registerDefault(ENTER_COMMAND, CommandMeta.EMPTY_META);
+        registerDefault(EXIT_COMMAND, CommandMeta.EMPTY_META);
+        registerDefault(DENY_COMMAND, StringFilter.EMPTY_FILTER);
+        registerDefault(FOLLOW, true);
+        registerDefault(DENY_AGGRO, EnumFilter.EMPTY_FILTER);
+        registerDefault(GROWTH, true);
+        registerDefault(DENY_BLOCK_USE, EnumFilter.EMPTY_FILTER);
+        registerDefault(KEEP_INVENTORY, false, sampleWorld.getGameRuleValue(GameRule.KEEP_INVENTORY));
+        registerDefault(KEEP_XP, false, sampleWorld.getGameRuleValue(GameRule.KEEP_INVENTORY));
+        registerDefault(RESPAWN_LOCATION, null);
+        registerDefault(DENY_ENTITY_USE, EnumFilter.EMPTY_FILTER);
+        registerDefault(DENY_ITEM_USE, EnumFilter.EMPTY_FILTER);
+        registerDefault(DENY_WEAPON_USE, EnumFilter.EMPTY_FILTER);
+        registerDefault(FLIGHT, false, Bukkit.getServer().getAllowFlight());
+    }
+
+    private static void registerDefault(RegionFlag flag, Object regionDefault, Object worldDefault) {
+        DEFAULT_VALUES.put(flag, new Pair<>(regionDefault, worldDefault));
+    }
+
+    private static void registerDefault(RegionFlag flag, Object value) {
+        registerDefault(flag, value, value);
     }
 }
