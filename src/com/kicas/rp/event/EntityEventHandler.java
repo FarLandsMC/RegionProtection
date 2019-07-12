@@ -51,7 +51,7 @@ public class EntityEventHandler implements Listener {
             return;
         }
 
-        event.setCancelled(!flags.isAllowed(RegionFlag.MOB_GRIEF));
+        event.setCancelled(!(flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS) && flags.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS)));
     }
 
     /**
@@ -64,7 +64,7 @@ public class EntityEventHandler implements Listener {
         if(flags == null)
             return;
 
-        if((event.getEntity().getType() == EntityType.SNOWMAN && !flags.isAllowed(RegionFlag.MOB_GRIEF)))
+        if((event.getEntity().getType() == EntityType.SNOWMAN && !flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS)))
             event.setCancelled(true);
         else if(event.getEntity().getType() == EntityType.PLAYER) {
             if(!flags.isAllowed(RegionFlag.ICE_CHANGE))
@@ -109,15 +109,15 @@ public class EntityEventHandler implements Listener {
         }else{
             // If the mob explosion occurs in an area where mob grief is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
-            if(flags != null && !flags.isAllowed(RegionFlag.MOB_GRIEF)) {
+            if(flags != null && !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES)) {
                 event.setCancelled(true);
                 return;
             }
 
-            // Prevent explosions caused by other entities besides TNT
+            // Prevent explosions caused by entities other than TNT
             event.blockList().removeIf(block -> {
                 FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
-                return flags0 != null && !flags0.isAllowed(RegionFlag.MOB_GRIEF);
+                return flags0 != null && !flags0.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS);
             });
         }
     }

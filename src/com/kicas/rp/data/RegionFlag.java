@@ -21,7 +21,7 @@ public enum RegionFlag {
     DENY_SPAWN(EnumFilter.class),
     DENY_BREAK(EnumFilter.class),
     DENY_PLACE(EnumFilter.class),
-    MOB_GRIEF, // Any form of damage caused by non-player, hostile mobs
+    ANIMAL_GRIEF_BLOCKS, // block damage caused by non-player, non-hostile mobs
     TNT(false),
     OVERLAP, // Regions containing the same locations
     INVINCIBLE,
@@ -54,7 +54,9 @@ public enum RegionFlag {
     DENY_ENTITY_USE(EnumFilter.class),
     DENY_ITEM_USE(EnumFilter.class),
     DENY_WEAPON_USE(EnumFilter.class),
-    FLIGHT;
+    FLIGHT,
+    HOSTILE_GRIEF_BLOCKS, // block damage caused by hostile mobs
+    HOSTILE_GRIEF_ENTITIES; // entity damage caused by hostile mobs
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Object>> DEFAULT_VALUES = new HashMap<>();
@@ -223,8 +225,8 @@ public enum RegionFlag {
         registerDefault(DENY_BREAK, EnumFilter.EMPTY_FILTER);
         registerDefault(DENY_PLACE, EnumFilter.EMPTY_FILTER);
         World sampleWorld = Bukkit.getWorlds().get(0);
-        registerDefault(MOB_GRIEF, config.getBoolean("entity.mob-grief"),
-                sampleWorld.getGameRuleValue(GameRule.DO_MOB_SPAWNING));
+        registerDefault(ANIMAL_GRIEF_BLOCKS, config.getBoolean("entity.animal-grief-blocks"),
+                sampleWorld.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(TNT, config.getBoolean("world.tnt-explosions"));
         registerDefault(OVERLAP, false);
         registerDefault(INVINCIBLE, false);
@@ -258,6 +260,10 @@ public enum RegionFlag {
         registerDefault(DENY_ITEM_USE, EnumFilter.EMPTY_FILTER);
         registerDefault(DENY_WEAPON_USE, EnumFilter.EMPTY_FILTER);
         registerDefault(FLIGHT, false, Bukkit.getServer().getAllowFlight());
+        registerDefault(HOSTILE_GRIEF_BLOCKS, config.getBoolean("entity.hostile-grief-blocks"),
+                sampleWorld.getGameRuleValue(GameRule.MOB_GRIEFING));
+        registerDefault(HOSTILE_GRIEF_ENTITIES, config.getBoolean("entity.hostile-grief-entities"),
+                sampleWorld.getGameRuleValue(GameRule.MOB_GRIEFING));
     }
 
     private static void registerDefault(RegionFlag flag, Object regionDefault, Object worldDefault) {

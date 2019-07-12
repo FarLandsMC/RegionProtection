@@ -103,8 +103,10 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("general.enable-claims-in-worlds", Collections.singletonList("world"));
 
         config.addDefault("player.pvp", false);
-
-        config.addDefault("entity.mob-grief", false);
+    
+        config.addDefault("entity.animal-grief-blocks", true);
+        config.addDefault("entity.hostile-grief-blocks", false);
+        config.addDefault("entity.hostile-grief-entities", false);
 
         config.addDefault("world.tnt", false);
         config.addDefault("world.snow-change", true);
