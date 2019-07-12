@@ -64,11 +64,11 @@ commands:
     description: Give players levels of access to your claim.
     usage: /trust
     aliases: [accesstrust, at, containertrust, ct, managementtrust, mt, untrust]
-    permission: rp.claims
+    permission: rp.claims.manage
   trustlist:
     description: Show who has trust in your claim.
     usage: /trustlist
-    permission: rp.claims
+    permission: rp.claims.manage
 permissions:
   rp.claims.create:
     description: Allows a player to steal a claim
