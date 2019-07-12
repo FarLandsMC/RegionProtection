@@ -43,8 +43,7 @@ public class CommandClaimList implements CommandExecutor {
                 (int)(0.5 * (region.getMin().getZ() + region.getMax().getZ())),
                 region.area()));
     
-        int used = 0,
-                remaining = RegionProtection.getDataManager().getClaimBlocks(uuid);
+        int remaining = RegionProtection.getDataManager().getClaimBlocks(uuid), used = 0;
         for (Region claim : claimlist)
             used += claim.area();
         TextUtils.sendFormatted(sender, "&(gold)Total Blocks: %0\nUsed: %1\nAvailable: %2",
