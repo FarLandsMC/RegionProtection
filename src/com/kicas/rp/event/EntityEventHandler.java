@@ -5,6 +5,7 @@ import com.kicas.rp.data.*;
 
 import com.kicas.rp.data.flagdata.EnumFilter;
 import com.kicas.rp.data.flagdata.TrustMeta;
+import com.kicas.rp.util.Entities;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
@@ -51,7 +52,8 @@ public class EntityEventHandler implements Listener {
             return;
         }
 
-        event.setCancelled(!(flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS) && flags.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS)));
+        event.setCancelled(!flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS) && Entities.isAnimal(event.getEntityType()) ||
+                !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS) && Entities.isMonster(event.getEntityType()));
     }
 
     /**
