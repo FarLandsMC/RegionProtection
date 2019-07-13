@@ -57,7 +57,7 @@ public class CommandClaimToggle extends TabCompleterBase implements CommandExecu
         }else
             newValue = !claim.isAllowed(toggle);
 
-        claim.setFlag(RegionFlag.TNT, newValue);
+        claim.setFlag(toggle, newValue);
         sender.sendMessage(ChatColor.GOLD + (newValue ? "Enabled" : "Disabled") + " " + Utils.formattedName(toggle) +
                 " in your claim.");
 

@@ -93,7 +93,7 @@ public class Entities {
      * @return true if the given entity is passive towards the given player, false otherwise.
      */
     public static boolean isPassive(Player player, Entity entity) {
-        return PASSIVES.contains(entity.getType()) ||
+        return PASSIVES.contains(entity.getType()) || !entity.getType().isAlive() ||
                 (AGGERABLES.contains(entity.getType()) && !player.equals(((Mob) entity).getTarget()));
     }
     
@@ -104,8 +104,8 @@ public class Entities {
      * @param entityType the entity type.
      * @return true if the given entity is generally passive.
      */
-    public static boolean isAnimal(EntityType entityType) {
-        return AGGERABLES.contains(entityType) || PASSIVES.contains(entityType);
+    public static boolean isPassive(EntityType entityType) {
+        return AGGERABLES.contains(entityType) || PASSIVES.contains(entityType) || !entityType.isAlive();
     }
     
     /**

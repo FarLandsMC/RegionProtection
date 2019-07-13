@@ -52,8 +52,44 @@ public class EntityEventHandler implements Listener {
             return;
         }
 
-        event.setCancelled(!flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS) && Entities.isAnimal(event.getEntityType()) ||
+        event.setCancelled(!flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS) && Entities.isPassive(event.getEntityType()) ||
                 !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS) && Entities.isMonster(event.getEntityType()));
+    }
+
+    /**
+     * Handles the hostile-grief-entities flag.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if(flags == null || event.getDamager() instanceof Player || event.getEntity() instanceof Player ||
+                flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES) || Entities.isMonster(event.getEntityType())) {
+            return;
+        }
+
+        if(event.getDamager() instanceof Projectile) {
+            ProjectileSource shooter = ((Projectile)event.getDamager()).getShooter();
+            if(!(shooter instanceof Player || shooter instanceof BlockProjectileSource))
+                event.setCancelled(true);
+        }else
+            event.setCancelled(true);
+    }
+
+    /**
+     * Block entity explosion damage.
+     * @param event the event.
+     */
+    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    public void onEntityDamaged(EntityDamageEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if(flags == null)
+            return;
+
+        if(event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION &&
+                !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES)) {
+            event.setCancelled(true);
+        }
     }
 
     /**
@@ -112,6 +148,7 @@ public class EntityEventHandler implements Listener {
             // If the mob explosion occurs in an area where mob grief is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
             if(flags != null && !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES)) {
+                System.out.println("here");
                 event.setCancelled(true);
                 return;
             }
