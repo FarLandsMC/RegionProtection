@@ -341,6 +341,9 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             } else { // Suggest flag values
                 RegionFlag flag = Utils.valueOfFormattedName(args[2], RegionFlag.class);
 
+                if(flag == null)
+                    return Collections.emptyList();
+
                 // Too complex, not worth giving suggestions for
                 if(flag == RegionFlag.TRUST || flag == RegionFlag.GREETING || flag == RegionFlag.FAREWELL)
                     return Collections.emptyList();
