@@ -17,12 +17,12 @@ import java.util.Map;
  * All of the flags which can be set for a specific region.
  */
 public enum RegionFlag {
-    TRUST(false, TrustMeta.class),
+    TRUST(TrustMeta.class),
     DENY_SPAWN(EnumFilter.class),
     DENY_BREAK(EnumFilter.class),
     DENY_PLACE(EnumFilter.class),
-    ANIMAL_GRIEF_BLOCKS, // block damage caused by non-player, non-hostile mobs
-    TNT(false),
+    ANIMAL_GRIEF_BLOCKS(true), // block damage caused by non-player, non-hostile mobs
+    TNT(true),
     OVERLAP, // Regions containing the same locations
     INVINCIBLE,
     GREETING(TextMeta.class),
@@ -31,7 +31,7 @@ public enum RegionFlag {
     ANIMAL_DAMAGE, // Allow players to damage animals
     POTION_SPLASH, // The actual splash part
     FORCE_CHEST_ACCESS, // Just chests, trapped chests, and ender chests. Only checked if it's explicitly set.
-    PVP,
+    PVP(true),
     BED_ENTER,
     WATER_FLOW,
     LAVA_FLOW,
@@ -55,34 +55,34 @@ public enum RegionFlag {
     DENY_ITEM_USE(EnumFilter.class),
     DENY_WEAPON_USE(EnumFilter.class),
     FLIGHT,
-    HOSTILE_GRIEF_BLOCKS, // block damage caused by hostile mobs
-    HOSTILE_GRIEF_ENTITIES; // entity damage caused by hostile mobs
+    HOSTILE_GRIEF_BLOCKS(true), // block damage caused by hostile mobs
+    HOSTILE_GRIEF_ENTITIES(true); // entity damage caused by hostile mobs
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Object>> DEFAULT_VALUES = new HashMap<>();
 
-    private final boolean adminOnly;
+    private final boolean playerToggleable;
     private final Class<?> metaClass;
 
-    RegionFlag(boolean adminOnly, Class<?> metaClass) {
-        this.adminOnly = adminOnly;
+    RegionFlag(boolean playerToggleable, Class<?> metaClass) {
+        this.playerToggleable = playerToggleable;
         this.metaClass = metaClass;
     }
 
     RegionFlag(Class<?> metaClass) {
-        this(true, metaClass);
+        this(false, metaClass);
     }
 
-    RegionFlag(boolean adminOnly) {
-        this(adminOnly, boolean.class);
+    RegionFlag(boolean playerToggleable) {
+        this(playerToggleable, boolean.class);
     }
 
     RegionFlag() {
-        this(true, boolean.class);
+        this(false, boolean.class);
     }
 
-    public boolean isAdminOnly() {
-        return adminOnly;
+    public boolean isPlayerToggleable() {
+        return playerToggleable;
     }
 
     public Class<?> getMetaClass() {

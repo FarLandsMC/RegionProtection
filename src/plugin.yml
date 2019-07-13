@@ -28,9 +28,10 @@ commands:
     description: Show the list of claims that you own.
     usage: /claimlist [player]
     aliases: [claimslist]
-  claimtnt:
-    description: Toggle on or off TNT in your claim.
-    usage: /claimtnt
+  claimtoggle:
+    description: Toggle various flags on your claim
+    usage: /claimtoggle <toggle> [on|off]
+    permission: rp.claims.manage
   expandclaim:
     description: Expand your claim in the direction you are facing.
     usage: /expandclaim <amount>

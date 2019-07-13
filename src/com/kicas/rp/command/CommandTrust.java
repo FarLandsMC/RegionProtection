@@ -15,7 +15,7 @@ import java.util.*;
 /**
  * Allows players to grant or deny certain permissions for other players in their claim.
  */
-public class CommandTrust extends TabCompletorBase implements CommandExecutor {
+public class CommandTrust extends TabCompleterBase implements CommandExecutor {
     private static final Map<String, String> HELP_MESSAGES = new HashMap<>();
     private static final String ACCESS_HELP = ChatColor.GOLD + "Grant access to buttons, levers, switches, villager " +
             "trade, crafting and enchant tables, sheep shearing, and animal breeding.";

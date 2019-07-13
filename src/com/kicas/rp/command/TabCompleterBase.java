@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 /**
  * Allows for some static utility methods to be available to tab completors.
  */
-public abstract class TabCompletorBase implements TabCompleter {
+public abstract class TabCompleterBase implements TabCompleter {
     /**
      * Returns a list of the currently online players whose name starts with the given partial name.
      * @param partialName the partial name.

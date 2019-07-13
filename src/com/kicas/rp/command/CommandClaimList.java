@@ -38,16 +38,15 @@ public class CommandClaimList implements CommandExecutor {
         // Format the list and send it to the player
         TextUtils.sendFormatted(sender, "&(gold)%0 {&(aqua)%1} $(inflect,noun,1,claim) in this world:",
                 uuid.equals(((Player)sender).getUniqueId()) ? "You have" : args[0] + " has", claimlist.size());
-        claimlist.forEach(region -> TextUtils.sendFormatted(sender, "&(gold)%0x, %1z: %2 claim blocks",
+        claimlist.forEach(region -> TextUtils.sendFormatted(sender, "&(gold)%0x, %1z: {&(aqua)%2} claim blocks",
                 (int)(0.5 * (region.getMin().getX() + region.getMax().getX())),
                 (int)(0.5 * (region.getMin().getZ() + region.getMax().getZ())),
                 region.area()));
     
-        int remaining = RegionProtection.getDataManager().getClaimBlocks(uuid), used = 0;
-        for (Region claim : claimlist)
-            used += claim.area();
-        TextUtils.sendFormatted(sender, "&(gold)Total Blocks: %0\nUsed: %1\nAvailable: %2",
-                used + remaining, used, remaining);
+        int remaining = RegionProtection.getDataManager().getClaimBlocks(uuid),
+                used = claimlist.stream().map(r -> (int)r.area()).reduce(0, Integer::sum);
+        TextUtils.sendFormatted(sender, "&(gold){&(aqua)%0} used + {&(aqua)%1} available = {&(aqua)%2} total claim " +
+                "blocks", used, remaining, used + remaining);
         return true;
     }
 }

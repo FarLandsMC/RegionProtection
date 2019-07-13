@@ -159,7 +159,7 @@ public class RegionProtection extends JavaPlugin {
         registerCommand("claimblocks", new CommandClaimBlocks());
         registerCommand("claimheight", new CommandClaimHeight());
         registerCommand("claimlist", new CommandClaimList());
-        registerCommand("claimtnt", new CommandClaimTnt());
+        registerCommand("claimtoggle", new CommandClaimToggle());
         registerCommand("expandclaim", new CommandExpandClaim());
         registerCommand("expel", new CommandExpel());
         registerCommand("ignoretrust", new CommandIgnoreTrust());

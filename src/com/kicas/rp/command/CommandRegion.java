@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * Allows administrators to register and delete regions, as well as modify and view their flags. The size of a region
  * can also be adjusted through this command as well.
  */
-public class CommandRegion extends TabCompletorBase implements CommandExecutor {
+public class CommandRegion extends TabCompleterBase implements CommandExecutor {
     private static final List<String> SUB_COMMANDS = Arrays.asList("flag", "create", "expand", "retract", "delete",
             "info");
     private static final List<String> ALLOW_DENY = Arrays.asList("allow", "deny");

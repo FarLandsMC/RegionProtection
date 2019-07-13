@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * Allows players to modify the height of their claim or subdivision to some extent.
  */
-public class CommandClaimHeight extends TabCompletorBase implements CommandExecutor {
+public class CommandClaimHeight extends TabCompleterBase implements CommandExecutor {
     private static final List<String> SUB_COMMANDS = Arrays.asList("get", "set");
     private static final List<String> SIDES = Arrays.asList("top", "bottom");
 

@@ -22,7 +22,7 @@ import java.util.List;
  * Allows players to kick* certain players from their claim.
  * * send to the nearest unclaimed block
  */
-public class CommandExpel extends TabCompletorBase implements CommandExecutor {
+public class CommandExpel extends TabCompleterBase implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Sender check

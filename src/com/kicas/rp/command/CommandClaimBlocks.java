@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * Allows server operators to view and adjust the claim blocks for a given player.
  */
-public class CommandClaimBlocks extends TabCompletorBase implements CommandExecutor {
+public class CommandClaimBlocks extends TabCompleterBase implements CommandExecutor {
     private static final List<String> SUB_COMMANDS = Arrays.asList("add", "remove", "view");
 
     @Override

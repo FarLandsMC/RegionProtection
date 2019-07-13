@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * Allows the owner of a claim to give someone else ownership of one of their claims.
  */
-public class CommandTransferClaim extends TabCompletorBase implements CommandExecutor {
+public class CommandTransferClaim extends TabCompleterBase implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Args check
