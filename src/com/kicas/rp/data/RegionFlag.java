@@ -8,6 +8,7 @@ import org.bukkit.GameRule;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
 import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;
@@ -236,7 +237,8 @@ public enum RegionFlag {
         registerDefault(ANIMAL_DAMAGE, true);
         registerDefault(POTION_SPLASH, true);
         registerDefault(FORCE_CHEST_ACCESS, false);
-        registerDefault(PVP, config.getBoolean("player.pvp"));
+        registerDefault(PVP, config.getBoolean("player.pvp"),
+                ((CraftServer)Bukkit.getServer()).getServer().getDedicatedServerProperties().pvp);
         registerDefault(BED_ENTER, true);
         registerDefault(WATER_FLOW, true);
         registerDefault(LAVA_FLOW, true);
