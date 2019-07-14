@@ -13,6 +13,7 @@ import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * All of the flags which can be set for a specific region.
@@ -60,7 +61,7 @@ public enum RegionFlag {
     HOSTILE_GRIEF_ENTITIES(true); // entity damage caused by hostile mobs
 
     public static final RegionFlag[] VALUES = values();
-    private static final Map<RegionFlag, Pair<Object, Object>> DEFAULT_VALUES = new HashMap<>();
+    private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
 
     private final boolean playerToggleable;
     private final Class<?> metaClass;
@@ -95,13 +96,14 @@ public enum RegionFlag {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getDefaultValue() {
+    public <T> T getRegionDefaultValue() {
         return (T)DEFAULT_VALUES.get(this).getFirst();
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getWorldDefaultValue() {
-        return (T)DEFAULT_VALUES.get(this).getSecond();
+    public <T> T getWorldDefaultValue(World world) {
+        Pair<Object, Function<World, Object>> def = DEFAULT_VALUES.get(this);
+        return def.getSecond() == null ? (T)def.getFirst() : (T)def.getSecond().apply(world);
     }
 
     public static String toString(RegionFlag flag, Object meta) {
@@ -225,9 +227,8 @@ public enum RegionFlag {
         registerDefault(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
         registerDefault(DENY_BREAK, EnumFilter.EMPTY_FILTER);
         registerDefault(DENY_PLACE, EnumFilter.EMPTY_FILTER);
-        World sampleWorld = Bukkit.getWorlds().get(0);
         registerDefault(ANIMAL_GRIEF_BLOCKS, config.getBoolean("entity.animal-grief-blocks"),
-                sampleWorld.getGameRuleValue(GameRule.MOB_GRIEFING));
+                world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(TNT, config.getBoolean("world.tnt-explosions"));
         registerDefault(OVERLAP, false);
         registerDefault(INVINCIBLE, false);
@@ -238,7 +239,7 @@ public enum RegionFlag {
         registerDefault(POTION_SPLASH, true);
         registerDefault(FORCE_CHEST_ACCESS, false);
         registerDefault(PVP, config.getBoolean("player.pvp"),
-                ((CraftServer)Bukkit.getServer()).getServer().getDedicatedServerProperties().pvp);
+                world -> ((CraftServer)Bukkit.getServer()).getServer().getDedicatedServerProperties().pvp);
         registerDefault(BED_ENTER, true);
         registerDefault(WATER_FLOW, true);
         registerDefault(LAVA_FLOW, true);
@@ -247,7 +248,7 @@ public enum RegionFlag {
         registerDefault(CORAL_DEATH, config.getBoolean("world.coral-death"));
         registerDefault(LEAF_DECAY, config.getBoolean("world.leaf-decay"));
         registerDefault(LIGHTNING_MOB_DAMAGE, config.getBoolean("world.lightning-mob-damage"));
-        registerDefault(PORTAL_PAIR_FORMATION, config.getBoolean("world.portal-pair-formation"), true);
+        registerDefault(PORTAL_PAIR_FORMATION, config.getBoolean("world.portal-pair-formation"), world -> true);
         registerDefault(ENTER_COMMAND, CommandMeta.EMPTY_META);
         registerDefault(EXIT_COMMAND, CommandMeta.EMPTY_META);
         registerDefault(DENY_COMMAND, StringFilter.EMPTY_FILTER);
@@ -255,24 +256,24 @@ public enum RegionFlag {
         registerDefault(DENY_AGGRO, EnumFilter.EMPTY_FILTER);
         registerDefault(GROWTH, true);
         registerDefault(DENY_BLOCK_USE, EnumFilter.EMPTY_FILTER);
-        registerDefault(KEEP_INVENTORY, false, sampleWorld.getGameRuleValue(GameRule.KEEP_INVENTORY));
-        registerDefault(KEEP_XP, false, sampleWorld.getGameRuleValue(GameRule.KEEP_INVENTORY));
+        registerDefault(KEEP_INVENTORY, false, world -> world.getGameRuleValue(GameRule.KEEP_INVENTORY));
+        registerDefault(KEEP_XP, false, world -> world.getGameRuleValue(GameRule.KEEP_INVENTORY));
         registerDefault(RESPAWN_LOCATION, null);
         registerDefault(DENY_ENTITY_USE, EnumFilter.EMPTY_FILTER);
         registerDefault(DENY_ITEM_USE, EnumFilter.EMPTY_FILTER);
         registerDefault(DENY_WEAPON_USE, EnumFilter.EMPTY_FILTER);
-        registerDefault(FLIGHT, false, Bukkit.getServer().getAllowFlight());
+        registerDefault(FLIGHT, false, world -> Bukkit.getServer().getAllowFlight());
         registerDefault(HOSTILE_GRIEF_BLOCKS, config.getBoolean("entity.hostile-grief-blocks"),
-                sampleWorld.getGameRuleValue(GameRule.MOB_GRIEFING));
+                world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(HOSTILE_GRIEF_ENTITIES, config.getBoolean("entity.hostile-grief-entities"),
-                sampleWorld.getGameRuleValue(GameRule.MOB_GRIEFING));
+                world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
     }
 
-    private static void registerDefault(RegionFlag flag, Object regionDefault, Object worldDefault) {
+    private static void registerDefault(RegionFlag flag, Object regionDefault, Function<World, Object> worldDefault) {
         DEFAULT_VALUES.put(flag, new Pair<>(regionDefault, worldDefault));
     }
 
     private static void registerDefault(RegionFlag flag, Object value) {
-        registerDefault(flag, value, value);
+        registerDefault(flag, value, null);
     }
 }

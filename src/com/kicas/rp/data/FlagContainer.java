@@ -5,7 +5,6 @@ import com.kicas.rp.util.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -90,7 +89,7 @@ public class FlagContainer {
      * @return true if this flag is allowed according to this container, false otherwise.
      */
     public boolean isAllowed(RegionFlag flag) {
-        return flags.containsKey(flag) ? (boolean)flags.get(flag) : flag.getDefaultValue();
+        return flags.containsKey(flag) ? (boolean)flags.get(flag) : flag.getRegionDefaultValue();
     }
 
     public void setFlag(RegionFlag flag, Object meta) {
@@ -103,7 +102,7 @@ public class FlagContainer {
 
     @SuppressWarnings("unchecked")
     public <T> T getFlagMeta(RegionFlag flag) {
-        return flags.containsKey(flag) ? (T)flags.get(flag) : flag.getDefaultValue();
+        return flags.containsKey(flag) ? (T)flags.get(flag) : flag.getRegionDefaultValue();
     }
 
     /**
@@ -121,7 +120,8 @@ public class FlagContainer {
         if(flags.containsKey(flag))
             return (T)flags.get(flag);
         else{
-            Object meta = flag.isBoolean() ? flag.getDefaultValue() : ReflectionHelper.instantiate(flag.getMetaClass());
+            Object meta = flag.isBoolean() ? flag.getRegionDefaultValue()
+                    : ReflectionHelper.instantiate(flag.getMetaClass());
             flags.put(flag, meta);
             return (T)meta;
         }

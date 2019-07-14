@@ -1,5 +1,7 @@
 package com.kicas.rp.data;
 
+import org.bukkit.Bukkit;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +27,8 @@ public class WorldData extends FlagContainer {
 
     @Override
     public boolean isAllowed(RegionFlag flag) {
-        return flags.containsKey(flag) ? (boolean)flags.get(flag) : flag.getWorldDefaultValue();
+        return flags.containsKey(flag) ? (boolean)flags.get(flag)
+                : flag.getWorldDefaultValue(Bukkit.getWorld(worldUid));
     }
 
     public void addRegion(Region region) {
