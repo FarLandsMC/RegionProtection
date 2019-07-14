@@ -50,18 +50,20 @@ public final class ReflectionHelper {
     public static Number numericCast(Class<?> newType, Number target) {
         if (target.getClass().equals(newType))
             return target;
-        if (Integer.class.equals(newType))
+        if (Integer.class.equals(newType) || int.class.equals(newType))
             return target.intValue();
-        else if (Double.class.equals(newType))
+        else if (Double.class.equals(newType) || double.class.equals(newType))
             return target.doubleValue();
-        else if (Long.class.equals(newType))
+        else if (Long.class.equals(newType) || long.class.equals(newType))
             return target.longValue();
-        else if (Short.class.equals(newType))
+        else if (Short.class.equals(newType) || short.class.equals(newType))
             return target.shortValue();
-        else if (Float.class.equals(newType))
+        else if (Float.class.equals(newType) || float.class.equals(newType))
             return target.floatValue();
-        else
+        else if (Byte.class.equals(newType) || byte.class.equals(newType))
             return target.byteValue();
+        else
+            return null;
     }
 
     /**
@@ -72,11 +74,22 @@ public final class ReflectionHelper {
      * @param <T>     the new type.
      * @return the casted object, or null if the cast could not be completed.
      */
+    @SuppressWarnings("unchecked")
     public static <T> T safeCast(Class<T> newType, Object target) {
+        if (target instanceof Number) {
+            Number number = numericCast(newType, (Number) target);
+            if (number != null)
+                return (T) number;
+        }
+
         if (newType.isAssignableFrom(target.getClass()))
             return newType.cast(target);
         else
             return null;
+    }
+
+    public static boolean isValidCast(Class<?> to, Class<?> from) {
+        return to.isAssignableFrom(from) || Number.class.isAssignableFrom(to) && Number.class.isAssignableFrom(from);
     }
 
     @SuppressWarnings("unchecked")
@@ -112,7 +125,7 @@ public final class ReflectionHelper {
             return clazz;
     }
 
-    public static Class<?> asNative(Class<?> clazz) {
+    public static Class<?> asPrimitive(Class<?> clazz) {
         if (clazz.isPrimitive() || String.class.equals(clazz))
             return clazz;
         Class<?> nativeClass = W2P.get(clazz);
@@ -141,11 +154,11 @@ public final class ReflectionHelper {
         Constructor<T> c = getConstructor(clazz, parameterTypes);
         if (c == null)
             return null;
-        boolean oas = c.isAccessible();
+        boolean accessible = c.isAccessible();
         c.setAccessible(true);
         try {
             T object = c.newInstance(matchParameterTypes(parameters, c.getParameterTypes()));
-            c.setAccessible(oas);
+            c.setAccessible(accessible);
             return object;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             return null;
@@ -160,11 +173,11 @@ public final class ReflectionHelper {
         Class<?>[] paramTypes = c.getParameterTypes();
         for (int i = 0; i < params.length; ++i)
             params[i] = paramSupplier.apply(paramTypes[i]);
-        boolean oas = c.isAccessible();
+        boolean accessible = c.isAccessible();
         c.setAccessible(true);
         try {
             T object = c.newInstance(params);
-            c.setAccessible(oas);
+            c.setAccessible(accessible);
             return object;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             return null;
@@ -178,11 +191,11 @@ public final class ReflectionHelper {
         Method m = getMethod(methodName, clazz, parameterTypes);
         if (m == null)
             return null;
-        boolean oas = m.isAccessible();
+        boolean accessible = m.isAccessible();
         m.setAccessible(true);
         try {
             Object result = m.invoke(target, matchParameterTypes(parameters, m.getParameterTypes()));
-            m.setAccessible(oas);
+            m.setAccessible(accessible);
             return result;
         } catch (IllegalAccessException | InvocationTargetException ex) {
             return null;
@@ -190,11 +203,11 @@ public final class ReflectionHelper {
     }
 
     public static Object invoke(Method method, Object target, Object... parameters) {
-        boolean oas = method.isAccessible();
+        boolean accessible = method.isAccessible();
         method.setAccessible(true);
         try {
             Object result = method.invoke(target, matchParameterTypes(parameters, method.getParameterTypes()));
-            method.setAccessible(oas);
+            method.setAccessible(accessible);
             return result;
         } catch (IllegalAccessException | InvocationTargetException ex) {
             return null;
@@ -219,7 +232,7 @@ public final class ReflectionHelper {
     }
 
     public static Object getFieldValue(Field field, Object target) {
-        boolean oas = field.isAccessible();
+        boolean accessible = field.isAccessible();
         field.setAccessible(true);
         Object result;
         try {
@@ -227,23 +240,42 @@ public final class ReflectionHelper {
         } catch (IllegalAccessException ex) {
             return null;
         }
-        field.setAccessible(oas);
+        field.setAccessible(accessible);
         return result;
     }
 
-    public static boolean setFieldValue(String fieldName, Class<?> clazz, Object target, Object value) {
-        return setFieldValue(getFieldObject(fieldName, clazz), target, value);
+    public static boolean setNonFinalFieldValue(String fieldName, Class<?> clazz, Object target, Object value) {
+        return setNonFinalFieldValue(getFieldObject(fieldName, clazz), target, value);
     }
 
-    public static boolean setFieldValue(Field field, Object target, Object value) {
-        boolean oas = field.isAccessible();
+    public static boolean setNonFinalFieldValue(Field field, Object target, Object value) {
+        boolean accessible = field.isAccessible();
         field.setAccessible(true);
         try {
             field.set(target, value);
         } catch (IllegalAccessException ex) {
             return false;
         }
-        field.setAccessible(oas);
+        field.setAccessible(accessible);
+        return true;
+    }
+
+    public static boolean setFinalFieldValue(String fieldName, Class<?> clazz, Object target, Object value) {
+        return setFinalFieldValue(getFieldObject(fieldName, clazz), target, value);
+    }
+
+    public static boolean setFinalFieldValue(Field field, Object target, Object value) {
+        boolean accessible = field.isAccessible();
+        field.setAccessible(true);
+        int mod = field.getModifiers();
+        setNonFinalFieldValue("modifiers", Field.class, field, mod & ~Modifier.FINAL);
+        try {
+            field.set(target, value);
+        } catch (IllegalAccessException ex) {
+            return false;
+        }
+        field.setAccessible(accessible);
+        setNonFinalFieldValue("modifiers", Field.class, field, mod);
         return true;
     }
 
@@ -256,7 +288,7 @@ public final class ReflectionHelper {
             Class<?>[] opts = option.getParameterTypes(); // OPTS = option parameter types
             if (opts.length == parameterTypes.length) {
                 for (int i = 0; i < opts.length; ++i) {
-                    if (!opts[i].isAssignableFrom(parameterTypes[i]))
+                    if (!isValidCast(opts[i], parameterTypes[i]))
                         continue outer;
                 }
             } else
@@ -272,7 +304,7 @@ public final class ReflectionHelper {
             Class<?>[] opts = option.getParameterTypes(); // OPTS = option parameter types
             if (opts.length == parameterTypes.length) {
                 for (int i = 0; i < opts.length; ++i) {
-                    if (!opts[i].isAssignableFrom(parameterTypes[i]))
+                    if (!isValidCast(opts[i], parameterTypes[i]))
                         continue outer;
                 }
             } else
