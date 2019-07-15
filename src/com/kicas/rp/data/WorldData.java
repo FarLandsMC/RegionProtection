@@ -42,7 +42,7 @@ public class WorldData extends FlagContainer {
     }
 
     public void generateLookupTable(int scale) {
-        lookupTable = new RegionLookupTable(Math.max(16, regions.size()), scale);
+        lookupTable = new RegionLookupTable((int)(regions.size() * RegionLookupTable.INFLATION_CONSTANT), scale);
         regions.forEach(region -> {
             lookupTable.add(region);
             region.getChildren().forEach(lookupTable::add);

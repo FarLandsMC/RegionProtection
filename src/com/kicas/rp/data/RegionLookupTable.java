@@ -13,6 +13,9 @@ public class RegionLookupTable {
     private int size; // Number of added regions
     private final int scale; // How much to scale down coordinate positions (actual factor: 2^scale)
 
+    public static final double LOAD_FACTOR_THRESHOLD = 0.75;
+    public static final double INFLATION_CONSTANT = 1.35;
+
     public RegionLookupTable(int initialCapacity, int scale) {
         // An initial capacity of at least 3 is required so that upon inflation the table size actually increases
         this.table = new Node[Math.max(initialCapacity, 3)];
@@ -25,22 +28,25 @@ public class RegionLookupTable {
      * @param region the region to add.
      */
     public void add(Region region) {
+        addSilent(region);
+        // Check the load factor threshold
+        if((++ size) > table.length * LOAD_FACTOR_THRESHOLD)
+            inflate();
+    }
+
+    // Add the region without inflating
+    private void addSilent(Region region) {
         // Traverse the scalled down version of the region
         for (int x = region.getMin().getBlockX() >> scale; x <= region.getMax().getBlockX() >> scale; ++ x) {
             for (int z = region.getMin().getBlockZ() >> scale; z <= region.getMax().getBlockZ() >> scale; ++ z) {
                 // Add the region
-                int index = index(x, z);
+                int index = hash(x, z);
                 if(table[index] == null)
                     table[index] = new Node(region);
                 else
                     table[index].add(region);
             }
         }
-
-        ++ size;
-        // Increase table size if necessary
-        if(size > table.length)
-            inflate();
     }
 
     /**
@@ -71,7 +77,7 @@ public class RegionLookupTable {
      */
     public List<Region> getRegionsAt(Location loc) {
         // Get the root node containing candidate regions
-        Node node = table[index(loc)];
+        Node node = table[hash(loc)];
         if(node == null)
             return Collections.emptyList();
 
@@ -98,7 +104,7 @@ public class RegionLookupTable {
         for (int x = region.getMin().getBlockX() >> scale; x <= region.getMax().getBlockX() >> scale; ++ x) {
             for (int z = region.getMin().getBlockZ() >> scale; z <= region.getMax().getBlockZ() >> scale; ++ z) {
                 // Get the node at each part of the region
-                int index = index(x, z);
+                int index = hash(x, z);
                 Node node = table[index];
 
                 // Add the overlapping regions
@@ -121,7 +127,7 @@ public class RegionLookupTable {
      */
     public List<Region> getParentRegionsAt(Location loc) {
         // Get the root node containing candidate regions
-        Node node = table[index(loc)];
+        Node node = table[hash(loc)];
         if(node == null)
             return Collections.emptyList();
 
@@ -142,7 +148,7 @@ public class RegionLookupTable {
      */
     public List<Region> getRegionsAtIgnoreY(Location loc) {
         // Get the root node containing candidate regions
-        Node node = table[index(loc)];
+        Node node = table[hash(loc)];
         if(node == null)
             return Collections.emptyList();
 
@@ -166,7 +172,7 @@ public class RegionLookupTable {
      */
     public Region getHighestPriorityRegionAt(Location loc) {
         // Get the root node containing candidate regions
-        Node node = table[index(loc)];
+        Node node = table[hash(loc)];
         if(node == null)
             return null;
 
@@ -200,7 +206,7 @@ public class RegionLookupTable {
      */
     public Region getHighestPriorityRegionAtIgnoreY(Location loc) {
         // Get the root node containing candidate regions
-        Node node = table[index(loc)];
+        Node node = table[hash(loc)];
         if(node == null)
             return null;
 
@@ -230,7 +236,7 @@ public class RegionLookupTable {
         for (int x = bounds.getFirst().getBlockX() >> scale; x <= bounds.getSecond().getBlockX() >> scale; ++x) {
             for (int z = bounds.getFirst().getBlockZ() >> scale; z <= bounds.getSecond().getBlockZ() >> scale; ++z) {
                 // Remove the reference
-                int index = index(x, z);
+                int index = hash(x, z);
                 if(table[index] != null) {
                     if (table[index].region.equals(region))
                         table[index] = table[index].link;
@@ -254,21 +260,20 @@ public class RegionLookupTable {
         }
 
         // Create a new, empty table then add all the regions copied above
-        table = new Node[(int)(1.35 * table.length)];
-        size = 0;
+        table = new Node[(int)(INFLATION_CONSTANT * table.length)];
         for(Region region : regions)
-            add(region);
+            addSilent(region);
     }
 
     // Calculates the table index for the given location
-    private int index(Location loc) {
-        return index(loc.getBlockX() >> scale, loc.getBlockZ() >> scale);
+    private int hash(Location loc) {
+        return hash(loc.getBlockX() >> scale, loc.getBlockZ() >> scale);
     }
 
     // Convers the given x and z parts to a valid index for the inner table array
-    private int index(int x, int z) {
-        // The & operation sets the sign bit to 0
-        return ((x ^ z) & Integer.MAX_VALUE) % table.length;
+    private int hash(int x, int z) {
+        // The "x & Long.MAX_VALUE" sets the sign bit to 0
+        return (int)((((long)x << 32 | (long)z & 0xFF_FF_FF_FFL) & Long.MAX_VALUE) % table.length);
     }
 
     // Represents a node in the inner table, which will contain a region reference and could contain a reference to
