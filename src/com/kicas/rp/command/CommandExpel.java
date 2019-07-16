@@ -25,26 +25,26 @@ import java.util.List;
 public class CommandExpel extends TabCompleterBase implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        // Sender check
+        // Online sender required
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
-    
+
         // Make sure the sender is actually standing in a claim
         Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player) sender).getLocation());
         if (claim == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the claim where you wish to expel players.");
             return true;
         }
-    
+
         // Make sure the sender has permission to expel other players
         TrustMeta trustMeta = claim.getAndCreateFlagMeta(RegionFlag.TRUST);
         if (!trustMeta.hasTrust((Player) sender, TrustLevel.MANAGEMENT, claim)) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to expel players from this claim.");
             return true;
         }
-    
+
         // Make sure the owner isn't trying to expel themselves
         if (claim.isEffectiveOwner((Player) sender) && sender.getName().equals(args[0])) {
             sender.sendMessage(ChatColor.RED + "You cannot expel yourself from your own claim.");
@@ -57,19 +57,19 @@ public class CommandExpel extends TabCompleterBase implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "Could not find player " + args[0]);
             return true;
         }
-        
+
         // Find a safe place to send the player
         int w = claim.getMax().getBlockX() - claim.getMin().getBlockX(),
                 l = claim.getMax().getBlockZ() - claim.getMin().getBlockZ();
         Location ejection = claim.getMin().clone().add(w >> 1, 0, l >> 1); // center x,z of the claim
-        
+
         // Expel the player // dx dz tend to 0 ~ 0 to avoid world border issues
         player.teleport(Utils.walk(ejection, ejection.getBlockX() < 0 ? w : -w, ejection.getBlockZ() < 0 ? l : -l));
         sender.sendMessage(ChatColor.GREEN + "Expelled player " + player.getName() + " from your claim");
 
         return true;
     }
-    
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {

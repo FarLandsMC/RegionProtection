@@ -21,42 +21,44 @@ import java.util.stream.Stream;
 public class CommandClaimToggle extends TabCompleterBase implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        if(args.length == 0)
+        if (args.length == 0)
             return false;
 
-        // Sender check
-        if(!(sender instanceof Player)) {
+        // Online sender required
+        if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
 
         // Make sure the sender is actually standing in a claim
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player)sender).getLocation());
-        if(claim == null) {
+        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+        if (claim == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the claim where you wish to trust this person.");
             return true;
         }
 
+        // Parse the toggle
         RegionFlag toggle = Utils.valueOfFormattedName(args[0], RegionFlag.class);
-        if(toggle == null || !toggle.isPlayerToggleable()) {
+        if (toggle == null || !toggle.isPlayerToggleable()) {
             sender.sendMessage(ChatColor.RED + "Invalid toggle: " + args[0]);
             return true;
         }
 
+        // Parse/infer the new value
         boolean newValue;
-
-        if(args.length == 2) {
-            if("on".equalsIgnoreCase(args[1]))
+        if (args.length == 2) {
+            if ("on".equalsIgnoreCase(args[1]))
                 newValue = true;
-            else if("off".equalsIgnoreCase(args[1]))
+            else if ("off".equalsIgnoreCase(args[1]))
                 newValue = false;
-            else{
+            else {
                 sender.sendMessage(ChatColor.RED + "Invalid toggle value: " + args[1] + ". Expected \"on\" or \"off\"");
                 return true;
             }
-        }else
+        } else
             newValue = !claim.isAllowed(toggle);
 
+        // Modify the flag value
         claim.setFlag(toggle, newValue);
         sender.sendMessage(ChatColor.GOLD + (newValue ? "Enabled" : "Disabled") + " " + Utils.formattedName(toggle) +
                 " in your claim.");
@@ -68,10 +70,10 @@ public class CommandClaimToggle extends TabCompleterBase implements CommandExecu
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
         switch (args.length) {
-            case 1:
+            case 1: // Toggle suggestions
                 return filterStartingWith(args[0], Arrays.stream(RegionFlag.VALUES)
                         .filter(RegionFlag::isPlayerToggleable).map(Utils::formattedName));
-            case 2:
+            case 2: // Value suggestions
                 return filterStartingWith(args[1], Stream.of("on", "off"));
             default:
                 return Collections.emptyList();

@@ -3,7 +3,6 @@ package com.kicas.rp.command;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.TrustMeta;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -41,27 +40,27 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Send the help messages
-        if(args.length == 0) {
+        if (args.length == 0) {
             sender.sendMessage(HELP_MESSAGES.get(alias.toLowerCase()));
             return true;
         }
 
-        // Sender check
-        if(!(sender instanceof Player)) {
+        // Online sender required
+        if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
 
         // Make sure the sender is actually standing in a claim
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player)sender).getLocation());
-        if(claim == null) {
+        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player) sender).getLocation());
+        if (claim == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the claim where you wish to trust this person.");
             return true;
         }
 
         // Make sure the sender has permission to modify trust levels
         TrustMeta trustMeta = claim.getAndCreateFlagMeta(RegionFlag.TRUST);
-        if(!trustMeta.hasTrust((Player)sender, TrustLevel.MANAGEMENT, claim)) {
+        if (!trustMeta.hasTrust((Player) sender, TrustLevel.MANAGEMENT, claim)) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to trust people in this claim.");
             return true;
         }
@@ -84,46 +83,43 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
             case "mt":
                 trust = TrustLevel.MANAGEMENT;
                 break;
-            default:
+            default: // "untrust"
                 trust = TrustLevel.NONE;
                 break;
         }
 
         // Grant the trust and notify the sender
-        if("public".equals(args[0])) {
+        if ("public".equals(args[0])) {
             trustMeta.trustPublic(trust);
 
-            if(trust == TrustLevel.NONE)
+            if (trust == TrustLevel.NONE)
                 sender.sendMessage(ChatColor.GOLD + "Untrusted the public from your claim.");
-            else{
+            else {
                 sender.sendMessage(ChatColor.GOLD + "Granted the public " + trust.name().toLowerCase() + " trust in " +
                         "your claim.");
             }
-        }else{
+        }
+        // Grant a specific player trust
+        else {
             // Get the UUID to trust
-            Player player = Bukkit.getPlayer(args[0]);
-            UUID uuid;
-            if(player == null) {
-                uuid = RegionProtection.getDataManager().uuidForUsername(args[0]);
-                if(uuid == null) {
-                    sender.sendMessage(ChatColor.RED + "Player not found.");
-                    return true;
-                }
-            }else
-                uuid = player.getUniqueId();
+            UUID uuid = RegionProtection.getDataManager().uuidForUsername(args[0]);
+            if (uuid == null) {
+                sender.sendMessage(ChatColor.RED + "Player not found.");
+                return true;
+            }
 
             // Check to make sure the owner isn't demoting themselves
-            if(claim.isOwner(uuid)) {
+            if (claim.isOwner(uuid)) {
                 sender.sendMessage(ChatColor.RED + "You cannot set the trust level of " + args[0] + " in this claim " +
                         "since they are also an owner of the claim.");
                 return true;
             }
 
             // Notify the sender
-            if(trust == TrustLevel.NONE) {
+            if (trust == TrustLevel.NONE) {
                 trustMeta.untrust(uuid);
                 sender.sendMessage(ChatColor.GOLD + "Untrusted " + args[0] + " from your claim.");
-            }else{
+            } else {
                 trustMeta.trust(uuid, trust);
                 sender.sendMessage(ChatColor.GOLD + "Granted " + args[0] + " " + trust.name().toLowerCase() +
                         " trust in your claim.");

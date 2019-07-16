@@ -19,32 +19,32 @@ public class CommandTransferClaim extends TabCompleterBase implements CommandExe
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Args check
-        if(args.length == 0)
+        if (args.length == 0)
             return false;
 
-        // Sender check
-        if(!(sender instanceof Player)) {
+        // Online sender required
+        if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
 
         // Get and check the specified new owner
         UUID newOwner = RegionProtection.getDataManager().uuidForUsername(args[0]);
-        if(newOwner == null) {
+        if (newOwner == null) {
             sender.sendMessage(ChatColor.RED + "Invalid username: " + args[0]);
             return true;
         }
 
         // Get and check the region the sender is standing in
-        Region region = RegionProtection.getDataManager().getParentRegionsAt(((Player)sender).getLocation()).stream()
-                .filter(r -> r.isEffectiveOwner((Player)sender)).findAny().orElse(null);
-        if(region == null) {
+        Region region = RegionProtection.getDataManager().getParentRegionsAt(((Player) sender).getLocation()).stream()
+                .filter(r -> r.isEffectiveOwner((Player) sender)).findAny().orElse(null);
+        if (region == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the region you wish to transfer to this person.");
             return true;
         }
 
         // Transfer ownership
-        if(RegionProtection.getDataManager().tryTransferOwnership((Player)sender, region, newOwner, true))
+        if (RegionProtection.getDataManager().tryTransferOwnership((Player) sender, region, newOwner, true))
             sender.sendMessage(ChatColor.GREEN + "This claim is now owned by " + args[0] + ".");
 
         return true;

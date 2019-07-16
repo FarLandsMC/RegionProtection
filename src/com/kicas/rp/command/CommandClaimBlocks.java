@@ -16,21 +16,22 @@ import java.util.UUID;
  * Allows server operators to view and adjust the claim blocks for a given player.
  */
 public class CommandClaimBlocks extends TabCompleterBase implements CommandExecutor {
+    // For suggestions
     private static final List<String> SUB_COMMANDS = Arrays.asList("add", "remove", "view");
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        // Assume /claimblocks <self> view
         if (args.length == 0)
             return false;
 
+        // Lookup the username UUID
         UUID player = RegionProtection.getDataManager().uuidForUsername(args[0]);
-        if(player == null) {
+        if (player == null) {
             sender.sendMessage(ChatColor.RED + "Invalid username: " + args[0]);
             return true;
         }
-    
-        // Assume /claimblocks <player> view
+
+        // Assume "view" argument
         if (args.length < 2) {
             TextUtils.sendFormatted(sender, "&(gold)%0 has {&(aqua)%1} claim blocks.", args[0],
                     RegionProtection.getDataManager().getClaimBlocks(player));
@@ -38,18 +39,18 @@ public class CommandClaimBlocks extends TabCompleterBase implements CommandExecu
         }
 
         // Sub-command check
-        if(!SUB_COMMANDS.contains(args[1].toLowerCase())) {
+        if (!SUB_COMMANDS.contains(args[1].toLowerCase())) {
             sender.sendMessage(ChatColor.RED + "Invalid sub-command: " + args[1]);
             return true;
         }
 
         // View the number of claim blocks they have
-        if("view".equalsIgnoreCase(args[1]))
+        if ("view".equalsIgnoreCase(args[1]))
             TextUtils.sendFormatted(sender, "&(gold)%0 has {&(aqua)%1} claim blocks.", args[0],
                     RegionProtection.getDataManager().getClaimBlocks(player));
-        else{
+        else {
             // Secondary args check
-            if(args.length < 3) {
+            if (args.length < 3) {
                 sender.sendMessage(ChatColor.RED + "Usage: /claimblocks <name> <add|remove> <amount>");
                 return true;
             }
@@ -61,13 +62,13 @@ public class CommandClaimBlocks extends TabCompleterBase implements CommandExecu
             int amount;
             try {
                 amount = Integer.parseInt(args[2]);
-            }catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex) {
                 sender.sendMessage(ChatColor.RED + "Invalid amount: " + args[2]);
                 return true;
             }
 
             // Check to make sure we're not going to end up with negative claim blocks
-            if(removing && amount > RegionProtection.getDataManager().getClaimBlocks(player)) {
+            if (removing && amount > RegionProtection.getDataManager().getClaimBlocks(player)) {
                 sender.sendMessage(ChatColor.RED + "You cannot take that many claim blocks from this player " +
                         "otherwise they would have negative claim blocks.");
                 return true;
@@ -87,9 +88,9 @@ public class CommandClaimBlocks extends TabCompleterBase implements CommandExecu
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
         switch (args.length) {
-            case 1:
+            case 1: // Players
                 return getOnlinePlayers(args[0]);
-            case 2:
+            case 2: // Sub-commands
                 return filterStartingWith(args[1], SUB_COMMANDS);
             default:
                 return Collections.emptyList();

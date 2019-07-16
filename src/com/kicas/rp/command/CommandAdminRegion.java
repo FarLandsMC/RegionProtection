@@ -14,13 +14,13 @@ import org.bukkit.entity.Player;
 public class CommandAdminRegion implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        // Sender check
-        if(!(sender instanceof Player)) {
+        // Online sender required
+        if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
 
-        PlayerSession ps = RegionProtection.getDataManager().getPlayerSession((Player)sender);
+        PlayerSession ps = RegionProtection.getDataManager().getPlayerSession((Player) sender);
         ps.setInAdminRegionMode(!ps.isInAdminRegionMode());
 
         sender.sendMessage(ChatColor.GOLD + (ps.isInAdminRegionMode() ? "You can now create admin regions."

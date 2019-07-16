@@ -17,25 +17,25 @@ import org.bukkit.entity.Player;
 public class CommandExpandClaim implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        if(args.length == 0)
+        if (args.length == 0)
             return false;
 
-        // Sender check
-        if(!(sender instanceof Player)) {
+        // Online sender required
+        if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
 
         // Prioritize sub-claims
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player)sender).getLocation());
+        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
         // Admin claims should be modified in size through /region expand|retract
-        if(claim == null || claim.isAdminOwned()) {
+        if (claim == null || claim.isAdminOwned()) {
             sender.sendMessage(ChatColor.RED + "Please stand in the claim that you wish to expand.");
             return true;
         }
 
         // Permission check
-        if(!claim.isEffectiveOwner((Player)sender)) {
+        if (!claim.isEffectiveOwner((Player) sender)) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to expand this claim.");
             return true;
         }
@@ -44,18 +44,18 @@ public class CommandExpandClaim implements CommandExecutor {
         int amount;
         try {
             amount = Integer.parseInt(args[0]);
-        }catch(NumberFormatException ex) {
+        } catch (NumberFormatException ex) {
             sender.sendMessage(ChatColor.RED + "Invalid amount: " + args[0]);
             return true;
         }
 
         // Do the expansion
-        BlockFace facing = ((Player)sender).getFacing();
-        if(RegionProtection.getDataManager().tryExpandRegion((Player)sender, claim, facing, amount)) {
-            PlayerSession ps = RegionProtection.getDataManager().getPlayerSession((Player)sender);
+        BlockFace facing = ((Player) sender).getFacing();
+        if (RegionProtection.getDataManager().tryExpandRegion((Player) sender, claim, facing, amount)) {
+            PlayerSession ps = RegionProtection.getDataManager().getPlayerSession((Player) sender);
             sender.sendMessage(ChatColor.GREEN + "Successfully expanded this claim." + (claim.hasParent() ? ""
                     : "You have " + ps.getClaimBlocks() + " claim blocks remaining."));
-            ps.setRegionHighlighter(new RegionHighlighter((Player)sender, claim));
+            ps.setRegionHighlighter(new RegionHighlighter((Player) sender, claim));
         }
 
         return true;

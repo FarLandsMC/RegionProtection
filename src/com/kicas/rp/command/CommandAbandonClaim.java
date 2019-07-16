@@ -17,7 +17,7 @@ import org.bukkit.entity.Player;
 public class CommandAbandonClaim implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        // Sender check
+        // Online sender required
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
@@ -28,7 +28,7 @@ public class CommandAbandonClaim implements CommandExecutor {
         DataManager dm = RegionProtection.getDataManager();
         PlayerSession ps = dm.getPlayerSession(player);
 
-        // Abandon the claim the player is currently standing in
+        // Abandon the single claim the player is currently standing in
         if ("abandonclaim".equals(alias)) {
             // Prioritize sub-claims
             Region claim = dm.getHighestPriorityRegionAt(player.getLocation());

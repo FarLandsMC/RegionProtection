@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 public abstract class TabCompleterBase implements TabCompleter {
     /**
      * Returns a list of the currently online players whose name starts with the given partial name.
+     *
      * @param partialName the partial name.
      * @return a list of the currently online players whose name starts with the given partial name.
      */
@@ -24,13 +25,14 @@ public abstract class TabCompleterBase implements TabCompleter {
 
     /**
      * Joins all the arguments after the argument at the given index with the given delimiter.
+     *
      * @param index the index.
      * @param delim the delimiter.
-     * @param args the arguments.
+     * @param args  the arguments.
      * @return the result of joining the argument after the given index with the given delimiter.
      */
     public static String joinArgsBeyond(int index, String delim, String[] args) {
-        ++ index;
+        ++index;
         String[] data = new String[args.length - index];
         System.arraycopy(args, index, data, 0, data.length);
         return String.join(delim, data);
@@ -39,6 +41,7 @@ public abstract class TabCompleterBase implements TabCompleter {
     /**
      * Filters the given stream by removing null or empty strings, or strings who do not start with the given prefix
      * (ignoring case).
+     *
      * @param prefix the prefix to match.
      * @param stream the stream to filter.
      * @return the list of values left after the stream has been filtered.
@@ -51,7 +54,8 @@ public abstract class TabCompleterBase implements TabCompleter {
     /**
      * Filters the given string list by removing null or empty strings, or strings who do not start with the given
      * prefix (ignoring case). This method is equivalent to calling filterStartingWith(prefix, strings.stream()).
-     * @param prefix the prefix to match.
+     *
+     * @param prefix  the prefix to match.
      * @param strings the strings to filter.
      * @return the list of values left after the strings have been filtered.
      */

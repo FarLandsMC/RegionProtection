@@ -20,32 +20,34 @@ import java.util.stream.Collectors;
 public class CommandClaimList implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
-        // Sender check
-        if(!(sender instanceof Player)) {
+        // Online sender required
+        if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
 
         // Get the owner in question
         UUID uuid = args.length > 0 && sender.hasPermission("rp.command.externalclaimlist")
-                ? RegionProtection.getDataManager().uuidForUsername(args[0]) : ((Player)sender).getUniqueId();
+                ? RegionProtection.getDataManager().uuidForUsername(args[0]) : ((Player) sender).getUniqueId();
 
         // Build the list
-        List<Region> claimlist = RegionProtection.getDataManager().getRegionsInWorld(((Player)sender).getWorld())
+        List<Region> claimlist = RegionProtection.getDataManager().getRegionsInWorld(((Player) sender).getWorld())
                 .stream().filter(region -> !region.isAdminOwned() && region.isOwner(uuid)).collect(Collectors.toList());
 
         // Format the list and send it to the player
         TextUtils.sendFormatted(sender, "&(gold)%0 {&(aqua)%1} $(inflect,noun,1,claim) in this world:",
-                uuid.equals(((Player)sender).getUniqueId()) ? "You have" : args[0] + " has", claimlist.size());
+                uuid.equals(((Player) sender).getUniqueId()) ? "You have" : args[0] + " has", claimlist.size());
         claimlist.forEach(region -> TextUtils.sendFormatted(sender, "&(gold)%0x, %1z: {&(aqua)%2} claim blocks",
-                (int)(0.5 * (region.getMin().getX() + region.getMax().getX())),
-                (int)(0.5 * (region.getMin().getZ() + region.getMax().getZ())),
+                (int) (0.5 * (region.getMin().getX() + region.getMax().getX())),
+                (int) (0.5 * (region.getMin().getZ() + region.getMax().getZ())),
                 region.area()));
-    
+
+        // Finally notify the sender of how their claim blocks are being used
         int remaining = RegionProtection.getDataManager().getClaimBlocks(uuid),
-                used = claimlist.stream().map(r -> (int)r.area()).reduce(0, Integer::sum);
+                used = claimlist.stream().map(r -> (int) r.area()).reduce(0, Integer::sum);
         TextUtils.sendFormatted(sender, "&(gold){&(aqua)%0} used + {&(aqua)%1} available = {&(aqua)%2} total claim " +
                 "blocks", used, remaining, used + remaining);
+
         return true;
     }
 }
