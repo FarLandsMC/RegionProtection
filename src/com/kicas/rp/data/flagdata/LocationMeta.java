@@ -7,6 +7,10 @@ import org.bukkit.World;
 
 import java.util.UUID;
 
+/**
+ * Allows a minecraft location (including its world and rotation values) to be stored. Used for the respawn-location
+ * flag.
+ */
 public class LocationMeta {
     private UUID world;
     private double x, y, z;

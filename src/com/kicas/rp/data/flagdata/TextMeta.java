@@ -9,6 +9,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
  */
 public class TextMeta {
     private String text;
+    // Computed on construction for efficiency later on
     private BaseComponent[] formatted;
 
     public static final TextMeta EMPTY_TEXT = new TextMeta("", new BaseComponent[0]);

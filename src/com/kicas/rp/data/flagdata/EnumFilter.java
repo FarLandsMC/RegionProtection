@@ -23,7 +23,7 @@ public class EnumFilter {
         this.isWhitelist = isWhitelist;
         this.filter = filter;
     }
-    
+
     public EnumFilter(boolean isWhitelist) {
         this(isWhitelist, new ArrayList<>());
     }
@@ -31,26 +31,29 @@ public class EnumFilter {
     public EnumFilter() {
         this(false);
     }
-    
+
     public boolean isAllowed(Enum e) {
         return isWhitelist == filter.contains(e.ordinal());
-    }
-
-    public List<Integer> getFilter() {
-        return filter;
     }
 
     public boolean isWhitelist() {
         return isWhitelist;
     }
 
+    public List<Integer> getFilter() {
+        return filter;
+    }
+
     @SuppressWarnings("unchecked")
     public <E extends Enum<E>> String toString(Class<E> clazz) {
-        if(!isWhitelist && filter.isEmpty())
+        // ~ = empty filter, IE everything is allowed
+        if (!isWhitelist && filter.isEmpty())
             return "~";
 
+        // A whitelist means everything is disallowed with some exceptions, so *,!a,!b
         String base = isWhitelist ? "*" : "";
-        Enum<E>[] values = (Enum<E>[])ReflectionHelper.invoke("values", clazz, null);
+        // Convert the ordinals to formatted names and apply the formatting
+        Enum<E>[] values = (Enum<E>[]) ReflectionHelper.invoke("values", clazz, null);
         return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*, ") + String.join(", ", filter.stream()
                 .map(ordinal -> (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal]))
                 .toArray(String[]::new));
@@ -58,35 +61,38 @@ public class EnumFilter {
 
     @Override
     public boolean equals(Object other) {
-        if(other == this)
+        if (other == this)
             return true;
 
-        if(!(other instanceof EnumFilter))
+        if (!(other instanceof EnumFilter))
             return false;
 
-        EnumFilter ef = (EnumFilter)other;
+        EnumFilter ef = (EnumFilter) other;
         return filter.equals(ef.filter) && isWhitelist == ef.isWhitelist;
     }
 
     public static <E extends Enum<E>> EnumFilter fromString(String string, Class<E> clazz) {
-        if("~".equals(string))
+        if ("~".equals(string))
             return EMPTY_FILTER;
 
         boolean isWhitelist = string.contains("*");
         EnumFilter ef = new EnumFilter(isWhitelist);
-        for(String element : string.split(",")) {
+        for (String element : string.split(",")) {
             element = element.trim();
             // Ignore negation depending on the filter type (! = negation)
-            if(!"*".equals(element) && isWhitelist == element.startsWith("!")) {
+            if (!"*".equals(element) && isWhitelist == element.startsWith("!")) {
                 // Convert the element into the actual enum name
                 String name = isWhitelist ? element.substring(1) : element;
 
+                // Check the given enum name
                 Enum e = Utils.valueOfFormattedName(name, clazz);
-                if(e == null)
+                if (e == null)
                     throw new IllegalArgumentException("Invalid argument: " + element);
+
                 ef.filter.add(e.ordinal());
             }
         }
+
         return ef;
     }
 }

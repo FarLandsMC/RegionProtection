@@ -1,6 +1,7 @@
 package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.RegionProtection;
+import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -9,13 +10,13 @@ import org.bukkit.entity.Player;
  * the sender of the command as well as the command to execute.
  */
 public class CommandMeta {
-    private boolean isConsole;
+    private boolean runFromConsole;
     private String command;
 
     public static final CommandMeta EMPTY_META = new CommandMeta();
 
-    public CommandMeta(boolean isConsole, String command) {
-        this.isConsole = isConsole;
+    public CommandMeta(boolean runFromConsole, String command) {
+        this.runFromConsole = runFromConsole;
         this.command = command;
     }
 
@@ -25,10 +26,11 @@ public class CommandMeta {
 
     /**
      * Returns whether or not this command is meant to be run by the console.
+     *
      * @return true if this command is meant to be run by the console, false otherwise.
      */
-    public boolean isConsole() {
-        return isConsole;
+    public boolean runFromConsole() {
+        return runFromConsole;
     }
 
     public String getCommand() {
@@ -37,13 +39,29 @@ public class CommandMeta {
 
     /**
      * Executes the command stored in this metadata synchronously. If this command is not run by the console, then the
-     * given player is used as the sender of the command. Any occurrences of %0 in the in the command string stored in
-     * this meta will be replaced with the given player's username.
+     * given player is used as the sender of the command. There should always be an associated player when executing a
+     * command meta. Certain values will be substituted into the command according to the following map
+     * (marker, replacement):
+     * <ul>
+     * <li>%player%: the associated player's username</li>
+     * <li>%world%: the world the player is in</li>
+     * <li>%x%: the player's x position</li>
+     * <li>%y%: the player's y position</li>
+     * <li>%z%: the player's z position</li>
+     * </ul>
+     *
      * @param player the player associated with this execution of the command.
      */
     public void execute(Player player) {
-        String cmd = command.replaceAll("%0", player.getName());
+        // Perform substitutions
+        String cmd = command.replaceAll("%player%", player.getName())
+                .replaceAll("%world%", player.getWorld().getName())
+                .replaceAll("%x%", Utils.doubleToString(player.getLocation().getX(), 3))
+                .replaceAll("%y%", Utils.doubleToString(player.getLocation().getY(), 3))
+                .replaceAll("%z%", Utils.doubleToString(player.getLocation().getZ(), 3));
+
+        // Perform the execution
         Bukkit.getScheduler().runTask(RegionProtection.getInstance(),
-                () -> Bukkit.dispatchCommand(isConsole ? Bukkit.getConsoleSender() : player, cmd));
+                () -> Bukkit.dispatchCommand(runFromConsole ? Bukkit.getConsoleSender() : player, cmd));
     }
 }

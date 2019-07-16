@@ -87,7 +87,7 @@ public class Serializer {
             encoder.writeBoolean((boolean)meta);
         else{
             if(meta instanceof CommandMeta) {
-                encoder.writeBoolean(((CommandMeta)meta).isConsole());
+                encoder.writeBoolean(((CommandMeta)meta).runFromConsole());
                 encoder.writeUTF8Raw(((CommandMeta)meta).getCommand());
             }else if(meta instanceof EnumFilter) {
                 encoder.writeBoolean(((EnumFilter)meta).isWhitelist());

@@ -318,7 +318,7 @@ public class DataManager implements Listener {
         List<Region> regions = getRegionsAt(location);
 
         // Quick check for an absence of regions
-        if (regions == null)
+        if (regions.isEmpty())
             return worldFlags.isEmpty() ? null : worldFlags;
 
         // Filter out the regions that are near the location but don't contain it
