@@ -159,7 +159,7 @@ public class Region extends FlagContainer {
     }
 
     /**
-     * Returns whether or not this region and the given region overlap in 3D space, mening this region contains part,
+     * Returns whether or not this region and the given region overlap in 3D space, meaning this region contains part,
      * or all of the given region.
      * @param other the other region.
      * @return true if this region and the given region overlap, false otherwise.

@@ -6,7 +6,7 @@ import org.bukkit.Location;
 import java.util.*;
 
 /**
- * Allows for regions to be quickly found a verious locations through a hash-table-style algorithm.
+ * Allows for regions to be quickly found a various locations through a hash-table-style algorithm.
  */
 public class RegionLookupTable {
     private Node[] table;
@@ -36,7 +36,7 @@ public class RegionLookupTable {
 
     // Add the region without inflating
     private void addSilent(Region region) {
-        // Traverse the scalled down version of the region
+        // Traverse the scaled down version of the region
         for (int x = region.getMin().getBlockX() >> scale; x <= region.getMax().getBlockX() >> scale; ++ x) {
             for (int z = region.getMin().getBlockZ() >> scale; z <= region.getMax().getBlockZ() >> scale; ++ z) {
                 // Add the region
@@ -270,7 +270,7 @@ public class RegionLookupTable {
         return hash(loc.getBlockX() >> scale, loc.getBlockZ() >> scale);
     }
 
-    // Convers the given x and z parts to a valid index for the inner table array
+    // Converts the given x and z parts to a valid index for the inner table array
     private int hash(int x, int z) {
         // The "x & Long.MAX_VALUE" sets the sign bit to 0
         return (int)((((long)x << 32 | (long)z & 0xFF_FF_FF_FFL) & Long.MAX_VALUE) % table.length);

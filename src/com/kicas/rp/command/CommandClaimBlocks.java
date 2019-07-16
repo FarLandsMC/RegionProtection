@@ -1,7 +1,6 @@
 package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.data.DataManager;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -25,7 +24,7 @@ public class CommandClaimBlocks extends TabCompleterBase implements CommandExecu
         if (args.length == 0)
             return false;
 
-        UUID player = DataManager.uuidForUsername(args[0]);
+        UUID player = RegionProtection.getDataManager().uuidForUsername(args[0]);
         if(player == null) {
             sender.sendMessage(ChatColor.RED + "Invalid username: " + args[0]);
             return true;

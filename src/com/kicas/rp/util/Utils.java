@@ -58,9 +58,9 @@ public final class Utils {
     }
 
     /**
-     * Unformats the given name according to how it was formatted in the formattedName method of this class, and get the
-     * enumeration value corresponding to that name. If an enumeration constant could not be found with the unformatted
-     * name, then null is returned.
+     * Un-formats the given name according to how it was formatted in the formattedName method of this class, and get
+     * the enumeration value corresponding to that name. If an enumeration constant could not be found with the
+     * unformatted name, then null is returned.
      *
      * @param name the formatted name.
      * @param clazz the enum class.

@@ -30,7 +30,7 @@ public class CommandExpandClaim implements CommandExecutor {
         Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player)sender).getLocation());
         // Admin claims should be modified in size through /region expand|retract
         if(claim == null || claim.isAdminOwned()) {
-            sender.sendMessage(ChatColor.RED + "Please stand in the claim that you whish to expand.");
+            sender.sendMessage(ChatColor.RED + "Please stand in the claim that you wish to expand.");
             return true;
         }
 

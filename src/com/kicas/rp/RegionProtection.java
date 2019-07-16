@@ -132,7 +132,7 @@ public class RegionProtection extends JavaPlugin {
                     config.getString("general.claim-viewer"));
             claimViewer = Material.STICK;
         }
-        // Put claim block accruement in a usable form
+        // Put claim block addition in a usable form
         claimBlocksGainedPerMinute = (double)config.getInt("general.claim-blocks-gained-per-hour") / 60.0;
         // Convert the world names to UUIDs, filtering out invalid names in the process
         claimableWorlds = config.getStringList("general.enable-claims-in-worlds").stream().map(name -> {

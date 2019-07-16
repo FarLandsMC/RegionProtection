@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Allows for some static utility methods to be available to tab completors.
+ * Allows for some static utility methods to be available to tab completer.
  */
 public abstract class TabCompleterBase implements TabCompleter {
     /**

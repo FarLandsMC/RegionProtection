@@ -1,7 +1,6 @@
 package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.Region;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.ChatColor;
@@ -29,7 +28,7 @@ public class CommandClaimList implements CommandExecutor {
 
         // Get the owner in question
         UUID uuid = args.length > 0 && sender.hasPermission("rp.command.externalclaimlist")
-                ? DataManager.uuidForUsername(args[0]) : ((Player)sender).getUniqueId();
+                ? RegionProtection.getDataManager().uuidForUsername(args[0]) : ((Player)sender).getUniqueId();
 
         // Build the list
         List<Region> claimlist = RegionProtection.getDataManager().getRegionsInWorld(((Player)sender).getWorld())

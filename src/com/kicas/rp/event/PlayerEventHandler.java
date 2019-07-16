@@ -284,8 +284,8 @@ public class PlayerEventHandler implements Listener {
      * Handles multiple different types of entity interactions as detailed below.
      * <ul>
      *     <li>The breaking of leash hitches by right-clicking it.</li>
-     *     <li>The accessing of intentory holder entities such as minecart chests.</li>
-     *     <li>The accessing of interactable entities such as trader entites.</li>
+     *     <li>The accessing of inventory holder entities such as minecart chests.</li>
+     *     <li>The accessing of interactable entities such as trader entities.</li>
      * </ul>
      * @param event the event.
      */

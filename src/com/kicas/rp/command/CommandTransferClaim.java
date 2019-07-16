@@ -1,7 +1,6 @@
 package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.data.DataManager;
 import com.kicas.rp.data.Region;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -30,7 +29,7 @@ public class CommandTransferClaim extends TabCompleterBase implements CommandExe
         }
 
         // Get and check the specified new owner
-        UUID newOwner = DataManager.uuidForUsername(args[0]);
+        UUID newOwner = RegionProtection.getDataManager().uuidForUsername(args[0]);
         if(newOwner == null) {
             sender.sendMessage(ChatColor.RED + "Invalid username: " + args[0]);
             return true;

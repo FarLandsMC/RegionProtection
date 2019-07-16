@@ -29,6 +29,8 @@ public class DataManager implements Listener {
     // Used to create player sessions
     private final Map<UUID, PersistentPlayerData> playerData;
     private final Map<UUID, PlayerSession> playerSessionCache;
+    // Cache data received from the Mojang API
+    private final Map<String, UUID> ignUuidLookupCache;
 
     // These values are used to keep consistency in the serialized data
     public static final byte REGION_FORMAT_VERSION = 0;
@@ -43,6 +45,7 @@ public class DataManager implements Listener {
         this.worlds = new HashMap<>();
         this.playerData = new HashMap<>();
         this.playerSessionCache = new HashMap<>();
+        this.ignUuidLookupCache = new HashMap<>();
     }
 
     /**
@@ -54,7 +57,7 @@ public class DataManager implements Listener {
      * @param username the username.
      * @return the UUID associated with the given username, or null if no such UUID could be found.
      */
-    public static UUID uuidForUsername(String username) {
+    public UUID uuidForUsername(String username) {
         Player player = Bukkit.getPlayer(username);
         if(player != null)
             return player.getUniqueId();
@@ -64,6 +67,10 @@ public class DataManager implements Listener {
                 .orElse(null);
         if (op != null)
             return op.getUniqueId();
+
+        // Check cache
+        if(ignUuidLookupCache.containsKey(username))
+            return ignUuidLookupCache.get(username);
 
         // They have not joined before therefore we'll use the Mojang API
         try {
@@ -82,9 +89,11 @@ public class DataManager implements Listener {
 
             // Format the UUID with -'s and parse it
             String unformatted = new String(buffer, 7, 32);
-            return UUID.fromString(String.format("%s-%s-%s-%s-%s", unformatted.substring(0, 8),
+            UUID uuid = UUID.fromString(String.format("%s-%s-%s-%s-%s", unformatted.substring(0, 8),
                     unformatted.substring(8, 12), unformatted.substring(12, 16), unformatted.substring(16, 20),
                     unformatted.substring(20)));
+            ignUuidLookupCache.put(username, uuid);
+            return uuid;
         } catch (IOException ex) {
             // Some error occurred, return null
             return null;
@@ -101,7 +110,7 @@ public class DataManager implements Listener {
      * @return the username associated with the given UUID if one could be found, or null if no associated username
      * could be found.
      */
-    public static String currentUsernameForUuid(UUID uuid) {
+    public String currentUsernameForUuid(UUID uuid) {
         Player player = Bukkit.getPlayer(uuid);
         if(player != null)
             return player.getName();
@@ -111,6 +120,12 @@ public class DataManager implements Listener {
                 .orElse(null);
         if (op != null)
             return op.getName();
+
+        // Check cache
+        for(Map.Entry<String, UUID> entry : ignUuidLookupCache.entrySet()) {
+            if(entry.getValue().equals(uuid))
+                return entry.getKey();
+        }
 
         // They have not joined before therefore we'll use the Mojang API
         try {
@@ -296,7 +311,7 @@ public class DataManager implements Listener {
      * Gets the flags present at a certain location, accounting for region priorities and global flags.
      *
      * @param location the location.
-     * @return the fkags at the specified location, or null if no flags are present.
+     * @return the flags at the specified location, or null if no flags are present.
      */
     public synchronized FlagContainer getFlagsAt(Location location) {
         FlagContainer worldFlags = worlds.get(location.getWorld().getUID());
@@ -336,8 +351,8 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Attempts to create a claim with the provided verticies and the specified player as the owner. The provided
-     * verticies do not need to be minimums and maximums respecively, however they will be assumed to be diagonally
+     * Attempts to create a claim with the provided vertices and the specified player as the owner. The provided
+     * vertices do not need to be minimums and maximums respectively, however they will be assumed to be diagonally
      * opposite from one another. The created region will extend from y=62 to the maximum world height if in the
      * overworld, else the claim will extend from y=0 to world height. The following conditions are tested to ensure the
      * claim can be safely created:
@@ -357,7 +372,7 @@ public class DataManager implements Listener {
      * @return the claim, or null if the claim could not be created.
      */
     public synchronized Region tryCreateClaim(Player creator, Location vertex1, Location vertex2) {
-        // Convert the given verticies into a minimum and maximum vertex
+        // Convert the given vertices into a minimum and maximum vertex
         Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
                 "world".equals(vertex1.getWorld().getName()) ? 62 : 0,
                 Math.min(vertex1.getZ(), vertex2.getZ()));
@@ -412,7 +427,7 @@ public class DataManager implements Listener {
      * @return the region, or null if the region could not be created.
      */
     public Region tryCreateAdminRegion(Location vertex1, Location vertex2) {
-        // Convert the given verticies into a minimum and maximum vertex
+        // Convert the given vertices into a minimum and maximum vertex
         Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
                 Math.min(vertex1.getY(), vertex2.getY()), Math.min(vertex1.getZ(), vertex2.getZ()));
         Location max = new Location(vertex1.getWorld(), Math.max(vertex1.getX(), vertex2.getX()),
@@ -498,7 +513,7 @@ public class DataManager implements Listener {
      * </ul>
      * The first two conditions above are tested for all regions, while the rest are only tested for
      * non-administrator-owned parent claims. The only unique check performed to a subdivision is to ensure it is still
-     * completely contained within the parent claim. If any of these coniditons are found, then the player will be
+     * completely contained within the parent claim. If any of these conditions are found, then the player will be
      * notified with an error message and false will be returned. Upon successful resizing of the claim, the owner of
      * the claim will gain or lose claim blocks depending on the change in area of the claim and true will be returned.
      *
@@ -516,7 +531,7 @@ public class DataManager implements Listener {
         // Resize the claim
         claim.moveVertex(originalVertex, newVertex);
 
-        // Manage collisions, sides, claim blocks, and exclaving of subdivisions
+        // Manage collisions, sides, claim blocks, and subdivisions becoming exclaves
         if (!resizeChecks(delegate, claim, bounds))
             return false;
 
@@ -533,7 +548,7 @@ public class DataManager implements Listener {
      * @param region    the region to expand.
      * @param direction the direction in which to expand the region.
      * @param amount    the amount by which to expand the region.
-     * @return true if the region was successfull expanded, false otherwise.
+     * @return true if the region was successful expanded, false otherwise.
      */
     public synchronized boolean tryExpandRegion(Player delegate, Region region, BlockFace direction, int amount) {
         Pair<Location, Location> bounds = region.getBounds();
@@ -582,9 +597,9 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Attempts to create a subdivision of a given claim with the given verticies. This method does not check to ensure
+     * Attempts to create a subdivision of a given claim with the given vertices. This method does not check to ensure
      * that the provided player has permission to subdivide this claim, this check should be performed outside of this
-     * method. The provided verticies do not need to be minimums and maximums respecively, however they will be assumed
+     * method. The provided vertices do not need to be minimums and maximums respectively, however they will be assumed
      * to be diagonally opposite from one another. The created subdivision will adopt the ownership of the given claim,
      * as well as the minimum y-value of the given claim. The following conditions are tested to see if the subdivision
      * cannot be created:
@@ -595,7 +610,7 @@ public class DataManager implements Listener {
      * <li>An area smaller than the minimum subdivision area</li>
      * </ul>
      * If any of these checks fail, then the player will be notified with a message and null will be returned. Upon
-     * successful subdividing of the claim, the subdivision will becoma a child of the given region, and will have a
+     * successful subdividing of the claim, the subdivision will become a child of the given region, and will have a
      * higher priority than the given region.
      *
      * @param delegate the creator of the subdivision.
@@ -605,7 +620,7 @@ public class DataManager implements Listener {
      * @return the subdivision, or null if the subdivision could not be created.
      */
     public synchronized Region tryCreateSubdivision(Player delegate, Region claim, Location vertex1, Location vertex2) {
-        // Convert the given verticies into a minimum and maximum vertex
+        // Convert the given vertices into a minimum and maximum vertex
         Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
                 claim.getMin().getBlockY(), Math.min(vertex1.getZ(), vertex2.getZ()));
         Location max = new Location(vertex1.getWorld(), Math.max(vertex1.getX(), vertex2.getX()),
@@ -832,7 +847,7 @@ public class DataManager implements Listener {
         return true;
     }
 
-    // Checks for collisions between the given region and other non-child claims that do not permis overlap
+    // Checks for collisions between the given region and other non-child claims that do not permits overlap
     // The given delegate will be notified if overlap is detected and those regions will be highlighted
     // Returns true if no collisions were present
     private boolean checkCollisions(Player delegate, Region region) {

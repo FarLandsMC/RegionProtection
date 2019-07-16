@@ -136,7 +136,7 @@ public class TrustMeta {
             list.put(publicTrustLevel, "public");
 
         trustData.forEach((uuid, trust) -> {
-            String name = DataManager.currentUsernameForUuid(uuid);
+            String name = RegionProtection.getDataManager().currentUsernameForUuid(uuid);
             if(name != null) {
                 String current = list.get(trust);
                 list.put(trust, current.isEmpty() ? name : current + ", " + name);
@@ -175,7 +175,7 @@ public class TrustMeta {
 
     /**
      * Creates a trust meta based on the given string. The format for a trust meta is as follows: for an individual
-     * trust level, the name of the trust level should be follwed by a colon, then a comma separated list of the players
+     * trust level, the name of the trust level should be followed by a colon, then a comma separated list of the players
      * who are to be designated that trust level. If "public" is encountered as a player name, then that trust level
      * will be assigned to the public. Each individual trust level as defined above should be separated by a space
      * character. If the given string is empty then an empty trust meta will be returned.
@@ -212,7 +212,7 @@ public class TrustMeta {
                     meta.trustPublic(level);
                     continue;
                 }
-                UUID uuid = DataManager.uuidForUsername(player);
+                UUID uuid = RegionProtection.getDataManager().uuidForUsername(player);
                 if(uuid == null)
                     throw new IllegalArgumentException("Invalid player name: " + player);
                 meta.trustData.put(uuid, level);

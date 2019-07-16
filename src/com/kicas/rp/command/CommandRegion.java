@@ -148,7 +148,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
         // Flag sub-command
         if ("flag".equals(args[0])) {
-            // Teritary args check
+            // Tertiary args check
             if (args.length < 3) {
                 sender.sendMessage(ChatColor.RED + "Usage: /region flag <name> <flag> [value]");
                 return true;
@@ -165,7 +165,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 return true;
             }
 
-            // If the prefix the flag name with !, such as /region flag test !deny-spawn, delete the falg
+            // If the prefix the flag name with !, such as /region flag test !deny-spawn, delete the flag
             boolean delete = args[2].startsWith("!");
 
             // Get and check the flag in question
@@ -221,13 +221,13 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
         // Region size modification
         if ("expand".equals(args[0]) || "retract".equals(args[0])) {
-            // Teritary args check
+            // Tertiary args check
             if (args.length < 3) {
                 sender.sendMessage(ChatColor.RED + "Usage: /region expand|retract <name> <direction> [value]");
                 return true;
             }
 
-            // Verticle extension is a different case, so check for that first
+            // Vertical extension is a different case, so check for that first
             if ("vert".equalsIgnoreCase(args[2]) || "vertical".equalsIgnoreCase(args[2])) {
                 // Retracting vertically doesn't make sense, don't allow it
                 if ("retract".equals(args[0])) {

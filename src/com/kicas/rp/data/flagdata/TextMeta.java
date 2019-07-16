@@ -4,7 +4,7 @@ import com.kicas.rp.util.TextUtils;
 import net.md_5.bungee.api.chat.BaseComponent;
 
 /**
- * Represents metadata for flags that contain formatted in-game tesxt. The format stored follows that which is parsed by
+ * Represents metadata for flags that contain formatted in-game text. The format stored follows that which is parsed by
  * the TextUtils utility.
  */
 public class TextMeta {

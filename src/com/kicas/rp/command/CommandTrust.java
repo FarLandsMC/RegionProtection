@@ -104,7 +104,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
             Player player = Bukkit.getPlayer(args[0]);
             UUID uuid;
             if(player == null) {
-                uuid = DataManager.uuidForUsername(args[0]);
+                uuid = RegionProtection.getDataManager().uuidForUsername(args[0]);
                 if(uuid == null) {
                     sender.sendMessage(ChatColor.RED + "Player not found.");
                     return true;

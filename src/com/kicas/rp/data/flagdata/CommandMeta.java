@@ -1,12 +1,8 @@
 package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.RegionProtection;
-import com.kicas.rp.util.Decoder;
-import com.kicas.rp.util.Encoder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-
-import java.io.IOException;
 
 /**
  * Represents the metadata for a command. This meta is used for the enter-command and exit-command flags, and specifies
@@ -41,12 +37,12 @@ public class CommandMeta {
 
     /**
      * Executes the command stored in this metadata synchronously. If this command is not run by the console, then the
-     * given playerr is used as the sender of the command. Any occurences of %0 in the in the command string stored in
+     * given player is used as the sender of the command. Any occurrences of %0 in the in the command string stored in
      * this meta will be replaced with the given player's username.
      * @param player the player associated with this execution of the command.
      */
     public void execute(Player player) {
-        String cmd = command.replaceAll("\\%0", player.getName());
+        String cmd = command.replaceAll("%0", player.getName());
         Bukkit.getScheduler().runTask(RegionProtection.getInstance(),
                 () -> Bukkit.dispatchCommand(isConsole ? Bukkit.getConsoleSender() : player, cmd));
     }
