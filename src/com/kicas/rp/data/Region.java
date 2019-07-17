@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Contains the data pertaining to a region. Regions can have child regions as well. These child regions are to some
- * extent managed by the parent region in terms of serialization, deserialization, and deletion. Child regions also have
- * a priority greater than or equal to the parent region. If their priority is equal to the parent region, then they
- * will adopt the flags of the parent region and are updated whenever the parent's flags change.
+ * Contains the data pertaining to a region. Regions can have child regions as well. These child regions are, to some
+ * extent, managed by the parent region in terms of serialization, deserialization, and deletion. Child regions also
+ * have a priority greater than or equal to the parent region. If their priority is equal to the parent region, then
+ * they will adopt the flags of the parent region and are updated whenever the parent's flags change.
  */
 public class Region extends FlagContainer {
     // Can be null, such as in claims
@@ -72,6 +72,11 @@ public class Region extends FlagContainer {
         return name;
     }
 
+    /**
+     * Returns the display name of this region. If the actual name of the region is not null, then that string is
+     * returned, otherwise "[Owned by &lt;ownerName&gt;]" is returned.
+     * @return the display name of this region.
+     */
     public String getDisplayName() {
         return name == null || name.isEmpty() ? "[Owned by " + getOwnerName() + "]" : name;
     }

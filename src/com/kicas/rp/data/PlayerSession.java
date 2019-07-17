@@ -35,7 +35,7 @@ public class PlayerSession {
     }
 
     public int getClaimBlocks() {
-        return (int)claimBlocks;
+        return (int) claimBlocks;
     }
 
     public void addClaimBlocks(double amount) {
@@ -48,14 +48,15 @@ public class PlayerSession {
 
     /**
      * Removes the current highlighter and replaces it with the new, given highlighter. If the given highlighter is not
-     * null, then its blocks are shown to the player.
+     * null, then it is activated and the client-side block changes are sent.
+     *
      * @param highlighter the region highlighter.
      */
     public void setRegionHighlighter(RegionHighlighter highlighter) {
-        if(currentHighlighter != null && !currentHighlighter.isComplete())
+        if (currentHighlighter != null && !currentHighlighter.isComplete())
             currentHighlighter.remove();
         currentHighlighter = highlighter;
-        if(highlighter != null)
+        if (highlighter != null)
             Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), currentHighlighter::showBlocks, 1L);
     }
 

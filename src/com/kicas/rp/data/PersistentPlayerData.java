@@ -5,6 +5,9 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
+/**
+ * This class contains player data this is stored to disk between server instances.
+ */
 public class PersistentPlayerData {
     private UUID uuid;
     private int claimBlocks;
