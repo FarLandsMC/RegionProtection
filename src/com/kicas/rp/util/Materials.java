@@ -97,7 +97,7 @@ public class Materials {
      * @return true if the given material is sensitive to a player standing on it, false otherwise.
      */
     public static boolean isPressureSensitive(Material material) {
-        return material == TURTLE_EGG || material == TRIPWIRE ||
+        return material == TURTLE_EGG || material == TRIPWIRE || material == FARMLAND ||
                 material.name().endsWith("PRESSURE_PLATE");
     }
 

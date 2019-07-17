@@ -120,15 +120,14 @@ public class PlayerEventHandler implements Listener {
      */
     @EventHandler(ignoreCancelled=true, priority=EventPriority.LOW)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if(event.getClickedBlock() == null)
-            return;
-
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
         if(flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
 
         Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
-        Material blockType = event.getClickedBlock().getType();
+        Material blockType = event.getClickedBlock() == null
+                ? event.getPlayer().getLocation().subtract(0, 0.5, 0).getBlock().getType()
+                : event.getClickedBlock().getType();
 
         if(event.getAction() != Action.PHYSICAL && !heldItem.isBlock() &&
                 !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isAllowed(heldItem)) {
