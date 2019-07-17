@@ -125,7 +125,7 @@ public class TrustMeta {
 
         // Skip the NONE trust level
         for (int i = 1; i < TrustLevel.VALUES.length; ++i)
-            list.put(TrustLevel.VALUES[i], new LinkedList<>());
+            list.put(TrustLevel.VALUES[i], new ArrayList<>());
 
         trustData.forEach((uuid, trust) -> list.get(trust).add(uuid));
 

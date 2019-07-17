@@ -82,7 +82,7 @@ public class RegionLookupTable {
             return Collections.emptyList();
 
         // Build the list
-        List<Region> regions = new LinkedList<>();
+        List<Region> regions = new ArrayList<>();
         do {
             if(node.region.contains(loc))
                 regions.add(node.region);
@@ -132,7 +132,7 @@ public class RegionLookupTable {
             return Collections.emptyList();
 
         // Build the list
-        List<Region> regions = new LinkedList<>();
+        List<Region> regions = new ArrayList<>();
         do {
             if(node.region.contains(loc) && !node.region.hasParent())
                 regions.add(node.region);
@@ -153,7 +153,7 @@ public class RegionLookupTable {
             return Collections.emptyList();
 
         // Build the list
-        List<Region> regions = new LinkedList<>();
+        List<Region> regions = new ArrayList<>();
         do {
             if(node.region.containsIgnoreY(loc))
                 regions.add(node.region);
