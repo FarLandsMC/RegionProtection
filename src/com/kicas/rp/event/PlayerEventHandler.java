@@ -653,11 +653,16 @@ public class PlayerEventHandler implements Listener {
                     toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(event.getPlayer());
             }
 
-            if(event.getPlayer().getGameMode() == GameMode.SURVIVAL || event.getPlayer().getGameMode() == GameMode.ADVENTURE) {
+            // Flight only applies to players in survival or adventure mode, and only if one of the regions they are
+            // crossing has a flight flag.
+            if((event.getPlayer().getGameMode() == GameMode.SURVIVAL || event.getPlayer().getGameMode() ==
+                    GameMode.ADVENTURE) && (toFlags != null && toFlags.hasFlag(RegionFlag.FLIGHT) ||
+                    fromFlags != null && fromFlags.hasFlag(RegionFlag.FLIGHT))) {
                 boolean allowFlight = toFlags == null ? event.getPlayer().getServer().getAllowFlight()
                         : toFlags.isAllowed(RegionFlag.FLIGHT);
+
                 event.getPlayer().setAllowFlight(allowFlight);
-                if(!allowFlight) {
+                if (!allowFlight) {
                     event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 200, 4,
                             false, false, false));
                 }
