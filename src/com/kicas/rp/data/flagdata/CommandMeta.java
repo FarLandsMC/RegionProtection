@@ -25,14 +25,15 @@ public class CommandMeta {
     }
 
     /**
-     * Returns whether or not this command is meant to be run by the console.
-     *
      * @return true if this command is meant to be run by the console, false otherwise.
      */
     public boolean runFromConsole() {
         return runFromConsole;
     }
 
+    /**
+     * @return the text command contained in this class.
+     */
     public String getCommand() {
         return command;
     }

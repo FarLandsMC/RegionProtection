@@ -31,18 +31,42 @@ public class StringFilter {
         this(false);
     }
 
+    /**
+     * Returns whether or not this filter allows the given string constant. More specifically, returns true if this
+     * filter contains the given string constant and this filter is a whitelist, or true if this filter does not contain
+     * the given string constant and is a blacklist.
+     *
+     * @param string the string to test.
+     * @return true if the given string is allowed by this filter, false otherwise.
+     */
     public boolean isAllowed(String string) {
         return isWhitelist == filter.contains(string);
     }
 
-    public List<String> getFilter() {
-        return filter;
-    }
-
+    /**
+     * Returns true if this filter is a whitelist, or false if this filter is a blacklist. A whitelist filter only
+     * allows a certain set of elements while a blacklist disallows a certain set of items.
+     *
+     * @return true if this filter is a whitelist, or false if this filter is a blacklist.
+     */
     public boolean isWhitelist() {
         return isWhitelist;
     }
 
+    /**
+     * @return a copy of the list containing the string constants in this filter.
+     */
+    public List<String> getFilterCopy() {
+        return new ArrayList<>(filter);
+    }
+
+    /**
+     * Converts this string filter to a string. Whitelist filters will be prefixed with a * and all subsequent
+     * comma-separated elements will be preceded by a !. For a blacklist filter, simply a list of comma separated string
+     * constants is returned.
+     *
+     * @return a string representation of this string filter.
+     */
     @Override
     public String toString() {
         // ~ = empty filter, IE everything is allowed
@@ -56,6 +80,13 @@ public class StringFilter {
                 .map(string -> (isWhitelist ? "!" : "") + string).toArray(String[]::new));
     }
 
+    /**
+     * Returns true if and only if the given object is a string filter, and has the same contents and type (whitelist or
+     * blacklist) as this filter.
+     *
+     * @param other the other object to test.
+     * @return true if the given object is an string filter and equivalent to this filter, false otherwise.
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this)
@@ -68,6 +99,16 @@ public class StringFilter {
         return filter.equals(sf.filter) && isWhitelist == sf.isWhitelist;
     }
 
+    /**
+     * Converts the given string to an string filter. Each individual element should be separated by a comma. If the
+     * string contains an asterisk (*), then the resulting filter will be a whitelist and only elements prefixed with !
+     * will be added to the filter. If no asterisks are in the input string, then the resulting filter will be a
+     * blacklist filter, and elements prefixed with ! will be ignored. If the given input string is just a tilde (~),
+     * then an empty filter will be returned.
+     *
+     * @param string the input string.
+     * @return the string filter resulting from the given string.
+     */
     public static StringFilter fromString(String string) {
         if ("~".equals(string))
             return EMPTY_FILTER;

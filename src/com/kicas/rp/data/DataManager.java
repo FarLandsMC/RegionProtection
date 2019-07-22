@@ -15,7 +15,6 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -208,6 +207,12 @@ public class DataManager implements Listener {
         return worlds.get(world.getUID()).getRegions();
     }
 
+    /**
+     * Returns the global flag container for the given world.
+     *
+     * @param world the world.
+     * @return the global flag container for the given world.
+     */
     public FlagContainer getWorldFlags(World world) {
         return worlds.get(world.getUID());
     }
@@ -336,7 +341,7 @@ public class DataManager implements Listener {
             return worldFlags.isEmpty() ? null : worldFlags;
 
         // Filter out the regions that are near the location but don't contain it
-        regions = regions.stream().filter(region -> region.contains(location)).collect(Collectors.toList());
+        regions.removeIf(region -> !region.contains(location));
         if (regions.isEmpty())
             return worldFlags.isEmpty() ? null : worldFlags;
 
@@ -1012,7 +1017,7 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Saves all data managed by this class to disc.
+     * Saves all data managed by this class to disk.
      */
     public synchronized void save() {
         // Save world data

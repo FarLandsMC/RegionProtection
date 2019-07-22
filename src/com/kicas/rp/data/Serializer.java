@@ -91,7 +91,7 @@ public class Serializer {
                 encoder.writeUTF8Raw(((CommandMeta)meta).getCommand());
             }else if(meta instanceof EnumFilter) {
                 encoder.writeBoolean(((EnumFilter)meta).isWhitelist());
-                List<Integer> filter = ((EnumFilter)meta).getFilter();
+                List<Integer> filter = ((EnumFilter)meta).getFilterCopy();
                 encoder.writeUintCompressed(filter.size());
                 for(Integer integer : filter)
                     encoder.writeUintCompressed(integer);
@@ -105,12 +105,12 @@ public class Serializer {
                 encoder.writeFloat(loc.getPitch());
             }else if(meta instanceof StringFilter) {
                 encoder.writeBoolean(((StringFilter)meta).isWhitelist());
-                encoder.writeArray(((StringFilter)meta).getFilter(), String.class);
+                encoder.writeArray(((StringFilter)meta).getFilterCopy(), String.class);
             }else if(meta instanceof TextMeta)
                 encoder.writeUTF8Raw(((TextMeta)meta).getText());
             else if(meta instanceof TrustMeta) {
                 encoder.write(((TrustMeta)meta).getPublicTrustLevel().ordinal());
-                Map<UUID, TrustLevel> rawTrustData = ((TrustMeta)meta).getRawTrustData();
+                Map<UUID, TrustLevel> rawTrustData = ((TrustMeta)meta).getRawTrustDataCopy();
                 encoder.writeUintCompressed(rawTrustData.size());
                 for(Map.Entry<UUID, TrustLevel> trust : rawTrustData.entrySet()) {
                     encoder.writeUuid(trust.getKey());

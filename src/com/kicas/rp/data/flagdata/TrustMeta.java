@@ -29,6 +29,9 @@ public class TrustMeta {
         this.publicTrustLevel = publicTrustLevel;
     }
 
+    /**
+     * @return an exact copy of this trust meta.
+     */
     public TrustMeta copy() {
         TrustMeta copy = new TrustMeta(publicTrustLevel);
         copy.trustData.putAll(trustData);
@@ -107,18 +110,22 @@ public class TrustMeta {
         publicTrustLevel = trust;
     }
 
+    /**
+     * @return the public trust level of this trust meta.
+     */
     public TrustLevel getPublicTrustLevel() {
         return publicTrustLevel;
     }
 
-    public Map<UUID, TrustLevel> getRawTrustData() {
-        return trustData;
+    /**
+     * @return an exact copy of the raw trust data in this trust meta.
+     */
+    public Map<UUID, TrustLevel> getRawTrustDataCopy() {
+        return new HashMap<>(trustData);
     }
 
     /**
-     * Returns a mapping of every trust level to a list of the UUIDs with that trust level.
-     *
-     * @return the trust list as described above.
+     * @return a mapping of every trust level to a list of the UUIDs with that trust level.
      */
     public Map<TrustLevel, List<UUID>> getTrustList() {
         Map<TrustLevel, List<UUID>> list = new HashMap<>();
@@ -133,10 +140,8 @@ public class TrustMeta {
     }
 
     /**
-     * Returns a mapping of every trust level to a string containing a comma separated list of the players with that
+     * @return a mapping of every trust level to a string containing a comma separated list of the players with that
      * trust level.
-     *
-     * @return the trust list as described above.
      */
     public Map<TrustLevel, String> getFormattedTrustList() {
         Map<TrustLevel, String> list = new HashMap<>();
@@ -160,6 +165,13 @@ public class TrustMeta {
         return list;
     }
 
+    /**
+     * Returns this trust meta in string form. If the trust data is empty and the public trust level is set to NONE,
+     * then "[No Trust]" is returned. If the trust data is empty and the public trust level is set to BUILD, then
+     * "[Full Trust]" is returned.
+     *
+     * @return this trust meta in string form.
+     */
     @Override
     public String toString() {
         if (trustData.isEmpty()) {
@@ -175,6 +187,13 @@ public class TrustMeta {
                 .reduce("", String::concat).trim();
     }
 
+    /**
+     * Returns true if an only if the given object is a trust meta instance, and if the trust lists are equal and the
+     * public trust levels are equal.
+     *
+     * @param other the object to test.
+     * @return true if this trust meta is equivalent to the given object, false otherwise.
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this)

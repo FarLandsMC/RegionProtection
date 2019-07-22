@@ -46,10 +46,19 @@ public class LocationMeta {
         this.pitch = 0F;
     }
 
+    /**
+     * @return a new Bukkit location based on the data in this meta class.
+     */
     public Location getLocation() {
         return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
     }
 
+    /**
+     * Converts this location meta to a string form. The resulting string will only contain the x, y, and z parts of
+     * this meta and each number will be truncated to three decimal points.
+     *
+     * @return this location meta in string form.
+     */
     @Override
     public String toString() {
         return Utils.doubleToString(x, 3) + "x, " + Utils.doubleToString(y, 3) + "y, " + Utils.doubleToString(z, 3) +
