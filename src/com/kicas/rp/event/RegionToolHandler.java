@@ -92,6 +92,7 @@ public class RegionToolHandler implements Listener {
                         if (region.isAdminOwned()) {
                             player.sendMessage(ChatColor.RED + "Administrator-owned regions should be modified " +
                                     "through the /region command.");
+                            ps.setLastClickedBlock(null);
                             return;
                         }
 
@@ -101,12 +102,10 @@ public class RegionToolHandler implements Listener {
                                 TrustLevel.MANAGEMENT, region)) {
                             player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
                             ps.setLastClickedBlock(null);
-                            event.setCancelled(true);
                             return;
                         } else if (!region.isEffectiveOwner(player)) { // Actions on the parent claim require ownership
                             player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
                             ps.setLastClickedBlock(null);
-                            event.setCancelled(true);
                             return;
                         }
 
@@ -118,9 +117,10 @@ public class RegionToolHandler implements Listener {
                                     "resize the claim.");
                         } else { // Subdividing
                             // Make sure they're not subdividing a subdivision
-                            if (region.hasParent())
+                            if (region.hasParent()) {
                                 player.sendMessage(ChatColor.RED + "You cannot subdivide this claim further here.");
-                            else {
+                                ps.setLastClickedBlock(null);
+                            } else {
                                 ps.setAction(PlayerSession.PlayerRegionAction.SUBDIVIDE_REGION);
                                 ps.setCurrentSelectedRegion(region);
                                 player.sendMessage(ChatColor.GOLD + "You are subdividing this claim. Select another " +
