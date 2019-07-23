@@ -57,7 +57,7 @@ public final class Utils {
      */
     public static int constrain(int n, int min, int max) {
         if (max < min)
-            throw new IllegalArgumentException("The maximum bound cannot be greater than the minimum bound.");
+            throw new IllegalArgumentException("The maximum bound cannot be less than the minimum bound.");
         return n < min ? min : (n > max ? max : n);
     }
 
