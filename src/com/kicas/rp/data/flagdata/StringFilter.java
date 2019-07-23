@@ -56,8 +56,8 @@ public class StringFilter {
     /**
      * @return a copy of the list containing the string constants in this filter.
      */
-    public List<String> getFilterCopy() {
-        return new ArrayList<>(filter);
+    public List<String> getFilter() {
+        return Collections.unmodifiableList(filter);
     }
 
     /**

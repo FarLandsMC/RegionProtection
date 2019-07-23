@@ -53,7 +53,14 @@ public class TextUtils {
         return parseExpression(new Pair<>(ChatColor.WHITE, new ArrayList<>()), input);
     }
 
-    // Insert values into the raw input
+    /**
+     * Inserts the given values into the raw string where the sequence %x occurs where x is the hexadecimal index of the
+     * value to insert.
+     *
+     * @param raw    the raw string.
+     * @param values the values to insert.
+     * @return the string with the values inserted.
+     */
     public static String insertValues(String raw, Object... values) {
         if (values.length == 0)
             return raw;
@@ -83,9 +90,16 @@ public class TextUtils {
         return sb.toString();
     }
 
-    // Parses the given expression. The format variable is as follows: text color, additive format colors (such as bold,
-    // italic, etc.). The values variable is the list of values potentially substituted into the text, and is used by
-    // the inflecting function.
+    /**
+     * Parses the given expression. The format variable is as follows: text color, additive format colors (such as bold,
+     * italic, etc.). The values variable is the list of values potentially substituted into the text, and is used by
+     * the inflecting function.
+     *
+     * @param format the format scope (color, formats).
+     * @param input  the input string to parse.
+     * @param values the object insertions (used by the inflect function).
+     * @return a base component array resulting from the given expression.
+     */
     private static BaseComponent[] parseExpression(Pair<ChatColor, List<ChatColor>> format, String input,
                                                    Object... values) {
         // Current component text
@@ -111,7 +125,7 @@ public class TextUtils {
                 case COLOR_CHAR: {
                     // Finish off the current component if it was started
                     if (component.length() > 0) {
-                        expr.add(parseComponent(format, component.toString()));
+                        expr.add(makeComponent(format, component.toString()));
                         component.setLength(0);
                     }
 
@@ -149,7 +163,7 @@ public class TextUtils {
                 case SECTION_START: {
                     // Finish off the current component if it was started
                     if (component.length() > 0) {
-                        expr.add(parseComponent(format, component.toString()));
+                        expr.add(makeComponent(format, component.toString()));
                         component.setLength(0);
                     }
 
@@ -222,7 +236,7 @@ public class TextUtils {
 
                     // Finish off the current component if it was started and we're not inflecting a word
                     if (!"inflect".equalsIgnoreCase(args.get(0)) && component.length() > 0) {
-                        expr.add(parseComponent(format, component.toString()));
+                        expr.add(makeComponent(format, component.toString()));
                         component.setLength(0);
                     }
 
@@ -368,13 +382,19 @@ public class TextUtils {
 
         // Get the last component
         if (component.length() > 0)
-            expr.add(parseComponent(format, component.toString()));
+            expr.add(makeComponent(format, component.toString()));
 
         return expr.toArray(new BaseComponent[0]);
     }
 
-    // Create a component with the given color and formatting and text
-    private static TextComponent parseComponent(Pair<ChatColor, List<ChatColor>> format, String text) {
+    /**
+     * Create a component with the given color and formatting and text
+     *
+     * @param format the formatting for the component (color, formats).
+     * @param text   the component text.
+     * @return the constructed component.
+     */
+    private static TextComponent makeComponent(Pair<ChatColor, List<ChatColor>> format, String text) {
         TextComponent tc = new TextComponent(text);
 
         // Color
@@ -394,9 +414,16 @@ public class TextUtils {
         return tc;
     }
 
-    // Gets the text enclosed by curved brackets or curly brackets, and returns the text inside the brackets and the
-    // index of the character after the last bracket. If the end of the string is encountered before the bracket is
-    // closed off, then {null, -1} is returned.
+    /**
+     * Gets the text enclosed by curved brackets or curly brackets, and returns the text inside the brackets and the
+     * index of the character after the last bracket. If the end of the string is encountered before the bracket is
+     * closed off, then {null, -1} is returned.
+     *
+     * @param start  the start index.
+     * @param string the string to get the enclosed value.
+     * @return a pair, where the first value is the enclosed string and the second value is the index of the character
+     * after the closing bracket of the enclosed string.
+     */
     private static Pair<String, Integer> getEnclosed(int start, String string) {
         boolean curved = string.charAt(start) == '('; // ()s or {}s
         int depth = 1, i = start + 1;

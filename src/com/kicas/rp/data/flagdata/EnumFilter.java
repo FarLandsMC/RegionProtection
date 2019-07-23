@@ -57,8 +57,8 @@ public class EnumFilter {
     /**
      * @return a copy of the list containing the enum ordinals in this filter.
      */
-    public List<Integer> getFilterCopy() {
-        return new ArrayList<>(filter);
+    public List<Integer> getFilter() {
+        return Collections.unmodifiableList(filter);
     }
 
     /**

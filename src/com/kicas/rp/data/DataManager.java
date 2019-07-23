@@ -402,11 +402,11 @@ public class DataManager implements Listener {
         Region region = new Region(null, 0, creator.getUniqueId(), min, max, null);
 
         // checkCollisions sends an error message to the creator
-        if (!checkCollisions(creator, region))
+        if (failsCollisionCheck(creator, region))
             return null;
 
         // Also sends the error message
-        if (!checkSides(creator, region))
+        if (failsSideCheck(creator, region))
             return null;
 
         // Check claim blocks
@@ -508,7 +508,7 @@ public class DataManager implements Listener {
         }
 
         // checkCollisions sends an error message to the creator
-        if (!force && !checkCollisions(delegate, region)) {
+        if (!force && failsCollisionCheck(delegate, region)) {
             if (region.hasParent())
                 region.getParent().getChildren().remove(region);
             return false;
@@ -553,7 +553,7 @@ public class DataManager implements Listener {
         claim.moveVertex(originalVertex, newVertex);
 
         // Manage collisions, sides, claim blocks, and subdivisions becoming exclaves
-        if (!resizeChecks(delegate, claim, bounds))
+        if (failsResizeChecks(delegate, claim, bounds))
             return false;
 
         worlds.get(claim.getWorld().getUID()).getLookupTable().reAdd(claim, bounds);
@@ -608,7 +608,7 @@ public class DataManager implements Listener {
         }
 
         // Manage collisions, sides, claim blocks, and subdivisions becoming exclaves
-        if (!resizeChecks(delegate, region, bounds))
+        if (failsResizeChecks(delegate, region, bounds))
             return false;
 
         // Make sure the bounds are still correct
@@ -673,7 +673,7 @@ public class DataManager implements Listener {
         }
 
         // Make sure the sides are the minimum length
-        if (!checkSides(delegate, region))
+        if (failsSideCheck(delegate, region))
             return null;
 
         // Area check
@@ -767,9 +767,19 @@ public class DataManager implements Listener {
         }
     }
 
-    // Actually performs the deletion of the given region. The removal of the given region from the lookup table always
-    // occurs however the regions will not be removed from its world's list unless the unregister parameter is true.
-    // This also includes the removal of child regions from their parent.
+    //
+
+    /**
+     * Actually performs the deletion of the given region. The removal of the given region from the lookup table always
+     * occurs however the regions will not be removed from its world's list unless the unregister parameter is true.
+     * This also includes the removal of child regions from their parent.
+     *
+     * @param delegate        the player performing the deletion.
+     * @param region          the region to delete.
+     * @param includeChildren whether or not to delete the given region's children.
+     * @param unregister      whether or not the remove the given region from its world data's list.
+     * @return true if the region was deleted successfully, false otherwise.
+     */
     private boolean tryDeleteRegion(Player delegate, Region region, boolean includeChildren, boolean unregister) {
         // Delete children
         if (!region.getChildren().isEmpty()) {
@@ -802,24 +812,35 @@ public class DataManager implements Listener {
         return true;
     }
 
-    // Makes sure the given region does not violate any constraints after being resized, and resets the region to the
-    // given bounds if those constraints are violated
-    private boolean resizeChecks(Player delegate, Region region, Pair<Location, Location> bounds) {
+    //
+
+    /**
+     * Makes sure the given region does not violate any constraints after being resized, and resets the region to the
+     * given bounds if those constraints are violated. Essentially the same checks that are performed upon a region's
+     * creation are performed here, however this method supports parent and child regions and has different checks for
+     * both.
+     *
+     * @param delegate the player resizing the region.
+     * @param region   the region to resize.
+     * @param bounds   the old bounds of the region.
+     * @return true if the region did not pass the resize checks, false otherwise.
+     */
+    private boolean failsResizeChecks(Player delegate, Region region, Pair<Location, Location> bounds) {
         // checkCollisions sends the error message to the player
-        if (!checkCollisions(delegate, region)) {
+        if (failsCollisionCheck(delegate, region)) {
             region.setBounds(bounds);
-            return false;
+            return true;
         }
 
         // Also sends an error message to the delegate
-        if (!checkSides(delegate, region)) {
+        if (failsSideCheck(delegate, region)) {
             region.setBounds(bounds);
-            return false;
+            return true;
         }
 
         // Admin regions do not require the following checks
         if (region.isAdminOwned())
-            return true;
+            return false;
 
         // Regular claims
         if (!region.hasParent()) {
@@ -831,7 +852,7 @@ public class DataManager implements Listener {
                 region.setBounds(bounds);
                 delegate.sendMessage(ChatColor.RED + "You need " + (areaDiff - claimBlocks) +
                         " more claim blocks to resize this claim.");
-                return false;
+                return true;
             }
 
             // Check to make sure it's at least the minimum area
@@ -839,7 +860,7 @@ public class DataManager implements Listener {
                 region.setBounds(bounds);
                 delegate.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at " +
                         "least " + RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
-                return false;
+                return true;
             }
 
             // Check to make sure all subdivisions are still within the parent region
@@ -851,7 +872,7 @@ public class DataManager implements Listener {
                         "not completely within the parent region.");
                 getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, exclaves,
                         Material.GLOWSTONE, Material.NETHERRACK, false));
-                return false;
+                return true;
             }
 
             // Modify claim blocks
@@ -865,7 +886,7 @@ public class DataManager implements Listener {
                 delegate.sendMessage(ChatColor.RED + "You cannot resize this subdivision here since it exits the " +
                         "parent claim.");
                 getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, region.getParent()));
-                return false;
+                return true;
             }
 
             // Check to make sure it's at least the minimum area
@@ -874,17 +895,22 @@ public class DataManager implements Listener {
                 delegate.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at " +
                         "least " + RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size") +
                         " blocks.");
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
-    // Checks for collisions between the given region and other non-child claims that do not permits overlap
-    // The given delegate will be notified if overlap is detected and those regions will be highlighted
-    // Returns true if no collisions were present
-    private boolean checkCollisions(Player delegate, Region region) {
+    /**
+     * Checks for collisions between the given region and other non-child claims that do not permits overlap. The given
+     * delegate will be notified if overlap is detected and those regions will be highlighted.
+     *
+     * @param delegate the player associated with the region being checked.
+     * @param region   the region to check.
+     * @return true if collisions are present, false otherwise.
+     */
+    private boolean failsCollisionCheck(Player delegate, Region region) {
         Set<Region> collisions = worlds.get(region.getWorld().getUID()).getLookupTable().getCollisions(region);
         collisions.removeIf(r -> r.isAllowed(RegionFlag.OVERLAP) || r.isAssociated(region));
 
@@ -892,22 +918,28 @@ public class DataManager implements Listener {
             delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
             getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, collisions,
                     Material.GLOWSTONE, Material.NETHERRACK, false));
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
-    // Ensures that each side of the given region is at leas three blocks long
-    private boolean checkSides(Player delegate, Region region) {
+    /**
+     * Ensures that each side of the given region is at least three blocks long.
+     *
+     * @param delegate the player associated with the given region.
+     * @param region   the region to check.
+     * @return true if the region has improper dimensions, false otherwise.
+     */
+    private boolean failsSideCheck(Player delegate, Region region) {
         // < 2 is used to counter the off-by-one error (in other words it accounts for the width of the block)
         if (region.getMax().getBlockX() - region.getMin().getBlockX() < 2 ||
                 region.getMax().getBlockZ() - region.getMin().getBlockZ() < 2) {
             delegate.sendMessage(ChatColor.RED + "All sides of your claim must be at least three blocks long.");
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     /**
@@ -987,9 +1019,12 @@ public class DataManager implements Listener {
         // Load data for each world
         try {
             File regionsFile = new File(rootDir.getAbsolutePath() + File.separator + "regions.dat");
-            if (!regionsFile.exists())
-                regionsFile.createNewFile();
-            else {
+            if (!regionsFile.exists()) {
+                if (!regionsFile.createNewFile()) {
+                    RegionProtection.error("Failed to create regions.dat upon loading data.");
+                    return;
+                }
+            } else {
                 Deserializer deserializer = new Deserializer(regionsFile, REGION_FORMAT_VERSION);
                 worlds.putAll(deserializer.readWorldData());
                 worlds.values().forEach(wd -> wd.generateLookupTable(LOOKUP_TABLE_SCALE));
@@ -1002,9 +1037,12 @@ public class DataManager implements Listener {
         // Load player data
         try {
             File playerDataFile = new File(rootDir.getAbsolutePath() + File.separator + "playerdata.dat");
-            if (!playerDataFile.exists())
-                playerDataFile.createNewFile();
-            else {
+            if (!playerDataFile.exists()) {
+                if (!playerDataFile.createNewFile()) {
+                    RegionProtection.error("Failed to create playerdata.dat upon loading data.");
+                    return;
+                }
+            } else {
                 Deserializer deserializer = new Deserializer(playerDataFile, PLAYER_DATA_FORMAT_VERSION);
                 playerData.putAll(deserializer.readPlayerData());
             }
@@ -1023,8 +1061,12 @@ public class DataManager implements Listener {
         // Save world data
         try {
             File regionsFile = new File(rootDir.getAbsolutePath() + File.separator + "regions.dat");
-            if (!regionsFile.exists())
-                regionsFile.createNewFile();
+            if (!regionsFile.exists()) {
+                if (!regionsFile.createNewFile()) {
+                    RegionProtection.error("Failed to create regions.dat upon saving data.");
+                    return;
+                }
+            }
             Serializer serializer = new Serializer(regionsFile, REGION_FORMAT_VERSION);
             serializer.writeWorldData(worlds.values());
         } catch (IOException ex) {
@@ -1039,8 +1081,12 @@ public class DataManager implements Listener {
         // Actually save the data to disc
         try {
             File playerDataFile = new File(rootDir.getAbsolutePath() + File.separator + "playerdata.dat");
-            if (!playerDataFile.exists())
-                playerDataFile.createNewFile();
+            if (!playerDataFile.exists()) {
+                if (!playerDataFile.createNewFile()) {
+                    RegionProtection.error("Failed to create playerdata.dat upon saving data.");
+                    return;
+                }
+            }
             Serializer serializer = new Serializer(playerDataFile, PLAYER_DATA_FORMAT_VERSION);
             serializer.writePlayerData(playerData.values());
         } catch (IOException ex) {

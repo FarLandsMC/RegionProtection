@@ -11,6 +11,13 @@ public enum TrustLevel {
 
     public static final TrustLevel[] VALUES = values();
 
+    /**
+     * Returns whether or not the ordinal of this trust level is greater than or equal to the ordinal of the given trust
+     * level.
+     *
+     * @param other the trust level to compare to.
+     * @return true if this trust level is at least the give level, false otherwise.
+     */
     public boolean isAtLeast(TrustLevel other) {
         return ordinal() >= other.ordinal();
     }

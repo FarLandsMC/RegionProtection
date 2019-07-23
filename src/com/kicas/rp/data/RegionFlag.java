@@ -83,29 +83,59 @@ public enum RegionFlag {
         this(false, boolean.class);
     }
 
+    /**
+     * @return true if this flag can be modified using the /claimtoggle command.
+     */
     public boolean isPlayerToggleable() {
         return playerToggleable;
     }
 
+    /**
+     * @return the metadata class associated with this flag.
+     */
     public Class<?> getMetaClass() {
         return metaClass;
     }
 
+    /**
+     * @return true if this flag is a boolean flag, meaning the meta class is equal to <code>boolean.class</code>.
+     */
     public boolean isBoolean() {
         return boolean.class.equals(metaClass);
     }
 
+    /**
+     * Returns this flag's default value for regions. This value returned by this method can by modified in the config.
+     *
+     * @param <T> the meta type.
+     * @return this flag's default value for regions.
+     */
     @SuppressWarnings("unchecked")
     public <T> T getRegionDefaultValue() {
         return (T)DEFAULT_VALUES.get(this).getFirst();
     }
 
+    /**
+     * Returns this flag's default value for the world. This value will be equal to the functional vanilla value so that
+     * the global flag container does not cause conflicts based on configured defaults.
+     *
+     * @param world the world to get the default value for.
+     * @param <T> the meta type.
+     * @return this flag's default value for the world.
+     */
     @SuppressWarnings("unchecked")
     public <T> T getWorldDefaultValue(World world) {
         Pair<Object, Function<World, Object>> def = DEFAULT_VALUES.get(this);
         return def.getSecond() == null ? (T)def.getFirst() : (T)def.getSecond().apply(world);
     }
 
+    /**
+     * Converts the given meta to a human-readable string based on the given flag the meta is associated with.
+     *
+     * @param flag the flag.
+     * @param meta the associated metadata.
+     * @return the given meta in human-readable string from.
+     */
     public static String toString(RegionFlag flag, Object meta) {
         String metaString;
 
@@ -122,6 +152,16 @@ public enum RegionFlag {
         return metaString;
     }
 
+    /**
+     * Parses the given meta string based on the associated flag, and returns the flag metadata derived from the given
+     * string.
+     *
+     * @param flag the flag associated with the given metadata in string form.
+     * @param metaString the string to parse.
+     * @return the flag metadata resulting from the given string.
+     * @throws IllegalArgumentException if the given metadata string is invalid in some way. The message of this
+     * exception will give details as to what the error was.
+     */
     public static Object metaFromString(RegionFlag flag, String metaString) throws IllegalArgumentException {
         switch (flag) {
             case TRUST:
@@ -221,7 +261,12 @@ public enum RegionFlag {
         }
     }
 
-    // Called when the plugin is enabled
+    /**
+     * This method is called upon the enabling of the plugin. Calling this method again while the plugin is enabled
+     * could cause a concurrent modification exception, but otherwise would not affect the functionality of the plugin.
+     *
+     * @param config the config to get default values from.
+     */
     public static void registerDefaults(FileConfiguration config) {
         registerDefault(TRUST, TrustMeta.FULL_TRUST);
         registerDefault(DENY_SPAWN, EnumFilter.EMPTY_FILTER);
@@ -243,11 +288,13 @@ public enum RegionFlag {
         registerDefault(BED_ENTER, true);
         registerDefault(WATER_FLOW, true);
         registerDefault(LAVA_FLOW, true);
-        registerDefault(SNOW_CHANGE, config.getBoolean("world.snow-change"));
-        registerDefault(ICE_CHANGE, config.getBoolean("world.ice-change"));
-        registerDefault(CORAL_DEATH, config.getBoolean("world.coral-death"));
-        registerDefault(LEAF_DECAY, config.getBoolean("world.leaf-decay"));
-        registerDefault(LIGHTNING_MOB_DAMAGE, config.getBoolean("world.lightning-mob-damage"));
+        registerDefault(SNOW_CHANGE, config.getBoolean("world.snow-change"), world -> true);
+        registerDefault(ICE_CHANGE, config.getBoolean("world.ice-change"), world -> true);
+        registerDefault(CORAL_DEATH, config.getBoolean("world.coral-death"),
+                world -> world.getGameRuleValue(GameRule.RANDOM_TICK_SPEED) > 0);
+        registerDefault(LEAF_DECAY, config.getBoolean("world.leaf-decay"),
+                world -> world.getGameRuleValue(GameRule.RANDOM_TICK_SPEED) > 0);
+        registerDefault(LIGHTNING_MOB_DAMAGE, config.getBoolean("world.lightning-mob-damage"), world -> true);
         registerDefault(PORTAL_PAIR_FORMATION, config.getBoolean("world.portal-pair-formation"), world -> true);
         registerDefault(ENTER_COMMAND, CommandMeta.EMPTY_META);
         registerDefault(EXIT_COMMAND, CommandMeta.EMPTY_META);
@@ -269,10 +316,25 @@ public enum RegionFlag {
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
     }
 
+    /**
+     * Registers the given flag with the given region default value, and given function to get the default value for a
+     * world.
+     *
+     * @param flag the flag to register default values for.
+     * @param regionDefault the region default value.
+     * @param worldDefault the function to get world default values.
+     */
     private static void registerDefault(RegionFlag flag, Object regionDefault, Function<World, Object> worldDefault) {
         DEFAULT_VALUES.put(flag, new Pair<>(regionDefault, worldDefault));
     }
 
+    /**
+     * Registers the given flag with the given default value, which will be both the region default value and world
+     * default value.
+     *
+     * @param flag the flag to register the default value for.
+     * @param value the default value.
+     */
     private static void registerDefault(RegionFlag flag, Object value) {
         registerDefault(flag, value, null);
     }

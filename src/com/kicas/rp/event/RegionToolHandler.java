@@ -58,7 +58,7 @@ public class RegionToolHandler implements Listener {
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             // Claim creation, resizing, and subdividing
             if (RegionProtection.getClaimCreationTool().equals(event.getMaterial())) {
-                if(!ps.isInAdminRegionMode() && !player.hasPermission("rp.claims.create")) {
+                if (!ps.isInAdminRegionMode() && !player.hasPermission("rp.claims.create")) {
                     player.sendMessage(ChatColor.RED + "You do not have permission to create claims on this server.");
                     return;
                 }
@@ -80,7 +80,7 @@ public class RegionToolHandler implements Listener {
                             // Make sure claims are allowed in the given world
                             if (!RegionProtection.getClaimableWorlds().contains(clickedLocation.getWorld().getUID())) {
                                 player.sendMessage(ChatColor.RED + "Claims are not allowed in this world.");
-                                ps.setLastClickedBlock(null);
+                                ps.endRegionAction();
                                 return;
                             }
 
@@ -92,7 +92,7 @@ public class RegionToolHandler implements Listener {
                         if (region.isAdminOwned()) {
                             player.sendMessage(ChatColor.RED + "Administrator-owned regions should be modified " +
                                     "through the /region command.");
-                            ps.setLastClickedBlock(null);
+                            ps.endRegionAction();
                             return;
                         }
 
@@ -101,11 +101,11 @@ public class RegionToolHandler implements Listener {
                         if (region.hasParent() && !region.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player,
                                 TrustLevel.MANAGEMENT, region)) {
                             player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
-                            ps.setLastClickedBlock(null);
+                            ps.endRegionAction();
                             return;
                         } else if (!region.isEffectiveOwner(player)) { // Actions on the parent claim require ownership
                             player.sendMessage(ChatColor.RED + "You do not have permission to modify this claim.");
-                            ps.setLastClickedBlock(null);
+                            ps.endRegionAction();
                             return;
                         }
 
@@ -119,7 +119,7 @@ public class RegionToolHandler implements Listener {
                             // Make sure they're not subdividing a subdivision
                             if (region.hasParent()) {
                                 player.sendMessage(ChatColor.RED + "You cannot subdivide this claim further here.");
-                                ps.setLastClickedBlock(null);
+                                ps.endRegionAction();
                             } else {
                                 ps.setAction(PlayerSession.PlayerRegionAction.SUBDIVIDE_REGION);
                                 ps.setCurrentSelectedRegion(region);
@@ -129,21 +129,18 @@ public class RegionToolHandler implements Listener {
                         }
                     }
                 } else { // Second location selection, thus completing the current pending action
-                    Location vertex = ps.getLastClickedBlock();
-                    ps.setLastClickedBlock(null);
-
                     // Fairly self-explanatory
                     switch (ps.getAction()) {
                         case CREATE_REGION: {
                             if (ps.isInAdminRegionMode()) { // Make an admin region
-                                Region region = dm.tryCreateAdminRegion(vertex, clickedLocation);
+                                Region region = dm.tryCreateAdminRegion(ps.getLastClickedBlock(), clickedLocation);
                                 if (region != null) {
                                     player.sendMessage(ChatColor.GREEN + "Region bounds set. Use the command " +
                                             "\"/region create\" to finish creating the region.");
                                     ps.setCurrentSelectedRegion(region);
                                 }
                             } else { // Make a claim
-                                Region claim = dm.tryCreateClaim(player, vertex, clickedLocation);
+                                Region claim = dm.tryCreateClaim(player, ps.getLastClickedBlock(), clickedLocation);
                                 if (claim != null) {
                                     player.sendMessage(ChatColor.GREEN + "Claim created. You have " +
                                             ps.getClaimBlocks() + " claim blocks remaining.");
@@ -155,7 +152,7 @@ public class RegionToolHandler implements Listener {
 
                         case RESIZE_REGION: {
                             Region claim = ps.getCurrentSelectedRegion();
-                            if (dm.tryResizeClaim(player, claim, vertex, clickedLocation)) {
+                            if (dm.tryResizeClaim(player, claim, ps.getLastClickedBlock(), clickedLocation)) {
                                 // Don't tell them how many claim blocks they have if they were resizing a subdivision
                                 player.sendMessage(ChatColor.GREEN + "Claim resized." + (claim.hasParent() ? ""
                                         : " You have " + ps.getClaimBlocks() + " claim blocks remaining."));
@@ -165,8 +162,8 @@ public class RegionToolHandler implements Listener {
                         }
 
                         case SUBDIVIDE_REGION: {
-                            Region subdivision = dm.tryCreateSubdivision(player, ps.getCurrentSelectedRegion(), vertex,
-                                    clickedLocation);
+                            Region subdivision = dm.tryCreateSubdivision(player, ps.getCurrentSelectedRegion(),
+                                    ps.getLastClickedBlock(), clickedLocation);
                             if (subdivision != null) {
                                 player.sendMessage(ChatColor.GREEN + "Subdivision created.");
                                 ps.setRegionHighlighter(new RegionHighlighter(player,
@@ -175,6 +172,8 @@ public class RegionToolHandler implements Listener {
                             break;
                         }
                     }
+
+                    ps.endRegionAction();
                 }
 
                 event.setCancelled(true);
@@ -207,13 +206,13 @@ public class RegionToolHandler implements Listener {
         // Scrolling to the creation tool. Only execute if they're not in admin region mode
         if (Materials.stackType(event.getPlayer().getInventory().getItem(event.getNewSlot())) ==
                 RegionProtection.getClaimCreationTool() && !ps.isInAdminRegionMode()) {
-            if(event.getPlayer().hasPermission("rp.claims.create")) {
+            if (event.getPlayer().hasPermission("rp.claims.create")) {
                 // Notify the player of their claim block count
                 event.getPlayer().sendMessage(ChatColor.GOLD + "You can claim up to " + ps.getClaimBlocks() +
                         " more blocks.");
             }
 
-            if(event.getPlayer().hasPermission("rp.claims.inquiry")) {
+            if (event.getPlayer().hasPermission("rp.claims.inquiry")) {
                 // Highlight regions within 100 blocks of the player
                 List<Region> regions = RegionProtection.getDataManager().getRegionsInWorld(event.getPlayer().getWorld())
                         .stream().filter(region -> region.distanceFromEdge(event.getPlayer().getLocation()) < 100 &&
@@ -229,7 +228,12 @@ public class RegionToolHandler implements Listener {
         }
     }
 
-    // Notify the player about the highest priority claim at a given location and highlight it
+    /**
+     * Notify the player about the highest priority claim at a given location and highlight it.
+     *
+     * @param recipient the player to send the information to.
+     * @param location  the location to check.
+     */
     private static void detailClaimAt(Player recipient, Location location) {
         Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(location);
 

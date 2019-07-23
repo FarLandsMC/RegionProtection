@@ -30,18 +30,35 @@ public class PlayerSession {
         this.lastClickedBlock = null;
     }
 
+    /**
+     * @return the UUID of the associated player.
+     */
     public UUID getUuid() {
         return uuid;
     }
 
+    /**
+     * @return the number of claim blocks the associated player has.
+     */
     public int getClaimBlocks() {
         return (int) claimBlocks;
     }
 
+    /**
+     * Adds the given number of claim blocks (or partial claim blocks) to the associated player's claim block count.
+     *
+     * @param amount the amount of blocks to add.
+     */
     public void addClaimBlocks(double amount) {
         claimBlocks += amount;
     }
 
+    /**
+     * Subtracts the given number of claim blocks (or partial claim blocks) from the associated player's claim block
+     * count.
+     *
+     * @param amount the amount of blocks to subtract.
+     */
     public void subtractClaimBlocks(int amount) {
         claimBlocks -= amount;
     }
@@ -57,47 +74,99 @@ public class PlayerSession {
             currentHighlighter.remove();
         currentHighlighter = highlighter;
         if (highlighter != null)
-            Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), currentHighlighter::showBlocks, 1L);
+            Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), currentHighlighter::showChanges, 1L);
     }
 
+    /**
+     * @return the current region action the player is performing, or null if no action is currently being performed.
+     */
     public PlayerRegionAction getAction() {
         return action;
     }
 
+    /**
+     * Sets the player's region action to the given value.
+     *
+     * @param action the region action.
+     * @see PlayerRegionAction Region Actions
+     */
     public void setAction(PlayerRegionAction action) {
         this.action = action;
     }
 
-    public boolean isInAdminRegionMode() {
-        return isInAdminRegionMode;
-    }
-
-    public void setInAdminRegionMode(boolean inAdminRegionMode) {
-        isInAdminRegionMode = inAdminRegionMode;
-    }
-
-    public boolean isIgnoringTrust() {
-        return isIgnoringTrust;
-    }
-
-    public void setIgnoringTrust(boolean ignoringTrust) {
-        isIgnoringTrust = ignoringTrust;
-    }
-
+    /**
+     * @return the player's current selected region, or null if no region is currently selected.
+     */
     public Region getCurrentSelectedRegion() {
         return currentSelectedRegion;
     }
 
-    public void setCurrentSelectedRegion(Region currentSelectedRegion) {
-        this.currentSelectedRegion = currentSelectedRegion;
+    /**
+     * Sets the player's current selected region to the given region.
+     *
+     * @param region the selected region.
+     */
+    public void setCurrentSelectedRegion(Region region) {
+        currentSelectedRegion = region;
     }
 
+    /**
+     * @return the player's last clicked block.
+     */
     public Location getLastClickedBlock() {
         return lastClickedBlock;
     }
 
+    /**
+     * Sets the player's last clicked block to the given location.
+     *
+     * @param lastClickedBlock the last clicked block.
+     */
     public void setLastClickedBlock(Location lastClickedBlock) {
         this.lastClickedBlock = lastClickedBlock;
+    }
+
+    /**
+     * Sets the player's region action, current selected region, and last clicked block to null.
+     */
+    public void endRegionAction() {
+        action = null;
+        currentSelectedRegion = null;
+        lastClickedBlock = null;
+    }
+
+    /**
+     * @return true if the player is in admin region mode, false otherwise.
+     */
+    public boolean isInAdminRegionMode() {
+        return isInAdminRegionMode;
+    }
+
+    /**
+     * Sets whether or not the associated player is in administrative region mode, which allows them to create
+     * admin-owned regions.
+     *
+     * @param inAdminRegionMode whether or not the player is in admin-region mode.
+     */
+    public void setInAdminRegionMode(boolean inAdminRegionMode) {
+        isInAdminRegionMode = inAdminRegionMode;
+    }
+
+    /**
+     * @return true if the player is ignoring the trust flag restrictions, false otherwise.
+     */
+    public boolean isIgnoringTrust() {
+        return isIgnoringTrust;
+    }
+
+    /**
+     * Sets whether or not the associated player is ignoring the trust flag, which also makes them the effective owner
+     * of every region.
+     *
+     * @param ignoringTrust whether or not the player is ignoring the trust flag.
+     */
+    public void setIgnoringTrust(boolean ignoringTrust) {
+        isIgnoringTrust = ignoringTrust;
     }
 
     /**

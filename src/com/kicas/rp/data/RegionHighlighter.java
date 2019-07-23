@@ -52,15 +52,14 @@ public class RegionHighlighter {
     }
 
     /**
-     * Cancels the automatic removal task and removes the client-side changes if the player is online.
+     * Initialize the changes and saves the original blocks. If the light source or block is null, the default materials
+     * will be used, with parent regions using glowstone and gold, and child regions using iron blocks and sea lanterns.
+     *
+     * @param regions         the regions to highlight.
+     * @param lightSource     the light source to use, or null if the default should be used.
+     * @param block           the block to use for highlighting, or null if the default should be used.
+     * @param includeChildren whether or not to include the children of the regions to highlight.
      */
-    public void remove() {
-        hideBlocks();
-        Bukkit.getScheduler().cancelTask(removalTaskId);
-    }
-
-    // Initialize the changes and save the original blocks. If the light source or block is null, the default materials
-    // will be used.
     private void initBlocks(Collection<Region> regions, Material lightSource, Material block, boolean includeChildren) {
         // Highest priority first
         regions.stream().sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority())).forEach(region -> {
@@ -91,17 +90,17 @@ public class RegionHighlighter {
             putChange(vertex.clone().add(0, 0, 1), bk);
 
             // Sides
-            for(int i = region.getMin().getBlockX() + 10;i < region.getMax().getBlockX() - 5;i += 10) {
+            for (int i = region.getMin().getBlockX() + 10; i < region.getMax().getBlockX() - 5; i += 10) {
                 putChange(new Location(region.getWorld(), i, 0, region.getMin().getZ()), bk);
                 putChange(new Location(region.getWorld(), i, 0, region.getMax().getZ()), bk);
             }
 
-            for(int i = region.getMin().getBlockZ() + 10;i < region.getMax().getBlockZ() - 5;i += 10) {
+            for (int i = region.getMin().getBlockZ() + 10; i < region.getMax().getBlockZ() - 5; i += 10) {
                 putChange(new Location(region.getWorld(), region.getMin().getX(), 0, i), bk);
                 putChange(new Location(region.getWorld(), region.getMax().getX(), 0, i), bk);
             }
 
-            if(includeChildren)
+            if (includeChildren)
                 initBlocks(region.getChildren(), lightSource, block, includeChildren);
         });
     }
@@ -109,20 +108,23 @@ public class RegionHighlighter {
     /**
      * Sends the client-side changes to the player this object was initialized with.
      */
-    public void showBlocks() {
+    public void showChanges() {
         changes.forEach((loc, mat) -> {
-            if(distanceCheck(loc))
+            if (distanceCheck(loc))
                 player.sendBlockChange(loc, mat.createBlockData());
         });
 
         removalTaskId = Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), () -> {
-            hideBlocks();
+            revertChanges();
             setComplete();
         }, 20L * 60L).getTaskId();
     }
 
-    private void hideBlocks() {
-        if(player.isOnline()) {
+    /**
+     * Reverts the changes shows by the showChanges method.
+     */
+    private void revertChanges() {
+        if (player.isOnline()) {
             changes.keySet().forEach(loc -> {
                 if (distanceCheck(loc)) {
                     Block block = loc.getBlock();
@@ -133,35 +135,61 @@ public class RegionHighlighter {
         }
     }
 
+    /**
+     * Cancels the automatic removal task and removes the client-side changes if the player is online.
+     */
+    public void remove() {
+        revertChanges();
+        Bukkit.getScheduler().cancelTask(removalTaskId);
+    }
+
+    /**
+     * @return true if this highlighter has automatically hidden the highlighted blocks from the player, false
+     * otherwise.
+     */
     public boolean isComplete() {
         return complete;
     }
 
+    /**
+     * Sets the status of this highlighter to complete.
+     */
     private void setComplete() {
         complete = true;
     }
 
-    // Adds or overwrites the change for the given location and also stores the original data if it's not already stored
+    /**
+     * Adds or overwrites the change for the given location and also stores the original data if it's not already
+     * stored if the given location is within 100 blocks horizontally of the player.
+     *
+     * @param location    the location to change.
+     * @param replacement the material to replace the location with.
+     */
     private void putChange(Location location, Material replacement) {
-        if(distanceCheck(location)) {
+        if (distanceCheck(location)) {
             location = findReplacementLocation(location.clone());
             changes.put(location, replacement);
         }
     }
 
+    /**
+     * @param location the location to check.
+     * @return true if the given location on the x-z plane is within 100 blocks of the player.
+     */
     private boolean distanceCheck(Location location) {
         double dx = location.getX() - player.getLocation().getX(), dz = location.getZ() - player.getLocation().getZ();
         return dx * dx + dz * dz < 100 * 100;
     }
-    
+
     /**
      * Make the block you want to display more likely to be visible to the player
+     *
      * @param replacement input block location
      * @return A location with modified Y to be on surface closest to the players foot level
      */
     private Location findReplacementLocation(Location replacement) {
         replacement.setY(Math.min(player.getLocation().getBlockY(), player.getWorld().getMaxHeight()));
-        
+
         // We don't go from the max height down in case the player is inside a cave
         if (replacement.getBlock().getType().isSolid() || replacement.getBlock().isLiquid()) {
             // Replacement is in the ground, so we need to move up

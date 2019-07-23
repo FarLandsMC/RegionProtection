@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Helps to categorize entities.
  */
-public class Entities {
+public final class Entities {
     private static final List<EntityType> INVENTORY_HOLDERS = Arrays.asList(ARMOR_STAND, ITEM_FRAME,
             HORSE, MULE, SKELETON_HORSE, DONKEY, ZOMBIE_HORSE, LLAMA, TRADER_LLAMA,
             MINECART_CHEST, MINECART_FURNACE, MINECART_HOPPER);
@@ -70,7 +70,7 @@ public class Entities {
         return HOSTILES.contains(entity.getType()) ||
                 (AGGERABLES.contains(entity.getType()) && player.equals(((Mob) entity).getTarget()));
     }
-    
+
     /**
      * Returns whether or not the given entity is hostile with respect the griefing capability.
      * Only returns true for regular hostiles.
@@ -81,7 +81,7 @@ public class Entities {
     public static boolean isMonster(EntityType entityType) {
         return HOSTILES.contains(entityType);
     }
-    
+
     /**
      * Returns whether or not the given entity is passive towards the given player. If the given entity is always
      * passive towards players then true is returned, otherwise if the entity has to be provoked then trust is only
@@ -96,7 +96,7 @@ public class Entities {
         return PASSIVES.contains(entity.getType()) || !entity.getType().isAlive() ||
                 (AGGERABLES.contains(entity.getType()) && !player.equals(((Mob) entity).getTarget()));
     }
-    
+
     /**
      * Returns whether or not the given entity is passive with respect the griefing capability.
      * Returns true for regular passives or aggerables.
@@ -107,7 +107,7 @@ public class Entities {
     public static boolean isPassive(EntityType entityType) {
         return AGGERABLES.contains(entityType) || PASSIVES.contains(entityType) || !entityType.isAlive();
     }
-    
+
     /**
      * Returns whether or not the given spawn reason is artificial, IE caused by a player.
      *

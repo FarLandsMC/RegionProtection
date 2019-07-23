@@ -16,8 +16,8 @@ import java.util.*;
 /**
  * Deserializes plugin data files, including regions.dat and playerdata.dat.
  */
-// TODO: Implement a system for reading older format versions
-public class Deserializer {
+// TODO: Implement a system for reading older format versions and add a corruption detection system
+public class Deserializer implements AutoCloseable {
     private final Decoder decoder;
     private final int expectedFormatVersion;
 
@@ -88,7 +88,13 @@ public class Deserializer {
         return playerData;
     }
 
-    // Reads a parent region (which has more fields than a child region)
+    /**
+     * Reads a parent region including its children and sets the region's world to the given world.
+     *
+     * @param world the region's world.
+     * @return the parent region.
+     * @throws IOException if an I/O error occurs.
+     */
     private Region readParentRegion(World world) throws IOException {
         String name = decoder.readUTF8Raw();
         // Contains the priority, and the sign bit is whether or not the region is administrator-owned
@@ -100,26 +106,44 @@ public class Deserializer {
         readFlags(region);
         int len = decoder.readCompressedUint();
         while (len > 0) {
-            region.getChildren().add(readChildRegion(world, region));
+            region.getChildren().add(readChildRegion(region));
             --len;
         }
 
         return region;
     }
 
-    // Reads a child region using the given parent region to fill in missing/inferred fields
-    private Region readChildRegion(World world, Region parent) throws IOException {
-        Region region = new Region(decoder.readUTF8Raw(), decoder.read(), parent.getOwner(), readRegionBound(world),
-                readRegionBound(world), parent);
+    /**
+     * Reads a child region and infers missing fields from the given parent region.
+     *
+     * @param parent the child region's parent.
+     * @return the child region.
+     * @throws IOException if an I/O error occurs.
+     */
+    private Region readChildRegion(Region parent) throws IOException {
+        Region region = new Region(decoder.readUTF8Raw(), decoder.read(), parent.getOwner(),
+                readRegionBound(parent.getWorld()), readRegionBound(parent.getWorld()), parent);
         readFlags(region);
         return region;
     }
 
+    /**
+     * Reads a location with the given world.
+     *
+     * @param world the location's world.
+     * @return the location.
+     * @throws IOException if an I/O error occurs.
+     */
     private Location readRegionBound(World world) throws IOException {
         return new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());
     }
 
-    // Reads a number of flags and metadata values and sets the given container's flags to the read values
+    /**
+     * Reads a number of flag-metadata key-value pairs and sets the given container's flags to the read values.
+     *
+     * @param container the flag container to add flags to.
+     * @throws IOException if an I/O error occurs.
+     */
     private void readFlags(FlagContainer container) throws IOException {
         int len = decoder.readCompressedUint();
         Map<RegionFlag, Object> flags = new HashMap<>(len);
@@ -132,7 +156,12 @@ public class Deserializer {
         container.setFlags(flags);
     }
 
-    // Reads an individual flag and its metadata
+    /**
+     * Reads an individual flag and its metadata.
+     *
+     * @return a pair with the read flag and its metadata.
+     * @throws IOException if an I/O error occurs.
+     */
     private Pair<RegionFlag, Object> readFlag() throws IOException {
         RegionFlag flag = readFlagEnum();
 
@@ -172,8 +201,23 @@ public class Deserializer {
         return new Pair<>(flag, meta);
     }
 
-    // Keeping this separate could be useful for cross-format generalization
+    /**
+     * Reads a flag.
+     *
+     * @return the read flag.
+     * @throws IOException if an I/O error occurs.
+     */
     private RegionFlag readFlagEnum() throws IOException {
         return RegionFlag.VALUES[decoder.readCompressedUint()];
+    }
+
+    /**
+     * Closes the decoder in this deserializer.
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void close() throws IOException {
+        decoder.close();
     }
 }

@@ -13,7 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class Serializer {
+/**
+ * This class is a version-specific serializer for region data and persistent player data.
+ */
+public class Serializer implements AutoCloseable {
     private final Encoder encoder;
     private final int formatVersion;
 
@@ -22,6 +25,12 @@ public class Serializer {
         this.encoder = new Encoder(new FileOutputStream(file));
     }
 
+    /**
+     * Writes the given world data to the output file.
+     *
+     * @param worldData the world data to write.
+     * @throws IOException if an I/O error occurs.
+     */
     public void writeWorldData(Collection<WorldData> worldData) throws IOException {
         encoder.write(formatVersion);
 
@@ -37,6 +46,12 @@ public class Serializer {
         encoder.close();
     }
 
+    /**
+     * Writes the given persistent player data collection to the output file.
+     *
+     * @param playerData the player data to write.
+     * @throws IOException if an I/O error occurs.
+     */
     public void writePlayerData(Collection<PersistentPlayerData> playerData) throws IOException {
         encoder.write(formatVersion);
 
@@ -45,10 +60,14 @@ public class Serializer {
             encoder.writeUuid(ppd.getUuid());
             encoder.writeUintCompressed(ppd.getClaimBlocks());
         }
-
-        encoder.close();
     }
 
+    /**
+     * Writes a region to the output file.
+     *
+     * @param region the region to write.
+     * @throws IOException if an I/O error occurs.
+     */
     private void writeRegion(Region region) throws IOException {
         encoder.writeUTF8Raw(region.getRawName() == null ? "" : region.getRawName());
         int meta = (region.isAdminOwned() ? 0x80 : 0) | Utils.constrain(region.getPriority(), 0, 127);
@@ -74,6 +93,12 @@ public class Serializer {
         }
     }
 
+    /**
+     * Writes the flags in a given flag container to the output file.
+     *
+     * @param container the container with the flags to write.
+     * @throws IOException if an I/O error occurs.
+     */
     private void writeFlags(FlagContainer container) throws IOException {
         Map<RegionFlag, Object> flags = container.getFlags();
         encoder.writeUintCompressed(flags.size());
@@ -81,42 +106,57 @@ public class Serializer {
             writeFlag(entry.getKey(), entry.getValue());
     }
 
+    /**
+     * Writes a given flag-meta pair to the output file.
+     *
+     * @param flag the flag.
+     * @param meta the associated metadata.
+     * @throws IOException if an I/O error occurs.
+     */
     private void writeFlag(RegionFlag flag, Object meta) throws IOException {
         encoder.writeUintCompressed(flag.ordinal());
         if(flag.isBoolean())
             encoder.writeBoolean((boolean)meta);
-        else{
-            if(meta instanceof CommandMeta) {
-                encoder.writeBoolean(((CommandMeta)meta).runFromConsole());
-                encoder.writeUTF8Raw(((CommandMeta)meta).getCommand());
-            }else if(meta instanceof EnumFilter) {
-                encoder.writeBoolean(((EnumFilter)meta).isWhitelist());
-                List<Integer> filter = ((EnumFilter)meta).getFilterCopy();
-                encoder.writeUintCompressed(filter.size());
-                for(Integer integer : filter)
-                    encoder.writeUintCompressed(integer);
-            }else if(meta instanceof LocationMeta) {
-                Location loc = ((LocationMeta)meta).getLocation();
-                encoder.writeUuid(loc.getWorld().getUID());
-                encoder.writeDouble(loc.getX());
-                encoder.writeDouble(loc.getY());
-                encoder.writeDouble(loc.getZ());
-                encoder.writeFloat(loc.getYaw());
-                encoder.writeFloat(loc.getPitch());
-            }else if(meta instanceof StringFilter) {
-                encoder.writeBoolean(((StringFilter)meta).isWhitelist());
-                encoder.writeArray(((StringFilter)meta).getFilterCopy(), String.class);
-            }else if(meta instanceof TextMeta)
-                encoder.writeUTF8Raw(((TextMeta)meta).getText());
-            else if(meta instanceof TrustMeta) {
-                encoder.write(((TrustMeta)meta).getPublicTrustLevel().ordinal());
-                Map<UUID, TrustLevel> rawTrustData = ((TrustMeta)meta).getRawTrustDataCopy();
-                encoder.writeUintCompressed(rawTrustData.size());
-                for(Map.Entry<UUID, TrustLevel> trust : rawTrustData.entrySet()) {
-                    encoder.writeUuid(trust.getKey());
-                    encoder.write(trust.getValue().ordinal());
-                }
+        else if(meta instanceof CommandMeta) {
+            encoder.writeBoolean(((CommandMeta)meta).runFromConsole());
+            encoder.writeUTF8Raw(((CommandMeta)meta).getCommand());
+        }else if(meta instanceof EnumFilter) {
+            encoder.writeBoolean(((EnumFilter)meta).isWhitelist());
+            List<Integer> filter = ((EnumFilter)meta).getFilter();
+            encoder.writeUintCompressed(filter.size());
+            for(Integer integer : filter)
+                encoder.writeUintCompressed(integer);
+        }else if(meta instanceof LocationMeta) {
+            Location loc = ((LocationMeta)meta).getLocation();
+            encoder.writeUuid(loc.getWorld().getUID());
+            encoder.writeDouble(loc.getX());
+            encoder.writeDouble(loc.getY());
+            encoder.writeDouble(loc.getZ());
+            encoder.writeFloat(loc.getYaw());
+            encoder.writeFloat(loc.getPitch());
+        }else if(meta instanceof StringFilter) {
+            encoder.writeBoolean(((StringFilter)meta).isWhitelist());
+            encoder.writeArray(((StringFilter)meta).getFilter(), String.class);
+        }else if(meta instanceof TextMeta)
+            encoder.writeUTF8Raw(((TextMeta)meta).getText());
+        else if(meta instanceof TrustMeta) {
+            encoder.write(((TrustMeta)meta).getPublicTrustLevel().ordinal());
+            Map<UUID, TrustLevel> rawTrustData = ((TrustMeta)meta).getRawTrustDataCopy();
+            encoder.writeUintCompressed(rawTrustData.size());
+            for(Map.Entry<UUID, TrustLevel> trust : rawTrustData.entrySet()) {
+                encoder.writeUuid(trust.getKey());
+                encoder.write(trust.getValue().ordinal());
             }
         }
+    }
+
+    /**
+     * Closes the encoder in this serializer.
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void close() throws IOException {
+        encoder.close();
     }
 }

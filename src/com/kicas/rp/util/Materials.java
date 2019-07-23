@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * Helps to categorize materials.
  */
-public class Materials {
+public final class Materials {
     // Some useful collections of Materials
     private static final List<Material> INVENTORY_HOLDERS = new ArrayList<>();
     private static final List<Material> PLACEABLES = new ArrayList<>();
@@ -34,6 +34,9 @@ public class Materials {
         PLACEABLES.addAll(materialsEndingWith("MINECART"));
         Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
                 .forEach(c -> CORALS.addAll(materialsEndingWith(c)));
+    }
+
+    private Materials() {
     }
 
     /**
@@ -79,7 +82,7 @@ public class Materials {
     public static boolean isPlaceable(Material material) {
         return PLACEABLES.contains(material);
     }
-    
+
     /**
      * Returns whether or not the given material is a type of coral, dead or alive.
      *
@@ -89,7 +92,7 @@ public class Materials {
     public static boolean isCoral(Material material) {
         return CORALS.contains(material);
     }
-    
+
     /**
      * Returns whether or not the given material is sensitive to a player standing on it.
      *
@@ -121,6 +124,12 @@ public class Materials {
         return tool.name().endsWith("SHOVEL") && material == GRASS_BLOCK;
     }
 
+    /**
+     * Returns whether or not the given material has a registered crafting recipe.
+     *
+     * @param material the material.
+     * @return true if a crafting recipe resulting in the given material was found, false otherwise.
+     */
     public static boolean hasRecipe(Material material) {
         Iterator<Recipe> itr = Bukkit.getServer().recipeIterator();
         while (itr.hasNext()) {
@@ -133,36 +142,37 @@ public class Materials {
     /**
      * Gets the material associated with the given entity. This includes all boat types, minecart types, paintings, item
      * frames, and leash hitches. If the given entity does not have an associated material, then AIR is returned.
+     *
      * @param entity the entity.
      * @return the material associated with the given entity, or AIR if not material is associated.
      */
     public static Material forEntity(Entity entity) {
-        if(entity instanceof Boat) {
-            switch(((Boat)entity).getWoodType()) {
+        if (entity instanceof Boat) {
+            switch (((Boat) entity).getWoodType()) {
                 case GENERIC:
                     return Material.OAK_BOAT;
                 case REDWOOD:
                     return Material.SPRUCE_BOAT;
                 default:
-                    return Material.valueOf(((Boat)entity).getWoodType().name() + "_BOAT");
+                    return Material.valueOf(((Boat) entity).getWoodType().name() + "_BOAT");
             }
-        }else if(entity instanceof CommandMinecart)
+        } else if (entity instanceof CommandMinecart)
             return Material.COMMAND_BLOCK_MINECART;
-        else if(entity instanceof StorageMinecart)
+        else if (entity instanceof StorageMinecart)
             return Material.CHEST_MINECART;
-        else if(entity instanceof ExplosiveMinecart)
+        else if (entity instanceof ExplosiveMinecart)
             return Material.TNT_MINECART;
-        else if(entity instanceof RideableMinecart)
+        else if (entity instanceof RideableMinecart)
             return Material.MINECART;
-        else if(entity instanceof PoweredMinecart)
+        else if (entity instanceof PoweredMinecart)
             return Material.FURNACE_MINECART;
-        else if(entity instanceof HopperMinecart)
+        else if (entity instanceof HopperMinecart)
             return Material.HOPPER_MINECART;
-        else if(entity instanceof Painting)
+        else if (entity instanceof Painting)
             return Material.PAINTING;
-        else if(entity instanceof ItemFrame)
+        else if (entity instanceof ItemFrame)
             return Material.ITEM_FRAME;
-        else if(entity instanceof LeashHitch)
+        else if (entity instanceof LeashHitch)
             return Material.LEAD;
         else
             return Material.AIR;

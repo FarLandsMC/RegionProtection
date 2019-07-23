@@ -1,6 +1,7 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.RegionProtection;
+import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -29,10 +30,17 @@ public class FlagContainer {
         this(Utils.UUID_00);
     }
 
+    /**
+     * @return true if the region is admin-owned, false otherwise.
+     */
     public boolean isAdminOwned() {
         return owner.getMostSignificantBits() == 0 && owner.getLeastSignificantBits() == 0;
     }
 
+    /**
+     * @return the UUID of the owner of this region. If the region is admin-owned, then a UUID with all bits set to 0 is
+     * returned.
+     */
     public UUID getOwner() {
         return owner;
     }
@@ -70,6 +78,11 @@ public class FlagContainer {
         return (isAdminOwned() ? Bukkit.getOfflinePlayer(uuid).isOp() : owner.equals(uuid));
     }
 
+    /**
+     * Sets the UUID of the owner of this container to the given UUID.
+     *
+     * @param uuid the new owner UUID.
+     */
     public void setOwner(UUID uuid) {
         owner = uuid;
     }
@@ -104,10 +117,21 @@ public class FlagContainer {
         return flags.containsKey(flag) ? (boolean) flags.get(flag) : flag.getRegionDefaultValue();
     }
 
+    /**
+     * Sets the value of the given flag to the given meta in this container, overwriting any preexisting value.
+     *
+     * @param flag the flag.
+     * @param meta the flag's metadata.
+     */
     public void setFlag(RegionFlag flag, Object meta) {
         flags.put(flag, meta);
     }
 
+    /**
+     * Removes any explicitly defined metadata associated with the given flag from this container.
+     *
+     * @param flag the flag.
+     */
     public void deleteFlag(RegionFlag flag) {
         flags.remove(flag);
     }
@@ -149,8 +173,13 @@ public class FlagContainer {
         }
     }
 
+    /**
+     * @return an exact copy of the flag-meta value pairs within this class.
+     */
     public Map<RegionFlag, Object> getFlags() {
-        return flags;
+        Map<RegionFlag, Object> copy = new HashMap<>(flags.size());
+        flags.forEach((flag, meta) -> copy.put(flag, meta instanceof TrustMeta ? ((TrustMeta) meta).copy() : meta));
+        return copy;
     }
 
     /**
@@ -163,6 +192,13 @@ public class FlagContainer {
         this.flags.putAll(flags);
     }
 
+    /**
+     * Returns true if an only if the given object is a flag container, and if the flags in this container match the
+     * flags in the given container.
+     *
+     * @param other the object to test.
+     * @return true if and only if the given object is a flag container and equivalent to this container.
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this)

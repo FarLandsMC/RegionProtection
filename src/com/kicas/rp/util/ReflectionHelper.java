@@ -47,6 +47,13 @@ public final class ReflectionHelper {
         return !type.isPrimitive();
     }
 
+    /**
+     * Casts the given number to the new type.
+     *
+     * @param newType the new type.
+     * @param target  the number to cast.
+     * @return the casted number, or null if the new type is invalid.
+     */
     public static Number numericCast(Class<?> newType, Number target) {
         if (target.getClass().equals(newType))
             return target;
@@ -88,11 +95,11 @@ public final class ReflectionHelper {
             return null;
     }
 
-    public static boolean isValidCast(Class<?> to, Class<?> from) {
-        return to.isAssignableFrom(from) || Number.class.isAssignableFrom(to) && Number.class.isAssignableFrom(from);
+    public static boolean isInvalidCast(Class<?> from, Class<?> to) {
+        return !to.isAssignableFrom(from) && (!Number.class.isAssignableFrom(to) ||
+                !Number.class.isAssignableFrom(from));
     }
 
-    @SuppressWarnings("unchecked")
     public static <T extends Annotation> T getAnnotation(Class<T> annotationClass, Object target) {
         // Check both declared annotations and regular annotations
         T a = target.getClass().getAnnotation(annotationClass);
@@ -288,7 +295,7 @@ public final class ReflectionHelper {
             Class<?>[] opts = option.getParameterTypes(); // OPTS = option parameter types
             if (opts.length == parameterTypes.length) {
                 for (int i = 0; i < opts.length; ++i) {
-                    if (!isValidCast(opts[i], parameterTypes[i]))
+                    if (isInvalidCast(parameterTypes[i], opts[i]))
                         continue outer;
                 }
             } else
@@ -304,7 +311,7 @@ public final class ReflectionHelper {
             Class<?>[] opts = option.getParameterTypes(); // OPTS = option parameter types
             if (opts.length == parameterTypes.length) {
                 for (int i = 0; i < opts.length; ++i) {
-                    if (!isValidCast(opts[i], parameterTypes[i]))
+                    if (isInvalidCast(parameterTypes[i], opts[i]))
                         continue outer;
                 }
             } else

@@ -24,11 +24,12 @@ import org.bukkit.event.world.StructureGrowEvent;
 public class WorldEventHandler implements Listener {
     /**
      * Handles fluid flow.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockMove(BlockFromToEvent event) {
-        if(RegionProtection.getDataManager().crossesRegions(event.getBlock().getLocation(),
+        if (RegionProtection.getDataManager().crossesRegions(event.getBlock().getLocation(),
                 event.getToBlock().getLocation()))
             event.setCancelled(true);
         else {
@@ -44,9 +45,10 @@ public class WorldEventHandler implements Listener {
 
     /**
      * Handles piston extensions crossing region boundaries.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
         event.setCancelled(event.getBlocks().stream().anyMatch(block -> RegionProtection.getDataManager()
                 .crossesRegions(event.getBlock().getLocation(),
@@ -55,72 +57,78 @@ public class WorldEventHandler implements Listener {
 
     /**
      * Handles piston retractions crossing region boundaries.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
         event.setCancelled(event.getBlocks().stream().anyMatch(block -> RegionProtection.getDataManager()
                 .crossesRegions(event.getBlock().getLocation(), block.getLocation())));
     }
-    
+
     /**
      * Handles creature spawn flag restrictions and mob lightning damage.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if(flags != null) {
-            if(event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.LIGHTNING &&
+        if (flags != null) {
+            if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.LIGHTNING &&
                     !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE)) {
                 event.setCancelled(true);
-            }else if(!Entities.isArtificialSpawn(event.getSpawnReason()) &&
+            } else if (!Entities.isArtificialSpawn(event.getSpawnReason()) &&
                     !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType())) {
                 event.setCancelled(true);
             }
         }
     }
-    
+
     /**
      * Handles block spreading and vine growth.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockSpread(BlockSpreadEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
         event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
     }
-    
+
     /**
      * Handles mushroom and tree growth.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onStructureGrow(StructureGrowEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
         event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
     }
-    
+
     /**
      * Handles mushroom and tree growth.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockGrow(BlockGrowEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
         event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
     }
-    
+
     /**
      * Handles ice and snow melting or forming.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockFade(BlockFadeEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if(flags == null)
+        if (flags == null)
             return;
-        
+
         if (!flags.isAllowed(RegionFlag.ICE_CHANGE) &&
                 (event.getBlock().getType() == Material.ICE || event.getBlock().getType() == Material.FROSTED_ICE))
             event.setCancelled(true);
@@ -130,12 +138,13 @@ public class WorldEventHandler implements Listener {
         else if (!flags.isAllowed(RegionFlag.CORAL_DEATH) && Materials.isCoral(event.getBlock().getType()))
             event.setCancelled(true);
     }
-    
+
     /**
      * Handles leaf decay.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onLeafDecay(LeavesDecayEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
         event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.LEAF_DECAY));
@@ -143,9 +152,10 @@ public class WorldEventHandler implements Listener {
 
     /**
      * Handles lightning damage on mobs.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         event.setCancelled(flags != null && event.getCause() == EntityDamageEvent.DamageCause.LIGHTNING &&
@@ -154,11 +164,12 @@ public class WorldEventHandler implements Listener {
 
     /**
      * Handle portal pair creation.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPortalCreated(PortalCreateEvent event) {
-        if(event.getReason() == PortalCreateEvent.CreateReason.NETHER_PAIR) {
+        if (event.getReason() == PortalCreateEvent.CreateReason.NETHER_PAIR) {
             event.setCancelled(event.getBlocks().stream().map(state -> RegionProtection.getDataManager().getFlagsAt(
                     state.getLocation())).anyMatch(flags -> flags != null &&
                     !flags.isAllowed(RegionFlag.PORTAL_PAIR_FORMATION)));

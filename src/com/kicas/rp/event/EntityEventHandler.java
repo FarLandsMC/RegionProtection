@@ -23,31 +23,32 @@ import org.bukkit.projectiles.ProjectileSource;
 public class EntityEventHandler implements Listener {
     /**
      * Handle enderman grief and fire arrows/dispenser-fired fire balls causing damage by hitting TNT or setting things
-     * on fire.
+     * on fire. Also handles the animal-grief-blocks and hostile-grief-blocks flags.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntityType() == EntityType.FALLING_BLOCK)
             return;
         DataManager dm = RegionProtection.getDataManager();
         FlagContainer flags = dm.getFlagsAt(event.getBlock().getLocation());
-        if(flags == null)
+        if (flags == null)
             return;
 
-        if((event.getEntityType() == EntityType.ARROW || event.getEntityType() == EntityType.SMALL_FIREBALL)) {
-            if(event.getBlock().getType() == Material.TNT && !flags.isAllowed(RegionFlag.TNT)) {
+        if ((event.getEntityType() == EntityType.ARROW || event.getEntityType() == EntityType.SMALL_FIREBALL)) {
+            if (event.getBlock().getType() == Material.TNT && !flags.isAllowed(RegionFlag.TNT)) {
                 event.setCancelled(true);
                 return;
             }
 
-            ProjectileSource shooter = ((Arrow)event.getEntity()).getShooter();
-            if(shooter instanceof Player) { // For players check trust
-                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)shooter,
+            ProjectileSource shooter = ((Arrow) event.getEntity()).getShooter();
+            if (shooter instanceof Player) { // For players check trust
+                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter,
                         TrustLevel.BUILD, flags));
-            }else if(shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
-                event.setCancelled(dm.crossesRegions(((BlockProjectileSource)shooter).getBlock().getLocation(),
-                            event.getBlock().getLocation()));
+            } else if (shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
+                event.setCancelled(dm.crossesRegions(((BlockProjectileSource) shooter).getBlock().getLocation(),
+                        event.getBlock().getLocation()));
             }
             return;
         }
@@ -58,35 +59,37 @@ public class EntityEventHandler implements Listener {
 
     /**
      * Handles the hostile-grief-entities flag.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if(flags == null || event.getDamager() instanceof Player || event.getEntity() instanceof Player ||
+        if (flags == null || event.getDamager() instanceof Player || event.getEntity() instanceof Player ||
                 flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES) || Entities.isMonster(event.getEntityType())) {
             return;
         }
 
-        if(event.getDamager() instanceof Projectile) {
-            ProjectileSource shooter = ((Projectile)event.getDamager()).getShooter();
-            if(!(shooter instanceof Player || shooter instanceof BlockProjectileSource))
+        if (event.getDamager() instanceof Projectile) {
+            ProjectileSource shooter = ((Projectile) event.getDamager()).getShooter();
+            if (!(shooter instanceof Player || shooter instanceof BlockProjectileSource))
                 event.setCancelled(true);
-        }else
+        } else
             event.setCancelled(true);
     }
 
     /**
-     * Block entity explosion damage.
+     * Prevent entity explosion damage.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamaged(EntityDamageEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if(flags == null)
+        if (flags == null)
             return;
 
-        if(event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION &&
+        if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION &&
                 !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES)) {
             event.setCancelled(true);
         }
@@ -94,20 +97,21 @@ public class EntityEventHandler implements Listener {
 
     /**
      * Handle frost walker and snow golem trails.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityFormBlock(EntityBlockFormEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if(flags == null)
+        if (flags == null)
             return;
 
-        if((event.getEntity().getType() == EntityType.SNOWMAN && !flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS)))
+        if ((event.getEntity().getType() == EntityType.SNOWMAN && !flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS)))
             event.setCancelled(true);
-        else if(event.getEntity().getType() == EntityType.PLAYER) {
-            if(!flags.isAllowed(RegionFlag.ICE_CHANGE))
+        else if (event.getEntity().getType() == EntityType.PLAYER) {
+            if (!flags.isAllowed(RegionFlag.ICE_CHANGE))
                 event.setCancelled(true);
-            else if(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)event.getEntity(),
+            else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) event.getEntity(),
                     TrustLevel.BUILD, flags)) {
                 event.setCancelled(true);
             }
@@ -116,25 +120,26 @@ public class EntityEventHandler implements Listener {
 
     /**
      * Prevent entity explosions (including the explosion of the primed TNT entity) from damaging claims.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityExplosion(EntityExplodeEvent event) {
-        if(EntityType.PRIMED_TNT.equals(event.getEntityType())) {
+        if (EntityType.PRIMED_TNT.equals(event.getEntityType())) {
             // If the explosion occurs in a location where tnt is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
-            if(flags != null && !flags.isAllowed(RegionFlag.TNT)) {
+            if (flags != null && !flags.isAllowed(RegionFlag.TNT)) {
                 event.setCancelled(true);
                 return;
             }
 
             // Individual block checks are required since the TNT could have been launched
-            Entity igniter = ((TNTPrimed)event.getEntity()).getSource();
-            if(igniter instanceof Player) {
+            Entity igniter = ((TNTPrimed) event.getEntity()).getSource();
+            if (igniter instanceof Player) {
                 // Trust check for player igniters
                 event.blockList().removeIf(block -> {
                     FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
-                    return flags0 != null && !flags0.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player)igniter,
+                    return flags0 != null && !flags0.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) igniter,
                             TrustLevel.BUILD, flags0);
                 });
             }
@@ -144,11 +149,10 @@ public class EntityEventHandler implements Listener {
                 FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
                 return flags0 != null && !flags0.isAllowed(RegionFlag.TNT);
             });
-        }else{
+        } else {
             // If the mob explosion occurs in an area where mob grief is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
-            if(flags != null && !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES)) {
-                System.out.println("here");
+            if (flags != null && !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES)) {
                 event.setCancelled(true);
                 return;
             }
@@ -160,26 +164,33 @@ public class EntityEventHandler implements Listener {
             });
         }
     }
-    
+
     /**
-     * Prevent splash potions from splashing. (effect from outside a border may slip in)
+     * Prevent splash potions from splashing. Note: effects from outside a border may slip in.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPotionSplash(PotionSplashEvent event) {
         handlePotionSplash(event);
     }
 
     /**
-     * Prevent lingering splash potions from splashing. (effect from outside a border may slip in)
+     * Prevent lingering splash potions from splashing. Note: effects from outside a border may slip in.
+     *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPotionSplash(LingeringPotionSplashEvent event) {
         handlePotionSplash(event);
     }
 
-    // Handles a splash potion, or lingering potion splash event
+    /**
+     * Handles a splash potion, or lingering potion splash event.
+     *
+     * @param event the event.
+     * @param <T>   the event type.
+     */
     private <T extends ProjectileHitEvent & Cancellable> void handlePotionSplash(T event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         if (flags != null && !flags.isAllowed(RegionFlag.POTION_SPLASH)) {
@@ -187,28 +198,28 @@ public class EntityEventHandler implements Listener {
             event.getEntity().remove();
         }
     }
-    
+
     /**
-     * Prevent pets teleporting to a region
+     * Prevent pets teleporting to a region.
      *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityTeleport(EntityTeleportEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
-        if(flags == null)
+        if (flags == null)
             return;
 
         event.setCancelled(event.getEntity() instanceof Tameable && ((Tameable) event.getEntity()).isTamed() &&
                 !flags.isAllowed(RegionFlag.FOLLOW));
     }
-    
+
     /**
-     * Prevent mobs from becoming aggro towards players inside a region
+     * Prevent mobs from becoming aggro towards players inside a region.
      *
      * @param event the event.
      */
-    @EventHandler(priority=EventPriority.LOW, ignoreCancelled=true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityTarget(EntityTargetEvent event) {
         if (event.getTarget() == null)
             return;

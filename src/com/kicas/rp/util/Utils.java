@@ -31,12 +31,33 @@ public final class Utils {
     private Utils() {
     }
 
+    /**
+     * Converts the given floating point number to a string and then truncates the decimal point to the given precision.
+     *
+     * @param d         the float point to convert to a string.
+     * @param precision the number of decimal point the resulting string should have.
+     * @return a string form of the given floating point number, with the decimal point truncated to the given
+     * precision.
+     */
     public static String doubleToString(double d, int precision) {
         String fp = Double.toString(d);
         return fp.contains(".") ? fp.substring(0, Math.min(fp.lastIndexOf('.') + precision + 1, fp.length())) +
                 (fp.contains("E") ? fp.substring(fp.lastIndexOf('E')) : "") : fp;
     }
+
+    /**
+     * Constrains the given number between the given minimum and maximum value. If the given number n is outside the
+     * given range then the closest bound is returned.
+     *
+     * @param n   the number to constrain.
+     * @param min the minimum bound.
+     * @param max the maximum bound.
+     * @return the constrained number.
+     * @throws IllegalArgumentException if the given maximum bound is less than the given minimum bound.
+     */
     public static int constrain(int n, int min, int max) {
+        if (max < min)
+            throw new IllegalArgumentException("The maximum bound cannot be greater than the minimum bound.");
         return n < min ? min : (n > max ? max : n);
     }
 
@@ -50,7 +71,7 @@ public final class Utils {
      */
     public static String getWorldName(String alias) {
         String formattedAlias = alias.toLowerCase();
-        if(WORLD_NAME_ALIASES.values().contains(formattedAlias))
+        if (WORLD_NAME_ALIASES.values().contains(formattedAlias))
             return formattedAlias;
 
         formattedAlias = formattedAlias.replaceAll("[\\-\\s]", "_");
@@ -62,15 +83,15 @@ public final class Utils {
      * the enumeration value corresponding to that name. If an enumeration constant could not be found with the
      * unformatted name, then null is returned.
      *
-     * @param name the formatted name.
+     * @param name  the formatted name.
      * @param clazz the enum class.
-     * @param <E> the enum type.
+     * @param <E>   the enum type.
      * @return the enumeration constant corresponding to the given formatted name in the given class, or null if no such
      * constant could be found.
      */
     @SuppressWarnings("unchecked")
     public static <E extends Enum<E>> E valueOfFormattedName(String name, Class<E> clazz) {
-        return (E)safeValueOf(enumName -> ReflectionHelper.invoke("valueOf", clazz, null, enumName),
+        return (E) safeValueOf(enumName -> ReflectionHelper.invoke("valueOf", clazz, null, enumName),
                 name.replaceAll("-", "_").toUpperCase());
     }
 
@@ -131,31 +152,31 @@ public final class Utils {
             return null;
         }
     }
-    
-    
+
+
     private static boolean doesDamage(Block b) {
         return b.getType().isSolid() || b.isLiquid() || Arrays.asList(Material.FIRE, Material.CACTUS)
                 .contains(b.getType());
     }
-    
+
     private static boolean canStand(Block b) { // if a player can safely stand here
         // (you can drown in water but you can also float and for this case swimming is safe enough)
         return !(b.isPassable() || Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(b.getType())) ||
                 b.getType().equals(Material.WATER);
     }
-    
+
     // if block below is solid and 2 blocks in player collision do not do damage
     private static boolean isSafe(Location l) {
         return !(doesDamage(l.add(0, 1, 0).getBlock()) || doesDamage(l.add(0, 1, 0).getBlock()));
     }
-    
+
     public static Location findSafe(final Location l) {
         l.setX(l.getBlockX() + .5);
         l.setZ(l.getBlockZ() + .5);
         return findSafe(l, Math.max(1, l.getBlockY() - 8), Math.min(l.getBlockY() + 7,
                 l.getWorld().getName().equals("world_nether") ? 126 : 254));
     }
-    
+
     private static Location findSafe(final Location origin, int s, int e) {
         Location safe = origin.clone();
         if (canStand(safe.getBlock()) && isSafe(safe.clone()))
@@ -172,7 +193,7 @@ public final class Utils {
         safe.getChunk().unload();
         return null;
     }
-    
+
     public static Location walk(Location location, int dx, int dz) {
         Location temp = findSafe(location.add(dx, 0, dz));
         while (temp == null)

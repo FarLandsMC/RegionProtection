@@ -121,7 +121,7 @@ public class TrustMeta {
      * @return an exact copy of the raw trust data in this trust meta.
      */
     public Map<UUID, TrustLevel> getRawTrustDataCopy() {
-        return new HashMap<>(trustData);
+        return Collections.unmodifiableMap(trustData);
     }
 
     /**
