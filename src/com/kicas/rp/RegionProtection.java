@@ -141,7 +141,12 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("general.enable-claim-stealing", false);
         config.addDefault("general.enable-claims-in-worlds", Collections.singletonList("world"));
 
+        config.addDefault("region.invincible", false);
+        config.addDefault("region.potion-splash", true);
+
         config.addDefault("player.pvp", false);
+        config.addDefault("player.hostile-damage", true);
+        config.addDefault("player.animal-damage", true);
 
         config.addDefault("entity.animal-grief-blocks", true);
         config.addDefault("entity.hostile-grief-blocks", false);

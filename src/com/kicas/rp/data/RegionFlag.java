@@ -276,12 +276,12 @@ public enum RegionFlag {
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(TNT, config.getBoolean("world.tnt-explosions"));
         registerDefault(OVERLAP, false);
-        registerDefault(INVINCIBLE, false);
+        registerDefault(INVINCIBLE, config.getBoolean("region.invincible"), world -> false);
         registerDefault(GREETING, TextMeta.EMPTY_TEXT);
         registerDefault(FAREWELL, TextMeta.EMPTY_TEXT);
-        registerDefault(HOSTILE_DAMAGE, true);
-        registerDefault(ANIMAL_DAMAGE, true);
-        registerDefault(POTION_SPLASH, true);
+        registerDefault(HOSTILE_DAMAGE, config.getBoolean("player.hostile-damage"), world -> true);
+        registerDefault(ANIMAL_DAMAGE, config.getBoolean("player.animal-damage"), world -> true);
+        registerDefault(POTION_SPLASH, config.getBoolean("region.potion-splash"), world -> true);
         registerDefault(FORCE_CHEST_ACCESS, false);
         registerDefault(PVP, config.getBoolean("player.pvp"),
                 world -> ((CraftServer)Bukkit.getServer()).getServer().getDedicatedServerProperties().pvp);
