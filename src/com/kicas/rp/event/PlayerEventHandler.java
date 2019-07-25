@@ -471,8 +471,8 @@ public class PlayerEventHandler implements Listener {
             if (event.getEntity() instanceof Player) {
                 event.setCancelled(!flags.isAllowed(RegionFlag.PVP));
             } else {
-                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter,
-                        TrustLevel.BUILD, flags));
+                event.setCancelled(!Entities.isHostile((Player)shooter, event.getEntity()) &&
+                        !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter, TrustLevel.BUILD, flags));
             }
         } else if (shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
             event.setCancelled(RegionProtection.getDataManager().crossesRegions(((BlockProjectileSource) shooter)
