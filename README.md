@@ -24,6 +24,9 @@ table will be generated. Also, all persistent player data will be loaded. When a
 flags present at the location of the event will be looked up through the data manager, and the event will be handled based on
 the metadata of the flags retrieved.
 
+*The following information provides in-depth detail about aspects of the plugin and how it works, it is not necessary to 
+read.*
+
 ## Commands
 Command implementations are stored as separate classes in the command package, and are registered in the RegionProtection
 class. The command implementation classes act as both the executor and tab completer (if the command has tab completion).
