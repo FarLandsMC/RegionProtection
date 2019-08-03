@@ -33,7 +33,7 @@ public class CommandTrapped implements CommandExecutor {
         // stuck meaning that the player has no permissions in the claim
         Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(player.getLocation());
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(player.getLocation());
-        if (claim == null || flags == null || !flags.isAllowed(RegionFlag.DENY_BREAK) ||
+        if (claim == null || flags == null || !flags.hasFlag(RegionFlag.DENY_BREAK) ||
                 flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player, TrustLevel.BUILD, flags)) {
             sender.sendMessage(ChatColor.RED + "You should not be trapped in this location");
             return true;
