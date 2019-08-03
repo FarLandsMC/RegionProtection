@@ -137,7 +137,9 @@ public class RegionToolHandler implements Listener {
                                 if (region != null) {
                                     player.sendMessage(ChatColor.GREEN + "Region bounds set. Use the command " +
                                             "\"/region create\" to finish creating the region.");
+                                    ps.endRegionAction();
                                     ps.setCurrentSelectedRegion(region);
+                                    return;
                                 }
                             } else { // Make a claim
                                 Region claim = dm.tryCreateClaim(player, ps.getLastClickedBlock(), clickedLocation);
