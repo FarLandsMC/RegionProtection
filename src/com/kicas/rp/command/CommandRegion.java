@@ -114,6 +114,12 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         if ("create".equals(args[0])) {
             PlayerSession ps = RegionProtection.getDataManager().getPlayerSession((Player) sender);
 
+            if (ps.getCurrentSelectedRegion() == null) {
+                sender.sendMessage(ChatColor.RED + "Please outline the region you wish to create before using this " +
+                        "command.");
+                return true;
+            }
+
             // Fields to potentially overwrite
             int priority = 0;
             String parentName = null;
