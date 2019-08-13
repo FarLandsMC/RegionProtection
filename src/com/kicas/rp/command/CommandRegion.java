@@ -209,7 +209,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             try {
                 // Parse/evaluate the meta string
                 meta = RegionFlag.metaFromString(flag, joinArgsBeyond(2, " ", args));
-            } catch (IllegalArgumentException ex) { // Thrown by the meta parsers
+            } catch (IllegalArgumentException | TextUtils.SyntaxException ex) { // Thrown by the meta parsers
                 sender.sendMessage(ChatColor.RED + ex.getMessage());
                 return true;
             }
