@@ -139,6 +139,7 @@ public class RegionToolHandler implements Listener {
                                             "\"/region create\" to finish creating the region.");
                                     ps.endRegionAction();
                                     ps.setCurrentSelectedRegion(region);
+                                    event.setCancelled(true);
                                     return;
                                 }
                             } else { // Make a claim
