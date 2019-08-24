@@ -652,12 +652,27 @@ public class PlayerEventHandler implements Listener {
     }
 
     /**
+     * @see PlayerEventHandler#onPlayerTranslocate(PlayerMoveEvent)
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
+        onPlayerTranslocate(event);
+    }
+
+    /**
+     * @see PlayerEventHandler#onPlayerTranslocate(PlayerMoveEvent)
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerMove(PlayerMoveEvent event) {
+        onPlayerTranslocate(event);
+    }
+
+    /**
      * Handles greetings, farewells, enter commands, exit commands, and the flight flag.
      *
      * @param event the event.
      */
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
-    public void onPlayerMove(PlayerMoveEvent event) {
+    private void onPlayerTranslocate(PlayerMoveEvent event) {
         FlagContainer fromFlags = RegionProtection.getDataManager().getFlagsAt(event.getFrom());
         FlagContainer toFlags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
 
