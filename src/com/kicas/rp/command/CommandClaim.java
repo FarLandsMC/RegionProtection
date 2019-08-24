@@ -19,6 +19,11 @@ public class CommandClaim implements CommandExecutor {
             return true;
         }
 
+        if (!RegionProtection.getClaimableWorlds().contains(((Player)sender).getWorld().getUID())) {
+            sender.sendMessage(ChatColor.RED + "Claims are not allowed in this world.");
+            return true;
+        }
+
         // Calculate the distance from the center using the minimum area, and calculate the corners
         double width = Math.sqrt(RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) / 2;
         Location center = ((Player) sender).getLocation();
