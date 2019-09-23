@@ -66,33 +66,15 @@ public class EntityEventHandler implements Listener {
     public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         if (flags == null || event.getDamager() instanceof Player || event.getEntity() instanceof Player ||
-                flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES) || Entities.isMonster(event.getEntityType())) {
+                flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES) || Entities.isMonster(event.getEntityType()))
             return;
-        }
 
         if (event.getDamager() instanceof Projectile) {
             ProjectileSource shooter = ((Projectile) event.getDamager()).getShooter();
             if (!(shooter instanceof Player || shooter instanceof BlockProjectileSource))
-                event.setCancelled(true);
+                event.setCancelled(shooter instanceof LivingEntity && Entities.isMonster(((LivingEntity) shooter).getType()));
         } else
             event.setCancelled(true);
-    }
-
-    /**
-     * Prevent entity explosion damage.
-     *
-     * @param event the event.
-     */
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onEntityDamaged(EntityDamageEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        if (flags == null)
-            return;
-
-        if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION &&
-                !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES)) {
-            event.setCancelled(true);
-        }
     }
 
     /**
