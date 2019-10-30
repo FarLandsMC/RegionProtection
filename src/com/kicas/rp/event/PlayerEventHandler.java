@@ -592,11 +592,15 @@ public class PlayerEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
 
         if (flags != null) {
-            if (flags.hasFlag(RegionFlag.KEEP_INVENTORY))
-                event.setKeepInventory(flags.isAllowed(RegionFlag.KEEP_INVENTORY));
+            if (flags.hasFlag(RegionFlag.KEEP_INVENTORY) && flags.isAllowed(RegionFlag.KEEP_INVENTORY)) {
+                event.setKeepInventory(true);
+                event.getDrops().clear();
+            }
 
-            if (flags.hasFlag(RegionFlag.KEEP_XP))
-                event.setKeepLevel(flags.isAllowed(RegionFlag.KEEP_XP));
+            if (flags.hasFlag(RegionFlag.KEEP_XP) && flags.isAllowed(RegionFlag.KEEP_XP)) {
+                event.setKeepLevel(true);
+                event.setDroppedExp(0);
+            }
         }
     }
 
