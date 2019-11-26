@@ -50,7 +50,7 @@ commands:
     permission: rp.command.ignoretrust
   region:
     description: Modify a region.
-    usage: /region <info|flag|create|expand|retract|delete> [name] [args...]
+    usage: /region <info|flag|create|expand|retract|rename|set-priority|delete> [name] [args...]
     aliases: [rg]
     permission: rp.command.region
   steal:

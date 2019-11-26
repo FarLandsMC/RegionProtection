@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 public class CommandRegion extends TabCompleterBase implements CommandExecutor {
     // For tab completion
     private static final List<String> SUB_COMMANDS = Arrays.asList("flag", "create", "expand", "retract", "delete",
-            "info");
+            "info", "rename", "set-priority");
     private static final List<String> ALLOW_DENY = Arrays.asList("allow", "deny");
     private static final List<String> EXPANSION_DIRECTIONS = Arrays.asList("vert", "top", "bottom", "north", "south",
             "east", "west");
@@ -134,6 +134,11 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                         priority = Integer.parseInt(priorityString);
                     } catch (NumberFormatException ex) {
                         sender.sendMessage(ChatColor.RED + "Invalid priority: " + priorityString);
+                        return true;
+                    }
+
+                    if (priority < 0 || priority > 127) {
+                        sender.sendMessage(ChatColor.RED + "Region priorities must be between 0 and 127 inclusive.");
                         return true;
                     }
                 }
@@ -290,6 +295,25 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 if (RegionProtection.getDataManager().tryExpandRegion((Player) sender, region, side, amount))
                     sender.sendMessage(ChatColor.GREEN + "Successfully adjusted region " + args[1]);
             }
+        } else if ("rename".equals(args[0])) {
+            if (RegionProtection.getDataManager().tryRenameRegion((Player) sender, region, args[2]))
+                sender.sendMessage(ChatColor.GREEN + "Renamed region \"" + args[1] + "\" to \"" + args[2] + "\".");
+        } else if ("set-priority".equals(args[0])) {
+            int newPriority;
+            try {
+                newPriority = Integer.parseInt(args[2]);
+            } catch (NumberFormatException ex) {
+                sender.sendMessage(ChatColor.RED + "Invalid priority: " + args[2]);
+                return true;
+            }
+
+            if (newPriority < 0 || newPriority > 127) {
+                sender.sendMessage(ChatColor.RED + "Region priorities must be between 0 and 127 inclusive.");
+                return true;
+            }
+
+            region.setPriority(newPriority);
+            sender.sendMessage(ChatColor.GREEN + "Set region priority to " + newPriority + ".");
         } else if ("delete".equals(args[0])) { // Delete a region
             boolean includeChildren = args.length == 3 && "true".equalsIgnoreCase(args[2]);
             // This can fail if includeChildren is false and the region has children

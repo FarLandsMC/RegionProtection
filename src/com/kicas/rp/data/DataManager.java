@@ -473,17 +473,9 @@ public class DataManager implements Listener {
      */
     public synchronized boolean tryRegisterRegion(Player delegate, Region region, String name, int priority,
                                                   String parentName, boolean force) {
-        // Make sure the name is free
-        if (getRegionByName(region.getWorld(), name) != null) {
-            delegate.sendMessage(ChatColor.RED + "A region with that name already exists.");
+        // Check the name
+        if (isRegionNameInvalid(delegate, region.getWorld(), name))
             return false;
-        }
-
-        // Make sure the __global__ region is not overwritten
-        if (GLOBAL_FLAG_NAME.equals(name)) {
-            delegate.sendMessage(ChatColor.RED + "This region name is reserved.");
-            return false;
-        }
 
         // Do most of the registration
         region.setName(name);
@@ -732,6 +724,23 @@ public class DataManager implements Listener {
     }
 
     /**
+     * Attempts to change the name of the given region to the new name provided. If the new name is already in-use in
+     * the given region's world or if that name is reserved.
+     *
+     * @param delegate the player performing the renaming.
+     * @param region   the region to rename.
+     * @param newName  the new name to give the region.
+     * @return true if the renaming was successful, false otherwise.
+     */
+    public synchronized boolean tryRenameRegion(Player delegate, Region region, String newName) {
+        if (isRegionNameInvalid(delegate, region.getWorld(), newName))
+            return false;
+
+        region.setName(newName);
+        return true;
+    }
+
+    /**
      * Attempts to delete the given region. This will remove the region from the list and the lookup table, and the same
      * operation will be performed on all the region's children if includeChildren is set to true. Upon successful
      * deletion of the region, if the given region has no parent and is not owned by an administrator then the owner
@@ -766,8 +775,6 @@ public class DataManager implements Listener {
                 itr.remove();
         }
     }
-
-    //
 
     /**
      * Actually performs the deletion of the given region. The removal of the given region from the lookup table always
@@ -812,7 +819,27 @@ public class DataManager implements Listener {
         return true;
     }
 
-    //
+    /**
+     * @param delegate the player providing the name.
+     * @param world    the world the region to be named is in.
+     * @param name     the name to check.
+     * @return true if the specified name is the name of another region in the given world or if the name is reserved.
+     */
+    private boolean isRegionNameInvalid(Player delegate, World world, String name) {
+        // Make sure the name is free
+        if (getRegionByName(world, name) != null) {
+            delegate.sendMessage(ChatColor.RED + "A region with that name already exists.");
+            return true;
+        }
+
+        // Make sure the __global__ region is not overwritten
+        if (GLOBAL_FLAG_NAME.equals(name)) {
+            delegate.sendMessage(ChatColor.RED + "This region name is reserved.");
+            return true;
+        }
+
+        return false;
+    }
 
     /**
      * Makes sure the given region does not violate any constraints after being resized, and resets the region to the
