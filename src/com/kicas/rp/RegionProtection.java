@@ -207,6 +207,7 @@ public class RegionProtection extends JavaPlugin {
      */
     private void registerCommands() {
         registerCommand("abandonclaim", SimpleCommand.ABANDON_CLAIM);
+        registerCommand("addcoowner", SimpleCommand.ADD_CO_OWNER);
         registerCommand("adminregion", SimpleCommand.ADMIN_REGION);
         registerCommand("claim", SimpleCommand.CLAIM);
         registerCommand("claimblocks", new CommandClaimBlocks());

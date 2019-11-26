@@ -32,7 +32,7 @@ public class DataManager implements Listener {
     private final Map<String, UUID> ignUuidLookupCache;
 
     // These values are used to keep consistency in the serialized data
-    public static final byte REGION_FORMAT_VERSION = 0;
+    public static final byte REGION_FORMAT_VERSION = 1;
     public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
     public static final String GLOBAL_FLAG_NAME = "__global__";
 
@@ -399,7 +399,7 @@ public class DataManager implements Listener {
                 vertex1.getWorld().getMaxHeight(), Math.max(vertex1.getZ(), vertex2.getZ()));
 
         // Create the region
-        Region region = new Region(null, 0, creator.getUniqueId(), min, max, null);
+        Region region = new Region(null, 0, creator.getUniqueId(), min, max, null, new ArrayList<>());
 
         // checkCollisions sends an error message to the creator
         if (failsCollisionCheck(creator, region))
@@ -650,7 +650,7 @@ public class DataManager implements Listener {
                 claim.getMax().getY(), Math.max(vertex1.getZ(), vertex2.getZ()));
 
         // Create the region
-        Region region = new Region(null, claim.getPriority() + 1, claim.getOwner(), min, max, claim);
+        Region region = new Region(null, claim.getPriority() + 1, claim.getOwner(), min, max, claim, claim.getCoOwners());
 
         // Check for complete containment
         if (!claim.contains(region)) {

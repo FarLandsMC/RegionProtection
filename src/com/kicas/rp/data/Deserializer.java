@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.*;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Pair;
@@ -16,7 +17,6 @@ import java.util.*;
 /**
  * Deserializes plugin data files, including regions.dat and playerdata.dat.
  */
-// TODO: Implement a system for reading older format versions and add a corruption detection system
 public class Deserializer implements AutoCloseable {
     private final Decoder decoder;
     private final int expectedFormatVersion;
@@ -36,8 +36,15 @@ public class Deserializer implements AutoCloseable {
         // Check the format version
         int format = decoder.read();
         if (format != expectedFormatVersion)
-            throw new IllegalStateException("Expected format version " + expectedFormatVersion + ". Found " + format);
+            RegionProtection.log("Decoding older data format version for world data file: " + format + ".");
 
+        Map<UUID, WorldData> worldData = readWorldData(format);
+        decoder.close();
+        return worldData;
+    }
+
+    // Wrapped, format-specific deserialization method
+    private Map<UUID, WorldData> readWorldData(int format) throws IOException {
         // Read each of the individual world data blocks
         int len = decoder.read();
         Map<UUID, WorldData> worldData = new HashMap<>(len);
@@ -45,21 +52,19 @@ public class Deserializer implements AutoCloseable {
             // Read the global flags
             UUID worldUid = decoder.readUuid();
             WorldData wd = new WorldData(worldUid);
-            readFlags(wd);
+            readFlags(wd, format);
 
             // Read the parent regions
             World world = Bukkit.getWorld(worldUid);
             int regionCount = decoder.readCompressedUint();
             while (regionCount > 0) {
-                wd.getRegions().add(readParentRegion(world));
+                wd.getRegions().add(readParentRegion(world, format));
                 --regionCount;
             }
 
             worldData.put(worldUid, wd);
             --len;
         }
-
-        decoder.close();
 
         return worldData;
     }
@@ -74,8 +79,15 @@ public class Deserializer implements AutoCloseable {
         // Check the format version
         int format = decoder.read();
         if (format != expectedFormatVersion)
-            throw new IllegalStateException("Expected format version " + expectedFormatVersion + ". Found " + format);
+            RegionProtection.log("Decoding older data format version for player data file: " + format + ".");
 
+        Map<UUID, PersistentPlayerData> playerData = readPlayerData(format);
+        decoder.close();
+        return playerData;
+    }
+
+    // Wrapped, format-specific deserialization method
+    private Map<UUID, PersistentPlayerData> readPlayerData(int format) throws IOException {
         // Read each individual player data object
         int len = decoder.readCompressedUint();
         Map<UUID, PersistentPlayerData> playerData = new HashMap<>(len);
@@ -91,22 +103,24 @@ public class Deserializer implements AutoCloseable {
     /**
      * Reads a parent region including its children and sets the region's world to the given world.
      *
-     * @param world the region's world.
+     * @param world  the region's world.
+     * @param format the format version of the file.
      * @return the parent region.
      * @throws IOException if an I/O error occurs.
      */
-    private Region readParentRegion(World world) throws IOException {
+    private Region readParentRegion(World world, int format) throws IOException {
         String name = decoder.readUTF8Raw();
         // Contains the priority, and the sign bit is whether or not the region is administrator-owned
         int meta = decoder.read();
 
         Region region = new Region(name, meta & 0x7F, (meta & 0x80) != 0 ? Utils.UUID_00 : decoder.readUuid(),
-                readRegionBound(world), readRegionBound(world), null);
+                readRegionBound(world), readRegionBound(world), null,
+                format > 0 ? decoder.readArrayAsList(UUID.class) : new ArrayList<>());
 
-        readFlags(region);
+        readFlags(region, format);
         int len = decoder.readCompressedUint();
         while (len > 0) {
-            region.getChildren().add(readChildRegion(region));
+            region.getChildren().add(readChildRegion(region, format));
             --len;
         }
 
@@ -117,13 +131,15 @@ public class Deserializer implements AutoCloseable {
      * Reads a child region and infers missing fields from the given parent region.
      *
      * @param parent the child region's parent.
+     * @param format the format version of the file.
      * @return the child region.
      * @throws IOException if an I/O error occurs.
      */
-    private Region readChildRegion(Region parent) throws IOException {
+    private Region readChildRegion(Region parent, int format) throws IOException {
         Region region = new Region(decoder.readUTF8Raw(), decoder.read() & 0x7F, parent.getOwner(),
-                readRegionBound(parent.getWorld()), readRegionBound(parent.getWorld()), parent);
-        readFlags(region);
+                readRegionBound(parent.getWorld()), readRegionBound(parent.getWorld()), parent,
+                format > 0 ? decoder.readArrayAsList(UUID.class) : new ArrayList<>());
+        readFlags(region, format);
         return region;
     }
 
@@ -142,13 +158,14 @@ public class Deserializer implements AutoCloseable {
      * Reads a number of flag-metadata key-value pairs and sets the given container's flags to the read values.
      *
      * @param container the flag container to add flags to.
+     * @param format    the format version of the file.
      * @throws IOException if an I/O error occurs.
      */
-    private void readFlags(FlagContainer container) throws IOException {
+    private void readFlags(FlagContainer container, int format) throws IOException {
         int len = decoder.readCompressedUint();
         Map<RegionFlag, Object> flags = new HashMap<>(len);
         while (len > 0) {
-            Pair<RegionFlag, Object> flag = readFlag();
+            Pair<RegionFlag, Object> flag = readFlag(format);
             flags.put(flag.getFirst(), flag.getSecond());
             --len;
         }
@@ -159,10 +176,11 @@ public class Deserializer implements AutoCloseable {
     /**
      * Reads an individual flag and its metadata.
      *
+     * @param format the format version of the file.
      * @return a pair with the read flag and its metadata.
      * @throws IOException if an I/O error occurs.
      */
-    private Pair<RegionFlag, Object> readFlag() throws IOException {
+    private Pair<RegionFlag, Object> readFlag(int format) throws IOException {
         RegionFlag flag = readFlagEnum();
 
         // Reads the flag meta value. Note: perhaps make these individual functions

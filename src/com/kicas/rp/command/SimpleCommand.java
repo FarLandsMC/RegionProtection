@@ -73,6 +73,51 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
     });
 
     /**
+     * Allows for players to add an remove co-owners of regions.
+     */
+    public static final SimpleCommand ADD_CO_OWNER = new SimpleCommand((sender, command, alias, args) -> {
+        if (args.length == 0)
+            return false;
+
+        // Online sender required
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
+            return true;
+        }
+
+        // Get and check the region
+        Region region = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+        if (region == null) {
+            sender.sendMessage(ChatColor.RED + "Please stand in the region which you wish to abandon.");
+            return true;
+        }
+
+        // Get and check the provided player name
+        UUID coOwner = RegionProtection.getDataManager().uuidForUsername(args[0]);
+        if (coOwner == null) {
+            sender.sendMessage(ChatColor.RED + "Player not found.");
+            return true;
+        }
+
+        if ("addcoowner".equals(alias)) {
+            if (region.getCoOwners().contains(coOwner)) {
+                sender.sendMessage(ChatColor.RED + "This person is already a co-owner.");
+                return true;
+            }
+
+            region.addCoOwner(coOwner);
+            sender.sendMessage(ChatColor.GREEN + args[0] + " is now a co-owner of this region.");
+        } else {
+            if (region.removeCoOwner(coOwner))
+                sender.sendMessage(ChatColor.GREEN + args[0] + " is no longer a co-owner of this region.");
+            else
+                sender.sendMessage(ChatColor.RED + args[0] + " is not a co-owner of this region, so they could not be removed.");
+        }
+
+        return true;
+    }, (sender, command, alias, args) -> args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList());
+
+    /**
      * Allows administrators to toggle between claim creation and admin region creation.
      */
     public static final SimpleCommand ADMIN_REGION = new SimpleCommand((sender, command, alias, args) -> {

@@ -6,11 +6,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Contains the data pertaining to a region. Regions can have child regions as well. These child regions are, to some
@@ -26,9 +24,10 @@ public class Region extends FlagContainer {
     private Location min, max;
     private Region parent;
     private final List<Region> children;
+    private final List<UUID> coOwners;
 
     // Copies the given location
-    public Region(String name, int priority, UUID owner, Location min, Location max, Region parent) {
+    public Region(String name, int priority, UUID owner, Location min, Location max, Region parent, List<UUID> coOwners) {
         super(owner);
         this.name = name;
         this.priority = priority;
@@ -37,11 +36,12 @@ public class Region extends FlagContainer {
         this.max = max.clone();
         this.parent = parent;
         this.children = new ArrayList<>();
+        this.coOwners = coOwners;
     }
 
     // Create an admin region
     public Region(Location min, Location max) {
-        this(null, 0, Utils.UUID_00, min, max, null);
+        this(null, 0, Utils.UUID_00, min, max, null, new ArrayList<>());
     }
 
     // For deserialization
@@ -54,10 +54,11 @@ public class Region extends FlagContainer {
         this.max = null;
         this.parent = null;
         this.children = new ArrayList<>();
+        this.coOwners = new ArrayList<>();
     }
 
     // For child creation in deserialization
-    public Region(Region parent) {
+    public Region(Region parent, List<UUID> coOwners) {
         super(parent.getOwner());
         this.name = null;
         this.priority = 0;
@@ -66,6 +67,7 @@ public class Region extends FlagContainer {
         this.max = null;
         this.parent = parent;
         this.children = new ArrayList<>();
+        this.coOwners = coOwners;
     }
 
     public String getRawName() {
@@ -164,6 +166,46 @@ public class Region extends FlagContainer {
     public void setOwner(UUID owner) {
         super.setOwner(owner);
         children.forEach(child -> child.setOwner(owner));
+    }
+
+    /**
+     * Adds the given UUID as a co-owner of this region and any child regions, making them an effective owner.
+     *
+     * @param owner the new co-owner.
+     */
+    public void addCoOwner(UUID owner) {
+        this.coOwners.add(owner);
+        children.forEach(child -> child.addCoOwner(owner));
+    }
+
+    /**
+     * Removes the given UUID from the list of co-owners in this region and all child regions.
+     *
+     * @param owner the co-owner to remove.
+     * @return true if the co-owner was removed, false if not.
+     */
+    public boolean removeCoOwner(UUID owner) {
+        if(!this.coOwners.remove(owner))
+            return false;
+        children.forEach(child -> child.removeCoOwner(owner));
+        return true;
+    }
+
+    /**
+     * @return an unmodifiable list of the co-owners of this region.
+     */
+    public List<UUID> getCoOwners() {
+        return Collections.unmodifiableList(coOwners);
+    }
+
+    /**
+     * @param player the player.
+     * @return true if the method as defined in the flag container class returns true or if the given player is a
+     * co-owner of this region.
+     */
+    @Override
+    public boolean isEffectiveOwner(Player player) {
+        return super.isEffectiveOwner(player) || coOwners.contains(player.getUniqueId());
     }
 
     /**

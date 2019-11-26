@@ -69,12 +69,18 @@ public class Serializer implements AutoCloseable {
      * @throws IOException if an I/O error occurs.
      */
     private void writeRegion(Region region) throws IOException {
+        // Name
         encoder.writeUTF8Raw(region.getRawName() == null ? "" : region.getRawName());
+
+        // Priority and the admin-ownership bit
         int meta = (region.isAdminOwned() ? 0x80 : 0) | Utils.constrain(region.getPriority(), 0, 127);
         encoder.write(meta);
+
+        // Write the actual owner
         if(!region.hasParent() && !region.isAdminOwned())
             encoder.writeUuid(region.getOwner());
 
+        // Bounds
         Location loc = region.getMin();
         encoder.writeIntCompressed(loc.getBlockX());
         encoder.write(Utils.constrain(loc.getBlockY(), 0, 255));
@@ -84,8 +90,12 @@ public class Serializer implements AutoCloseable {
         encoder.write(Utils.constrain(loc.getBlockY(), 0, 255));
         encoder.writeIntCompressed(loc.getBlockZ());
 
+        // Co-owners
+        encoder.writeArray(region.getCoOwners(), UUID.class);
+
         writeFlags(region);
 
+        // Children
         if(!region.hasParent()) {
             encoder.writeUintCompressed(region.getChildren().size());
             for(Region child : region.getChildren())

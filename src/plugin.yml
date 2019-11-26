@@ -9,6 +9,10 @@ commands:
     description: Abandon the claim you are currently standing in.
     usage: /abandonclaim
     aliases: [abandonallclaims]
+  addcoowner:
+    description: Adds a co-owner to the region you are currently standing in.
+    usage: /addcoowner <player>
+    aliases: [removecoowner]
   adminregion:
     description: Change into or out of admin region creation mode.
     usage: /adminregion
