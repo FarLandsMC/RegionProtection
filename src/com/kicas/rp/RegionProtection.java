@@ -206,22 +206,22 @@ public class RegionProtection extends JavaPlugin {
      * Registers the plugin commands.
      */
     private void registerCommands() {
-        registerCommand("abandonclaim", new CommandAbandonClaim());
-        registerCommand("adminregion", new CommandAdminRegion());
-        registerCommand("claim", new CommandClaim());
+        registerCommand("abandonclaim", SimpleCommand.ABANDON_CLAIM);
+        registerCommand("adminregion", SimpleCommand.ADMIN_REGION);
+        registerCommand("claim", SimpleCommand.CLAIM);
         registerCommand("claimblocks", new CommandClaimBlocks());
         registerCommand("claimheight", new CommandClaimHeight());
-        registerCommand("claimlist", new CommandClaimList());
-        registerCommand("claimtoggle", new CommandClaimToggle());
-        registerCommand("expandclaim", new CommandExpandClaim());
-        registerCommand("expel", new CommandExpel());
-        registerCommand("ignoretrust", new CommandIgnoreTrust());
+        registerCommand("claimlist", SimpleCommand.CLAIM_LIST);
+        registerCommand("claimtoggle", SimpleCommand.CLAIM_TOGGLE);
+        registerCommand("expandclaim", SimpleCommand.EXPAND_CLAIM);
+        registerCommand("expel", SimpleCommand.EXPEL);
+        registerCommand("ignoretrust", SimpleCommand.IGNORE_TRUST);
         registerCommand("region", new CommandRegion());
-        registerCommand("steal", new CommandSteal());
-        registerCommand("transferclaim", new CommandTransferClaim());
-        registerCommand("trapped", new CommandTrapped());
+        registerCommand("steal", SimpleCommand.STEAL);
+        registerCommand("transferclaim", SimpleCommand.TRANSFER_CLAIM);
+        registerCommand("trapped", SimpleCommand.TRAPPED);
         registerCommand("trust", new CommandTrust());
-        registerCommand("trustlist", new CommandTrustList());
+        registerCommand("trustlist", SimpleCommand.TRUST_LIST);
     }
 
     /**
