@@ -3,6 +3,7 @@ package com.kicas.rp.data;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Pair;
+import com.kicas.rp.util.TextUtils;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -370,6 +371,18 @@ public class DataManager implements Listener {
     }
 
     /**
+     * Notifies the given delegate, if not null, with the given input format string and inserted values.
+     *
+     * @param delegate the delegate to notify, or null if this method should do nothing.
+     * @param input    the input format string.
+     * @param values   the values to insert into the string.
+     */
+    private static void notifyDelegate(Player delegate, String input, Object... values) {
+        if (delegate != null)
+            TextUtils.sendFormatted(delegate, input, values);
+    }
+
+    /**
      * Attempts to create a claim with the provided vertices and the specified player as the owner. The provided
      * vertices do not need to be minimums and maximums respectively, however they will be assumed to be diagonally
      * opposite from one another. The created region will extend from y=62 to the maximum world height if in the
@@ -413,15 +426,15 @@ public class DataManager implements Listener {
         PlayerSession ps = getPlayerSession(creator);
         long area = region.area();
         if (area > ps.getClaimBlocks()) {
-            creator.sendMessage(ChatColor.RED + "You need " + (area - ps.getClaimBlocks()) +
-                    " more claim blocks to create this claim.");
+            notifyDelegate(creator, "&(red)You need {&(gold)%0} more claim blocks to create this claim.",
+                    area - ps.getClaimBlocks());
             return null;
         }
 
         // Check to make sure it's at least the minimum area
         if (area < RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) {
-            creator.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at least " +
-                    RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
+            notifyDelegate(creator, "&(red)This claim is too small! Your claim must have an area of at least " +
+                    "{&(gold)%0} blocks.", RegionProtection.getRPConfig().getInt("general.minimum-claim-size"));
             return null;
         }
 
@@ -486,13 +499,13 @@ public class DataManager implements Listener {
             // Check to make sure the name is valid
             Region parent = getRegionByName(region.getWorld(), parentName);
             if (parent == null) {
-                delegate.sendMessage(ChatColor.RED + "Could not find a region with name \n" + parentName + "\".");
+                notifyDelegate(delegate, "&(red)Could not find a region with name {&(gold)%0}.", parentName);
                 return false;
             }
 
             if (parent.hasParent()) {
-                delegate.sendMessage(ChatColor.RED + "You cannot assign a child to region " + parentName + " since " +
-                        "that region has a parent.");
+                notifyDelegate(delegate, "&(red)You cannot assign a child to region {&(gold)%0} since that " +
+                        "region has a parent.", parentName);
                 return false;
             }
 
@@ -510,6 +523,26 @@ public class DataManager implements Listener {
         worlds.get(region.getWorld().getUID()).addRegion(region);
 
         return true;
+    }
+
+    /**
+     * Has the same effect as combining the create and register methods above.
+     *
+     * @param vertex1  the first vertex.
+     * @param vertex2  the second vertex.
+     * @param name     the name of the region.
+     * @param priority the priority of the region.
+     * @param parent   the parent to register the region with, or null if the region has no parent.
+     * @param force    whether or not to force the registration of this region.
+     */
+    public Region tryCreateAndRegisterRegion(Location vertex1, Location vertex2, String name, int priority,
+                                             Region parent, boolean force) {
+        Region region = tryCreateAdminRegion(vertex1, vertex2);
+        if (!tryRegisterRegion(null, region, name, priority, null, force))
+            return null;
+        if (parent != null && !parent.hasParent())
+            associate(parent, region);
+        return region;
     }
 
     /**
@@ -594,8 +627,8 @@ public class DataManager implements Listener {
                 break;
 
             default:
-                delegate.sendMessage(ChatColor.RED + "Invalid direction: " + direction + ". Please only use the " +
-                        "four cardinal directions as well as up and down.");
+                notifyDelegate(delegate, "&(red)Invalid direction: {&(gold)%0}. Please only use the four " +
+                        "cardinal directions as well as up and down.", direction);
                 return false;
         }
 
@@ -646,7 +679,7 @@ public class DataManager implements Listener {
 
         // Check for complete containment
         if (!claim.contains(region)) {
-            delegate.sendMessage(ChatColor.RED + "A claim subdivision must be completely within the parent claim.");
+            notifyDelegate(delegate, "&(red)A claim subdivision must be completely within the parent claim.");
             return null;
         }
 
@@ -658,7 +691,7 @@ public class DataManager implements Listener {
 
         // Check collisions
         if (!collisions.isEmpty()) {
-            delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
+            notifyDelegate(delegate, "&(red)You cannot have a claim here since it overlaps other claims.");
             getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate,
                     collisions, Material.GLOWSTONE, Material.NETHERRACK, false));
             return null;
@@ -670,8 +703,8 @@ public class DataManager implements Listener {
 
         // Area check
         if (region.area() < RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size")) {
-            delegate.sendMessage(ChatColor.RED + "A claim subdivision must have an area of at least " +
-                    RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size") + " blocks.");
+            notifyDelegate(delegate, "&(red)A claim subdivision must have an area of at least {&(gold)%0} " +
+                    "blocks.", RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size"));
             return null;
         }
 
@@ -698,13 +731,13 @@ public class DataManager implements Listener {
     public boolean tryTransferOwnership(Player delegate, Region region, UUID newOwner, boolean transferTrust) {
         // Don't allow admin regions to have their ownership transferred
         if (region.isAdminOwned()) {
-            delegate.sendMessage(ChatColor.RED + "You cannot transfer the ownership of an admin owned region.");
+            notifyDelegate(delegate, "&(red)You cannot transfer the ownership of an admin owned region.");
             return false;
         }
 
         // Check claim blocks
         if (region.area() > getClaimBlocks(newOwner)) {
-            delegate.sendMessage(ChatColor.RED + "This player does not have enough claim blocks to take ownership of " +
+            notifyDelegate(delegate, "&(red)This player does not have enough claim blocks to take ownership of " +
                     "this claim.");
             return false;
         }
@@ -794,7 +827,7 @@ public class DataManager implements Listener {
                 region.getChildren().forEach(child -> tryDeleteRegion(delegate, child, false, false));
                 region.getChildren().clear();
             } else {
-                delegate.sendMessage(ChatColor.RED + "This region has subdivisions which must be removed first.");
+                notifyDelegate(delegate, "&(red)This region has subdivisions which must be removed first.");
                 return false;
             }
         }
@@ -828,13 +861,13 @@ public class DataManager implements Listener {
     private boolean isRegionNameInvalid(Player delegate, World world, String name) {
         // Make sure the name is free
         if (getRegionByName(world, name) != null) {
-            delegate.sendMessage(ChatColor.RED + "A region with that name already exists.");
+            notifyDelegate(delegate, "&(red)A region with that name already exists.");
             return true;
         }
 
         // Make sure the __global__ region is not overwritten
         if (GLOBAL_FLAG_NAME.equals(name)) {
-            delegate.sendMessage(ChatColor.RED + "This region name is reserved.");
+            notifyDelegate(delegate, "&(red)This region name is reserved.");
             return true;
         }
 
@@ -877,16 +910,16 @@ public class DataManager implements Listener {
                     ((long) bounds.getSecond().getBlockZ() - bounds.getFirst().getBlockZ());
             if (areaDiff > claimBlocks) {
                 region.setBounds(bounds);
-                delegate.sendMessage(ChatColor.RED + "You need " + (areaDiff - claimBlocks) +
-                        " more claim blocks to resize this claim.");
+                notifyDelegate(delegate, "&(red)You need {&(gold)%0} more claim blocks to resize this claim.",
+                        areaDiff - claimBlocks);
                 return true;
             }
 
             // Check to make sure it's at least the minimum area
             if (region.area() < RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) {
                 region.setBounds(bounds);
-                delegate.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at " +
-                        "least " + RegionProtection.getRPConfig().getInt("general.minimum-claim-size") + " blocks.");
+                notifyDelegate(delegate, "&(red)This claim is too small! Your claim must have an area of at " +
+                        "least {&(gold)%0} blocks.", RegionProtection.getRPConfig().getInt("general.minimum-claim-size"));
                 return true;
             }
 
@@ -895,7 +928,7 @@ public class DataManager implements Listener {
             region.getChildren().stream().filter(r -> !region.contains(r)).forEach(exclaves::add);
             if (!exclaves.isEmpty()) {
                 region.setBounds(bounds);
-                delegate.sendMessage(ChatColor.RED + "You cannot resize your claim here since some subdivisions are " +
+                notifyDelegate(delegate, "&(red)You cannot resize your claim here since some subdivisions are " +
                         "not completely within the parent region.");
                 getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, exclaves,
                         Material.GLOWSTONE, Material.NETHERRACK, false));
@@ -910,7 +943,7 @@ public class DataManager implements Listener {
             // Check to make sure the subdivision is still completely within the parent claim
             if (!region.getParent().contains(region)) {
                 region.setBounds(bounds);
-                delegate.sendMessage(ChatColor.RED + "You cannot resize this subdivision here since it exits the " +
+                notifyDelegate(delegate, "&(red)You cannot resize this subdivision here since it exits the " +
                         "parent claim.");
                 getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, region.getParent()));
                 return true;
@@ -919,9 +952,8 @@ public class DataManager implements Listener {
             // Check to make sure it's at least the minimum area
             if (region.area() < RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size")) {
                 region.setBounds(bounds);
-                delegate.sendMessage(ChatColor.RED + "This claim is too small! Your claim must have an area of at " +
-                        "least " + RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size") +
-                        " blocks.");
+                notifyDelegate(delegate, "&(red)This claim is too small! Your claim must have an area of at " +
+                        "least {&(gold)%0} blocks.", RegionProtection.getRPConfig().getInt("general.minimum-subdivision-size"));
                 return true;
             }
         }
@@ -942,7 +974,7 @@ public class DataManager implements Listener {
         collisions.removeIf(r -> r.isAllowed(RegionFlag.OVERLAP) || r.isAssociated(region));
 
         if (!collisions.isEmpty()) {
-            delegate.sendMessage(ChatColor.RED + "You cannot have a claim here since it overlaps other claims.");
+            notifyDelegate(delegate, "&(red)You cannot have a claim here since it overlaps other claims.");
             getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, collisions,
                     Material.GLOWSTONE, Material.NETHERRACK, false));
             return true;
@@ -962,7 +994,7 @@ public class DataManager implements Listener {
         // < 2 is used to counter the off-by-one error (in other words it accounts for the width of the block)
         if (region.getMax().getBlockX() - region.getMin().getBlockX() < 2 ||
                 region.getMax().getBlockZ() - region.getMin().getBlockZ() < 2) {
-            delegate.sendMessage(ChatColor.RED + "All sides of your claim must be at least three blocks long.");
+            notifyDelegate(delegate, "&(red)All sides of your claim must be at least three blocks long.");
             return true;
         }
 
