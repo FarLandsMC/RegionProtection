@@ -2,6 +2,7 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.data.flagdata.Augmentable;
 import com.kicas.rp.util.Materials;
 import com.kicas.rp.util.ReflectionHelper;
 import com.kicas.rp.util.TextUtils;
@@ -34,6 +35,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             "east", "west");
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         // Args check
         if (args.length < 1)
@@ -96,10 +98,17 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
             // Detail the regions
             regions.forEach(region -> {
-                TextUtils.sendFormatted(sender, "&(gold)Showing info for region {&(green)%0:}\nPriority: {&(aqua)%1}" +
-                                "\nParent: {&(aqua)%2}%3", region.getDisplayName(), region.getPriority(),
-                        region.hasParent() ? region.getParent().getDisplayName() : "none", region.isEmpty() ? ""
-                                : "\nFlags:\n" + formatFlags(region));
+                TextUtils.sendFormatted(
+                        sender,
+                        "&(gold)Showing info for region {&(green)%0:}\nPriority: {&(aqua)%1}\nParent: {&(aqua)%2}%3%4",
+                        region.getDisplayName(),
+                        region.getPriority(),
+                        region.hasParent() ? region.getParent().getDisplayName() : "none",
+                        region.getCoOwners().isEmpty() ? "" : "\nCo-Owners: {&(gray)" + region.getCoOwners().stream()
+                                .map(RegionProtection.getDataManager()::currentUsernameForUuid)
+                                .collect(Collectors.joining(", ")) + "}",
+                        region.isEmpty() ? "" : "\nFlags:\n" + formatFlags(region)
+                );
             });
 
             return true;
@@ -183,18 +192,25 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 return true;
             }
 
-            // If the prefix the flag name with !, such as /region flag test !deny-spawn, delete the flag
-            boolean delete = args[2].startsWith("!");
+            // See the enum for details
+            FlagModification modification = FlagModification.forFlagString(args[2]);
 
             // Get and check the flag in question
-            RegionFlag flag = Utils.valueOfFormattedName(delete ? args[2].substring(1) : args[2], RegionFlag.class);
+            RegionFlag flag = Utils.valueOfFormattedName(modification == FlagModification.SET_OR_NONE ? args[2]
+                    : args[2].substring(1), RegionFlag.class);
             if (flag == null) {
                 sender.sendMessage(ChatColor.RED + "Invalid flag: " + args[2]);
                 return true;
             }
 
+            if ((modification == FlagModification.AUGMENT || modification == FlagModification.REDUCE) &&
+                    !Augmentable.class.isAssignableFrom(flag.getMetaClass())) {
+                sender.sendMessage(ChatColor.RED + "This flag cannot be augmented or reduced.");
+                return true;
+            }
+
             // We're deleting the flag
-            if (delete) {
+            if (modification == FlagModification.DELETE) {
                 flags.deleteFlag(flag);
                 sender.sendMessage(ChatColor.GREEN + "Deleted flag " + Utils.formattedName(flag) + " from region " +
                         args[1]);
@@ -203,9 +219,12 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
             // If no value is specified, notify the player of the current value
             if (args.length == 3) {
-                String metaString = RegionFlag.toString(flag, flags.getFlagMeta(flag));
-                sender.sendMessage(ChatColor.GOLD + Utils.formattedName(flag) + " in region " + args[1] +
-                        " is set to: " + ChatColor.GRAY + (metaString.contains("\n") ? "\n" + metaString : metaString));
+                if (modification == FlagModification.SET_OR_NONE) {
+                    String metaString = RegionFlag.toString(flag, flags.getFlagMeta(flag));
+                    sender.sendMessage(ChatColor.GOLD + Utils.formattedName(flag) + " in region " + args[1] +
+                            " is set to: " + ChatColor.GRAY + (metaString.contains("\n") ? "\n" + metaString : metaString));
+                } else
+                    sender.sendMessage(ChatColor.RED + "A flag value must be specified to augment a flag.");
                 return true;
             }
 
@@ -219,10 +238,31 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 return true;
             }
 
-            // Set the flag and notify the player
-            flags.setFlag(flag, meta);
-            sender.sendMessage(ChatColor.GREEN + "Updated flag value for region " + args[1]);
+            // Regular set
+            if (modification == FlagModification.SET_OR_NONE)
+                flags.setFlag(flag, meta);
+            else { // Augmentation or reduction
+                // This requires metadata to already exist
+                Object currentMeta = flags.getFlagMeta(flag);
+                if (currentMeta == null) {
+                    sender.sendMessage(ChatColor.RED + "This flag cannot be augmented or reduced since no current value exists.");
+                    return true;
+                }
 
+                // This should never happen
+                if (!Augmentable.class.isAssignableFrom(currentMeta.getClass()) ||
+                        !meta.getClass().equals(currentMeta.getClass())) {
+                    throw new InternalError();
+                }
+
+                // Perform the operation
+                if (modification == FlagModification.AUGMENT)
+                    ((Augmentable) currentMeta).augment(meta);
+                else
+                    ((Augmentable) currentMeta).reduce(meta);
+            }
+
+            sender.sendMessage(ChatColor.GREEN + "Updated flag value for region " + args[1]);
             return true;
         }
 
@@ -383,12 +423,14 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         else if ("flag".equalsIgnoreCase(args[0])) {
             // Flag names
             if (args.length == 3) {
-                return filterStartingWith(args[2], Stream.of(RegionFlag.VALUES).map(flag -> (args[2].startsWith("!")
-                        ? "!" : "") + Utils.formattedName(flag)));
+                return filterStartingWith(args[2], Stream.of(RegionFlag.VALUES)
+                        .map(flag -> FlagModification.forFlagString(args[2]).marker + Utils.formattedName(flag)));
             }
             // Flag values
             else {
-                RegionFlag flag = Utils.valueOfFormattedName(args[2], RegionFlag.class);
+                FlagModification modification = FlagModification.forFlagString(args[2]);
+                RegionFlag flag = Utils.valueOfFormattedName(modification == FlagModification.SET_OR_NONE ? args[2]
+                        : args[2].substring(1), RegionFlag.class);
 
                 // Invalid flag -> no suggestions
                 if (flag == null)
@@ -518,5 +560,30 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
     private static <T> List<String> filterFormat(String prefix, Stream<T> stream, Function<T, String> toString) {
         return filterStartingWith(prefix, stream.map(x -> prefix.substring(0, prefix.lastIndexOf(',') + 1) +
                 (prefix.contains("*") ? "!" : "") + (toString == null ? (String) x : toString.apply(x))));
+    }
+
+    private enum FlagModification {
+        SET_OR_NONE(""), DELETE("!"), AUGMENT("+"), REDUCE("-");
+
+        final String marker;
+
+        static final FlagModification[] VALUES = values();
+
+        FlagModification(String marker) {
+            this.marker = marker;
+        }
+
+        static FlagModification forFlagString(String flag) {
+            if (flag.isEmpty())
+                return SET_OR_NONE;
+
+            String marker = flag.substring(0, 1);
+            for (FlagModification modification : VALUES) {
+                if (modification.marker.equals(marker))
+                    return modification;
+            }
+
+            return SET_OR_NONE;
+        }
     }
 }

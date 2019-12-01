@@ -8,10 +8,7 @@ import org.bukkit.Location;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * This class is a version-specific serializer for region data and persistent player data.
@@ -132,7 +129,7 @@ public class Serializer implements AutoCloseable {
             encoder.writeUTF8Raw(((CommandMeta)meta).getCommand());
         }else if(meta instanceof EnumFilter) {
             encoder.writeBoolean(((EnumFilter)meta).isWhitelist());
-            List<Integer> filter = ((EnumFilter)meta).getFilter();
+            Set<Integer> filter = ((EnumFilter)meta).getFilter();
             encoder.writeUintCompressed(filter.size());
             for(Integer integer : filter)
                 encoder.writeUintCompressed(integer);

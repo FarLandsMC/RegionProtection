@@ -10,7 +10,7 @@ import java.util.*;
 /**
  * The metadata class for the trust region flag.
  */
-public class TrustMeta {
+public class TrustMeta implements Augmentable<TrustMeta> {
     // Key: player UUID, value: trust level
     private final Map<UUID, TrustLevel> trustData;
     private TrustLevel publicTrustLevel;
@@ -36,6 +36,35 @@ public class TrustMeta {
         TrustMeta copy = new TrustMeta(publicTrustLevel);
         copy.trustData.putAll(trustData);
         return copy;
+    }
+
+    /**
+     * Sets this meta's public trust level to that of the given meta and adds all explicit trusts in the given meta to
+     * this meta's internal list.
+     *
+     * @param other the other trust meta.
+     */
+    @Override
+    public void augment(TrustMeta other) {
+        if (other.publicTrustLevel != TrustLevel.NONE)
+            publicTrustLevel = other.publicTrustLevel;
+        trustData.putAll(other.trustData);
+    }
+
+    /**
+     * If this meta's public trust level is equal to that of the given meta, then the public trust level in this meta is
+     * set to none. All explicit trusts in this meta that match trusts in the given meta are removed.
+     *
+     * @param other the other object.
+     */
+    @Override
+    public void reduce(TrustMeta other) {
+        if (publicTrustLevel == other.publicTrustLevel)
+            publicTrustLevel = TrustLevel.NONE;
+        other.trustData.forEach((uuid, trust) -> {
+            if (trustData.get(uuid) == trust)
+                trustData.remove(uuid);
+        });
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.kicas.rp.data;
+package com.kicas.rp.data.flagdata;
 
 /**
  * Contains the various levels of trust that can be assigned.

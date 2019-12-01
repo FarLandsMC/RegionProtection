@@ -79,7 +79,7 @@ public class Deserializer implements AutoCloseable {
         // Check the format version
         int format = decoder.read();
         if (format != expectedFormatVersion)
-            RegionProtection.log("Decoding older data format version for player data file: " + format + ".");
+            RegionProtection.log("Decoding older data format version (" + format + ") for player data file.");
 
         Map<UUID, PersistentPlayerData> playerData = readPlayerData(format);
         decoder.close();
@@ -191,7 +191,7 @@ public class Deserializer implements AutoCloseable {
             meta = new CommandMeta(decoder.readBoolean(), decoder.readUTF8Raw());
         else if (EnumFilter.class.equals(flag.getMetaClass())) {
             boolean isWhitelist = decoder.readBoolean();
-            List<Integer> filter = new ArrayList<>();
+            Set<Integer> filter = new HashSet<>();
             int len = decoder.readCompressedUint();
             while (len > 0) {
                 filter.add(decoder.readCompressedUint());
@@ -202,7 +202,7 @@ public class Deserializer implements AutoCloseable {
             meta = new LocationMeta(decoder.readUuid(), decoder.readDouble(), decoder.readDouble(),
                     decoder.readDouble(), decoder.readFloat(), decoder.readFloat());
         } else if (StringFilter.class.equals(flag.getMetaClass()))
-            meta = new StringFilter(decoder.readBoolean(), decoder.readArrayAsList(String.class));
+            meta = new StringFilter(decoder.readBoolean(), new HashSet<>(decoder.readArrayAsList(String.class)));
         else if (TextMeta.class.equals(flag.getMetaClass()))
             meta = new TextMeta(decoder.readUTF8Raw());
         else if (TrustMeta.class.equals(flag.getMetaClass())) {

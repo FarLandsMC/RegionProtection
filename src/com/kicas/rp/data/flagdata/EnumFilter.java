@@ -2,30 +2,23 @@ package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.util.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Can act as a blacklist or whitelist for any given enum.
  */
-public class EnumFilter {
-    private boolean isWhitelist;
-    // List of ordinals
-    private final List<Integer> filter;
-
+public class EnumFilter extends AbstractFilter<Integer> {
     /**
      * Default filter value.
      */
-    public static final EnumFilter EMPTY_FILTER = new EnumFilter(false, Collections.emptyList());
+    public static final EnumFilter EMPTY_FILTER = new EnumFilter(false, Collections.emptySet());
 
-    public EnumFilter(boolean isWhitelist, List<Integer> filter) {
-        this.isWhitelist = isWhitelist;
-        this.filter = filter;
+    public EnumFilter(boolean isWhitelist, Set<Integer> filter) {
+        super(isWhitelist, filter);
     }
 
     public EnumFilter(boolean isWhitelist) {
-        this(isWhitelist, new ArrayList<>());
+        this(isWhitelist, new HashSet<>());
     }
 
     public EnumFilter() {
@@ -42,23 +35,6 @@ public class EnumFilter {
      */
     public boolean isAllowed(Enum e) {
         return isWhitelist == filter.contains(e.ordinal());
-    }
-
-    /**
-     * Returns true if this filter is a whitelist, or false if this filter is a blacklist. A whitelist filter only
-     * allows a certain set of elements while a blacklist disallows a certain set of items.
-     *
-     * @return true if this filter is a whitelist, or false if this filter is a blacklist.
-     */
-    public boolean isWhitelist() {
-        return isWhitelist;
-    }
-
-    /**
-     * @return a copy of the list containing the enum ordinals in this filter.
-     */
-    public List<Integer> getFilter() {
-        return Collections.unmodifiableList(filter);
     }
 
     /**
@@ -83,25 +59,6 @@ public class EnumFilter {
         return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*, ") + String.join(", ", filter.stream()
                 .map(ordinal -> (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal]))
                 .toArray(String[]::new));
-    }
-
-    /**
-     * Returns true if and only if the given object is an enum filter, and has the same contents and type (whitelist or
-     * blacklist) as this filter.
-     *
-     * @param other the other object to test.
-     * @return true if the given object is an enum filter and equivalent to this filter, false otherwise.
-     */
-    @Override
-    public boolean equals(Object other) {
-        if (other == this)
-            return true;
-
-        if (!(other instanceof EnumFilter))
-            return false;
-
-        EnumFilter ef = (EnumFilter) other;
-        return filter.equals(ef.filter) && isWhitelist == ef.isWhitelist;
     }
 
     /**

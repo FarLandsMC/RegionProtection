@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.*;
 import org.bukkit.Bukkit;
@@ -302,7 +303,7 @@ public class Region extends FlagContainer {
         // borders of this region off to infinity.
 
         // Check for containment
-        if (contains(location))
+        if (containsIgnoreY(location))
             return 0;
 
         // Check the diagonal areas that require less computation

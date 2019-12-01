@@ -1,30 +1,23 @@
 package com.kicas.rp.data.flagdata;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * This class is functionally the same as the EnumFilter except rather than filtering enum constants it filters string
  * literals.
  */
-public class StringFilter {
-    // List of ordinals
-    private boolean isWhitelist;
-    private final List<String> filter;
-
+public class StringFilter extends AbstractFilter<String> {
     /**
      * Default filter value.
      */
-    public static final StringFilter EMPTY_FILTER = new StringFilter(false, Collections.emptyList());
+    public static final StringFilter EMPTY_FILTER = new StringFilter(false, Collections.emptySet());
 
-    public StringFilter(boolean isWhitelist, List<String> filter) {
-        this.isWhitelist = isWhitelist;
-        this.filter = filter;
+    public StringFilter(boolean isWhitelist, Set<String> filter) {
+        super(isWhitelist, filter);
     }
 
     public StringFilter(boolean isWhitelist) {
-        this(isWhitelist, new ArrayList<>());
+        this(isWhitelist, new HashSet<>());
     }
 
     public StringFilter() {
@@ -41,23 +34,6 @@ public class StringFilter {
      */
     public boolean isAllowed(String string) {
         return isWhitelist == filter.contains(string);
-    }
-
-    /**
-     * Returns true if this filter is a whitelist, or false if this filter is a blacklist. A whitelist filter only
-     * allows a certain set of elements while a blacklist disallows a certain set of items.
-     *
-     * @return true if this filter is a whitelist, or false if this filter is a blacklist.
-     */
-    public boolean isWhitelist() {
-        return isWhitelist;
-    }
-
-    /**
-     * @return a copy of the list containing the string constants in this filter.
-     */
-    public List<String> getFilter() {
-        return Collections.unmodifiableList(filter);
     }
 
     /**
@@ -78,25 +54,6 @@ public class StringFilter {
         // Convert the ordinals to formatted names and apply the formatting
         return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*, ") + String.join(", ", filter.stream()
                 .map(string -> (isWhitelist ? "!" : "") + string).toArray(String[]::new));
-    }
-
-    /**
-     * Returns true if and only if the given object is a string filter, and has the same contents and type (whitelist or
-     * blacklist) as this filter.
-     *
-     * @param other the other object to test.
-     * @return true if the given object is an string filter and equivalent to this filter, false otherwise.
-     */
-    @Override
-    public boolean equals(Object other) {
-        if (other == this)
-            return true;
-
-        if (!(other instanceof StringFilter))
-            return false;
-
-        StringFilter sf = (StringFilter) other;
-        return filter.equals(sf.filter) && isWhitelist == sf.isWhitelist;
     }
 
     /**

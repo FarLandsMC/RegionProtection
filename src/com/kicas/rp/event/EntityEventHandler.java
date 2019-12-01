@@ -4,6 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 
 import com.kicas.rp.data.flagdata.EnumFilter;
+import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Entities;
 import org.bukkit.Material;
