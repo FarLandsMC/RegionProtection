@@ -352,10 +352,14 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         // Find a safe place to send the player
         int w = claim.getMax().getBlockX() - claim.getMin().getBlockX(),
                 l = claim.getMax().getBlockZ() - claim.getMin().getBlockZ();
-        Location ejection = claim.getMin().clone().add(w >> 1, 0, l >> 1); // center x,z of the claim
+        Location ejection = claim.getMin().clone().add(w >> 1, 0, l >> 1); // Move to center of the claim
+        // Calculate a dx & dz that tend to world center to avoid potential world border issues
+        int dx = ejection.getBlockX() < 0 ? 1 : -1,
+                dz = ejection.getBlockZ() < 0 ? 1 : -1;
+        ejection.add(w * dx, 0, l * dz); // Move to the edge of the claim closest to world center
 
-        // Expel the player // dx dz tend to 0 ~ 0 to avoid world border issues
-        player.teleport(Utils.walk(ejection, ejection.getBlockX() < 0 ? w : -w, ejection.getBlockZ() < 0 ? l : -l));
+        // Expel the player
+        player.teleport(Utils.walk(ejection, 4 * dx, 4 * dz));
         sender.sendMessage(ChatColor.GREEN + "Expelled player " + player.getName() + " from your claim");
 
         return true;
@@ -490,16 +494,9 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        // Find a safe place to send the player
-        int w = claim.getMax().getBlockX() - claim.getMin().getBlockX(),
-                l = claim.getMax().getBlockZ() - claim.getMin().getBlockZ();
-        Location ejection = claim.getMin().clone().add(w >> 1, 0, l >> 1); // center x,z of the claim
-        // get dx dz tend to 0 ~ 0 to avoid world border issues
-        int dx = ejection.getBlockX() < 0 ? 1 : -1, dz = ejection.getBlockZ() < 0 ? 1 : -1;
-        ejection.add(w * dx, 0, l * dz); // get to the edge of the claim closest to 0 ~ 0
-
         // Free the player
-        player.teleport(Utils.walk(ejection, 3 * dx, 3 * dz));
+        Location ejection = player.getLocation();
+        player.teleport(Utils.walk(ejection, ejection.getBlockX() < 0 ? 4 : -4, ejection.getBlockZ() < 0 ? 4 : -4));
         sender.sendMessage(ChatColor.GREEN + "Teleported to safety");
 
         return true;

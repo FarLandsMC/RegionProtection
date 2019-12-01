@@ -153,51 +153,126 @@ public final class Utils {
         }
     }
 
-
-    private static boolean doesDamage(Block b) {
-        return b.getType().isSolid() || b.isLiquid() || Arrays.asList(Material.FIRE, Material.CACTUS)
-                .contains(b.getType());
+    /**
+     * If the block given block would damage the player when placed at their foot level or eye level
+     *
+     * @param block the block to check
+     * @return if a player can safely stand inside this block
+     */
+    private static boolean doesDamage(Block block) {
+        return block.getType().isSolid() || block.isLiquid() ||
+                Arrays.asList(Material.FIRE, Material.CACTUS).contains(block.getType());
     }
 
-    private static boolean canStand(Block b) { // if a player can safely stand here
-        // (you can drown in water but you can also float and for this case swimming is safe enough)
-        return !(b.isPassable() || Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(b.getType())) ||
-                b.getType().equals(Material.WATER);
+    /**
+     * If a player would be teleported to the location of this block, confirm they cannot:
+     *  fall through or take damage
+     *  unless the block water
+     *
+     * @param block the block to check
+     * @return if the block can be stood on without the block damaging the player
+     */
+    private static boolean canStand(Block block) {
+        return !(
+                block.isPassable() ||
+                Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(block.getType())
+        ) || block.getType().equals(Material.WATER);
     }
 
-    // if block below is solid and 2 blocks in player collision do not do damage
-    private static boolean isSafe(Location l) {
-        return !(doesDamage(l.add(0, 1, 0).getBlock()) || doesDamage(l.add(0, 1, 0).getBlock()));
+    /**
+     * If a player would be teleported to this location, confirm they cannot:
+     *  take damage from the block at    the location (body)
+     *  take damage from the block above the location (head)
+     *
+     * @param location the location to check
+     * @return if a player would be damaged by any of the blocks at this location upon tp ignoring the block below
+     */
+    private static boolean isSafe(Location location) {
+        return !(
+                doesDamage(location.add(0, 1, 0).getBlock()) ||
+                doesDamage(location.add(0, 1, 0).getBlock())
+        );
     }
 
-    public static Location findSafe(final Location l) {
-        l.setX(l.getBlockX() + .5);
-        l.setZ(l.getBlockZ() + .5);
-        return findSafe(l, Math.max(1, l.getBlockY() - 8), Math.min(l.getBlockY() + 7,
-                l.getWorld().getName().equals("world_nether") ? 126 : 254));
+    /**
+     * Search for a safe location for a player to stand when teleporting to another player
+     * Set the location to be in the center of the block ready for teleportation
+     * Calculate reasonable bottom and top values to throw into the private method that completes the implementation
+     *
+     * @param origin location to check for safety
+     * @return a safe location if found, else null
+     */
+    public static Location findSafe(Location origin) {
+        origin.setX(origin.getBlockX() + .5);
+        origin.setZ(origin.getBlockZ() + .5);
+        return findSafe(origin, Math.max(1, origin.getBlockY() - 8), Math.min(origin.getBlockY() + 7, 255));
     }
 
-    private static Location findSafe(final Location origin, int s, int e) {
+    /**
+     * Search for a safe location for a player to stand
+     * We search a column at the x z of the origin
+     * The algorithm treats this column as being sorted with ground at the bottom and sky above it
+     * Because of this we can make assumptions that the ground will always have:
+     *  2 non damaging blocks above (air|vines|etc) and
+     *  1 block the player can stand on below (non passable and non damaging)
+     * Because bottom and top specify search range for Y they should satisfy these ranges:
+     *  0 < bottom < top < 256   for the overworld
+     *  0 < bottom < top < 124   for the nether (124 instead of 128 because the bedrock roof guarantees unsafe tp)
+     *
+     * @param origin the location to check for safety
+     * @param bottom where to set the bottom of the "binary search", 0 < bottom < top
+     * @param top    where to set the top    of the "binary search", bottom < top < 256
+     * @return a safe location if found, else null
+     */
+    private static Location findSafe(Location origin, int bottom, int top) {
         Location safe = origin.clone();
+
         if (canStand(safe.getBlock()) && isSafe(safe.clone()))
             return safe.add(0, .5, 0);
+
         do {
-            safe.setY((s + e) >> 1);
+            safe.setY((bottom + top) >> 1);
+
             if (canStand(safe.getBlock())) {
                 if (isSafe(safe.clone()))
                     return safe.add(0, 1, 0);
-                s = safe.getBlockY();
+
+                bottom = safe.getBlockY();
             } else
-                e = safe.getBlockY();
-        } while (e - s > 1);
+                top = safe.getBlockY();
+        } while (top - bottom > 1);
+
         safe.getChunk().unload();
         return null;
     }
 
-    public static Location walk(Location location, int dx, int dz) {
-        Location temp = findSafe(location.add(dx, 0, dz));
-        while (temp == null)
-            temp = findSafe(location.add(dx, 0, dz));
-        return temp;
+    /**
+     * Search for a safe location using findSafe starting at and including origin in steps of dx dz where
+     *  these values are multiplied by 16 when there is Liquid at y62 as this usually indicates being in an ocean and
+     *  oceans provide a lower probability for findSafe to return a non null location.
+     *
+     * @param origin the location to start searching from
+     * @param dx the x offset we tend towards
+     * @param dz the x offset we tend towards
+     * @return the first safe location we find
+     */
+    public static Location walk(Location origin, int dx, int dz) {
+        origin.setX(origin.getBlockX() + .5);
+        origin.setZ(origin.getBlockZ() + .5);
+        final int bottom = 1,
+                top = origin.getWorld().getName().equals("world_nether") ? 124 : 255;
+
+        Location safe = findSafe(origin, bottom, top);
+        if (safe != null)
+            return safe;
+
+        origin.setY(62);
+        while (safe == null) {
+            if (origin.getBlock().isLiquid())
+                origin.add(16 * dx, 0, 16 * dz);
+            else
+                safe = findSafe(origin.add(dx, 0, dz), bottom, top);
+        }
+        return safe;
     }
 }
