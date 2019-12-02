@@ -1,5 +1,6 @@
 package com.kicas.rp.data;
 
+import com.google.gson.*;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Pair;
@@ -38,7 +39,9 @@ public class DataManager implements Listener {
     public static final String GLOBAL_FLAG_NAME = "__global__";
 
     private static final String MOJANG_API_BASE = "https://api.mojang.com";
+    // The larger the number, the more efficient memory usage is but the less efficient lookup is
     private static final int LOOKUP_TABLE_SCALE = 7;
+    private static final JsonParser JSON_PARSER = new JsonParser();
 
     public DataManager(File rootDir) {
         this.rootDir = rootDir;
@@ -58,6 +61,7 @@ public class DataManager implements Listener {
      * @return the UUID associated with the given username, or null if no such UUID could be found.
      */
     public UUID uuidForUsername(String username) {
+        // Check online players
         Player player = Bukkit.getPlayer(username);
         if (player != null)
             return player.getUniqueId();
@@ -79,16 +83,25 @@ public class DataManager implements Listener {
             InputStream in = url.openStream();
 
             // Read the data
-            byte[] buffer = new byte[39]; // Minimum bytes needed
-            int len = in.read(buffer, 0, buffer.length);
+            StringBuilder responseBuffer = new StringBuilder();
+            int by;
+            while ((by = in.read()) > -1)
+                responseBuffer.appendCodePoint(by);
             in.close();
 
             // Invalid username check
-            if (len <= 0)
+            if (responseBuffer.length() == 0)
+                return null;
+
+            // Parse the JSON
+            JsonElement response = JSON_PARSER.parse(responseBuffer.toString());
+
+            // The provided JSON should be an object
+            if (!response.isJsonObject())
                 return null;
 
             // Format the UUID with -'s and parse it
-            String unformatted = new String(buffer, 7, 32);
+            String unformatted = ((JsonObject) response).get("id").getAsString();
             UUID uuid = UUID.fromString(String.format("%s-%s-%s-%s-%s", unformatted.substring(0, 8),
                     unformatted.substring(8, 12), unformatted.substring(12, 16), unformatted.substring(16, 20),
                     unformatted.substring(20)));
@@ -114,6 +127,7 @@ public class DataManager implements Listener {
      * could be found.
      */
     public String currentUsernameForUuid(UUID uuid) {
+        // Check online players
         Player player = Bukkit.getPlayer(uuid);
         if (player != null)
             return player.getName();
@@ -137,24 +151,49 @@ public class DataManager implements Listener {
             InputStream in = url.openStream();
 
             // Read the data
-            StringBuilder sb = new StringBuilder();
-            int b;
-            while ((b = in.read()) > -1)
-                sb.appendCodePoint(b);
+            StringBuilder responseBuffer = new StringBuilder();
+            int by;
+            while ((by = in.read()) > -1)
+                responseBuffer.appendCodePoint(by);
+            in.close();
 
             // Invalid UUID check
-            if (sb.length() == 0)
+            if (responseBuffer.length() == 0)
                 return null;
 
-            // Get the last name (most recent)
-            String data = sb.toString();
-            int index = data.lastIndexOf("\"changedToAt\":");
-            data = data.substring(data.lastIndexOf("\"name\":") + 8, (index < 0 ? data.length() - 3 : index - 2));
+            // Parse the JSON
+            JsonElement response = JSON_PARSER.parse(responseBuffer.toString());
+
+            // The provided JSON should be an array
+            if (!response.isJsonArray())
+                return null;
+
+            // Find the name with the largest change date, IE the current username
+            String mostRecentName = null;
+            long maxChangedToDate = 0L;
+            for (JsonElement nameChange : (JsonArray) response) {
+                // Each element should be an object
+                if (nameChange.isJsonObject()) {
+                    JsonObject nameChangeObject = (JsonObject) nameChange;
+
+                    // The first name doesn't have a date assigned, so we substitute in the value 1 in that case
+                    long date = nameChangeObject.has("changedToAt") ? nameChangeObject.get("changedToAt").getAsLong() : 1L;
+
+                    if (date > maxChangedToDate) {
+                        mostRecentName = nameChangeObject.get("name").getAsString();
+                        maxChangedToDate = date;
+                    }
+                }
+            }
+
+            // This should never happen
+            if (mostRecentName == null)
+                return null;
 
             // Add the lookup to the cache
-            ignUuidLookupCache.put(data, uuid);
+            ignUuidLookupCache.put(mostRecentName, uuid);
 
-            return data;
+            return mostRecentName;
         } catch (IOException ex) {
             // Some error occurred, return null
             return null;
