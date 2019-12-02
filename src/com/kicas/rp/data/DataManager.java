@@ -1106,7 +1106,7 @@ public class DataManager implements Listener {
                 playerData.putAll(deserializer.readPlayerData());
             }
         } catch (Throwable ex) {
-            RegionProtection.error("Failed to load regions file: " + ex.getMessage());
+            RegionProtection.error("Failed to load player data file: " + ex.getMessage());
             ex.printStackTrace();
         }
 

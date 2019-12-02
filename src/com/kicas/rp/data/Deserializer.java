@@ -35,8 +35,10 @@ public class Deserializer implements AutoCloseable {
     public Map<UUID, WorldData> readWorldData() throws IOException {
         // Check the format version
         int format = decoder.read();
-        if (format != expectedFormatVersion)
-            RegionProtection.log("Decoding older data format version for world data file: " + format + ".");
+        if (format < expectedFormatVersion)
+            RegionProtection.log("Decoding older data format version (" + format + ") for world data file.");
+        else if (format > expectedFormatVersion)
+            fail("Invalid format encountered. Please make sure you are using the most recent version of the plugin.");
 
         Map<UUID, WorldData> worldData = readWorldData(format);
         decoder.close();
@@ -49,6 +51,9 @@ public class Deserializer implements AutoCloseable {
         int len = decoder.read();
         Map<UUID, WorldData> worldData = new HashMap<>(len);
         while (len > 0) {
+            if (decoder.isAtEndOfStream())
+                failEOF();
+
             // Read the global flags
             UUID worldUid = decoder.readUuid();
             WorldData wd = new WorldData(worldUid);
@@ -78,8 +83,10 @@ public class Deserializer implements AutoCloseable {
     public Map<UUID, PersistentPlayerData> readPlayerData() throws IOException {
         // Check the format version
         int format = decoder.read();
-        if (format != expectedFormatVersion)
+        if (format < expectedFormatVersion)
             RegionProtection.log("Decoding older data format version (" + format + ") for player data file.");
+        else if (format > expectedFormatVersion)
+            fail("Invalid format encountered. Please make sure you are using the most recent version of the plugin.");
 
         Map<UUID, PersistentPlayerData> playerData = readPlayerData(format);
         decoder.close();
@@ -92,6 +99,9 @@ public class Deserializer implements AutoCloseable {
         int len = decoder.readCompressedUint();
         Map<UUID, PersistentPlayerData> playerData = new HashMap<>(len);
         while (len > 0) {
+            if (decoder.isAtEndOfStream())
+                failEOF();
+
             UUID uuid = decoder.readUuid();
             playerData.put(uuid, new PersistentPlayerData(uuid, decoder.readCompressedUint()));
             --len;
@@ -185,36 +195,41 @@ public class Deserializer implements AutoCloseable {
 
         // Reads the flag meta value. Note: perhaps make these individual functions
         Object meta;
-        if (flag.isBoolean())
-            meta = decoder.readBoolean();
-        else if (CommandMeta.class.equals(flag.getMetaClass()))
-            meta = new CommandMeta(decoder.readBoolean(), decoder.readUTF8Raw());
-        else if (EnumFilter.class.equals(flag.getMetaClass())) {
-            boolean isWhitelist = decoder.readBoolean();
-            Set<Integer> filter = new HashSet<>();
-            int len = decoder.readCompressedUint();
-            while (len > 0) {
-                filter.add(decoder.readCompressedUint());
-                --len;
-            }
-            meta = new EnumFilter(isWhitelist, filter);
-        } else if (LocationMeta.class.equals(flag.getMetaClass())) {
-            meta = new LocationMeta(decoder.readUuid(), decoder.readDouble(), decoder.readDouble(),
-                    decoder.readDouble(), decoder.readFloat(), decoder.readFloat());
-        } else if (StringFilter.class.equals(flag.getMetaClass()))
-            meta = new StringFilter(decoder.readBoolean(), new HashSet<>(decoder.readArrayAsList(String.class)));
-        else if (TextMeta.class.equals(flag.getMetaClass()))
-            meta = new TextMeta(decoder.readUTF8Raw());
-        else if (TrustMeta.class.equals(flag.getMetaClass())) {
-            TrustMeta trustMeta = new TrustMeta(TrustLevel.VALUES[decoder.read()]);
-            int len = decoder.readCompressedUint();
-            while (len > 0) {
-                trustMeta.trust(decoder.readUuid(), TrustLevel.VALUES[decoder.read()]);
-                --len;
-            }
-            meta = trustMeta;
-        } else
-            throw new InternalError("Invalid flag meta class: " + flag.getMetaClass().getName());
+        try {
+            if (flag.isBoolean())
+                meta = decoder.readBoolean();
+            else if (CommandMeta.class.equals(flag.getMetaClass()))
+                meta = new CommandMeta(decoder.readBoolean(), decoder.readUTF8Raw());
+            else if (EnumFilter.class.equals(flag.getMetaClass())) {
+                boolean isWhitelist = decoder.readBoolean();
+                Set<Integer> filter = new HashSet<>();
+                int len = decoder.readCompressedUint();
+                while (len > 0) {
+                    filter.add(decoder.readCompressedUint());
+                    --len;
+                }
+                meta = new EnumFilter(isWhitelist, filter);
+            } else if (LocationMeta.class.equals(flag.getMetaClass())) {
+                meta = new LocationMeta(decoder.readUuid(), decoder.readDouble(), decoder.readDouble(),
+                        decoder.readDouble(), decoder.readFloat(), decoder.readFloat());
+            } else if (StringFilter.class.equals(flag.getMetaClass()))
+                meta = new StringFilter(decoder.readBoolean(), new HashSet<>(decoder.readArrayAsList(String.class)));
+            else if (TextMeta.class.equals(flag.getMetaClass()))
+                meta = new TextMeta(decoder.readUTF8Raw());
+            else if (TrustMeta.class.equals(flag.getMetaClass())) {
+                TrustMeta trustMeta = new TrustMeta(TrustLevel.VALUES[decoder.read()]);
+                int len = decoder.readCompressedUint();
+                while (len > 0) {
+                    trustMeta.trust(decoder.readUuid(), TrustLevel.VALUES[decoder.read()]);
+                    --len;
+                }
+                meta = trustMeta;
+            } else
+                throw new InternalError("Invalid flag meta class: " + flag.getMetaClass().getName());
+        } catch (IndexOutOfBoundsException ex) {
+            fail("An invalid index was encountered. The region data file is likely corrupted.");
+            return null;
+        }
 
         return new Pair<>(flag, meta);
     }
@@ -237,5 +252,31 @@ public class Deserializer implements AutoCloseable {
     @Override
     public void close() throws IOException {
         decoder.close();
+    }
+
+    /**
+     * Logs the error to console and throws an exception with the given message.
+     *
+     * @param message the error message.
+     */
+    private void fail(String message) {
+        RegionProtection.error("Failed to read data: " + message);
+        throw new DeserializationException(message);
+    }
+
+    /**
+     * Identical to the fail method except the message is already set below.
+     */
+    private void failEOF() {
+        fail("EOF encountered before it was expected.");
+    }
+
+    /**
+     * Thrown when an error regarding deserialization occurs.
+     */
+    public static final class DeserializationException extends RuntimeException {
+        public DeserializationException(String message) {
+            super(message);
+        }
     }
 }

@@ -14,7 +14,7 @@ public class Decoder implements Closeable {
     /**
      * The input stream.
      */
-    private final InputStream in;
+    private final WrappedInputStream in;
 
     /**
      * Constructs a new decoder with a specified input stream that defaults to not decompressing lengths.
@@ -22,7 +22,7 @@ public class Decoder implements Closeable {
      * @param in the input stream.
      */
     public Decoder(InputStream in) {
-        this.in = in;
+        this.in = new WrappedInputStream(in);
     }
 
     /**
@@ -31,7 +31,14 @@ public class Decoder implements Closeable {
      * @return the input stream this decoder is using.
      */
     public InputStream getInputStream() {
-        return in;
+        return in.stream;
+    }
+
+    /**
+     * @return true if the end of the stream was reached, false otherwise.
+     */
+    public boolean isAtEndOfStream() {
+        return in.lastRead == -1;
     }
 
     /**
@@ -382,5 +389,25 @@ public class Decoder implements Closeable {
     @Override
     public void close() throws IOException {
         in.close();
+    }
+
+    /**
+     * Wraps an input stream so that the last byte read is kept track of.
+     */
+    private static class WrappedInputStream extends InputStream {
+        final InputStream stream;
+        int lastRead;
+
+        WrappedInputStream(InputStream stream) {
+            this.stream = stream;
+        }
+
+        /**
+         * {@inheritDoc }
+         */
+        @Override
+        public int read() throws IOException {
+            return (lastRead = stream.read());
+        }
     }
 }
