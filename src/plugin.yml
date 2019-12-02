@@ -57,6 +57,10 @@ commands:
     description: Take ownership of an expired claim if you have enough claim blocks.
     usage: /steal
     permission: rp.command.steal
+  toregion:
+    description: Teleport yourself to a region.
+    usage: /toregion <name>
+    permission: rp.command.toregion
   transferclaim:
     description: Transfer the ownership of your claim to another person.
     usage: /transferclaim <newOwner>
@@ -90,6 +94,9 @@ permissions:
   rp.command.claimblocks:
     description: Allows a player to use /claimblocks
     default: op
+  rp.command.expel:
+    description: Allows a player to use /expel
+    default: true
   rp.command.externalclaimlist:
     description: Allows a player to view another person's claim list
     default: op
@@ -102,6 +109,6 @@ permissions:
   rp.command.steal:
     description: Allows a player to use /steal
     default: true
-  rp.command.expel:
-    description: Allows a player to use /expel
-    default: true
+  rp.command.toregion:
+    description: Allows a player to use /toregion
+    default: op

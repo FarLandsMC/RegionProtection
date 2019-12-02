@@ -2,6 +2,7 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.data.flagdata.LocationMeta;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.TextUtils;
@@ -147,7 +148,7 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        if (!RegionProtection.getClaimableWorlds().contains(((Player)sender).getWorld().getUID())) {
+        if (!RegionProtection.getClaimableWorlds().contains(((Player) sender).getWorld().getUID())) {
             sender.sendMessage(ChatColor.RED + "Claims are not allowed in this world.");
             return true;
         }
@@ -436,6 +437,38 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
 
         return true;
     });
+
+    /**
+     * Teleports the sender to the region with the specified name.
+     */
+    public static final SimpleCommand TO_REGION = new SimpleCommand((sender, command, alias, args) -> {
+        if (args.length == 0)
+            return false;
+
+        // Online sender required
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
+            return true;
+        }
+
+        Player player = (Player) sender;
+        Region region = RegionProtection.getDataManager().getRegionByName(player.getWorld(), args[0]);
+        if (region == null) {
+            sender.sendMessage(ChatColor.RED + "Region not found.");
+            return true;
+        }
+
+        // Teleport the sender to the respawn location if it exists, otherwise teleport them to the center of the region
+        if (region.hasFlag(RegionFlag.RESPAWN_LOCATION))
+            player.teleport(region.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation());
+        else {
+            player.teleport(Utils.findSafe(new Location(region.getWorld(), (region.getMin().getX() + region.getMax().getX()) / 2,
+                    128, (region.getMin().getZ() + region.getMax().getZ()) / 2)));
+        }
+
+        return true;
+    }, (sender, command, alias, args) -> args.length == 1 ? filterStartingWith(args[0], RegionProtection.getDataManager()
+            .getRegionNames(((Player) sender).getWorld(), false)) : Collections.emptyList());
 
     /**
      * Allows the owner of a claim to give someone else ownership of one of their claims.

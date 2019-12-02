@@ -219,6 +219,7 @@ public class RegionProtection extends JavaPlugin {
         registerCommand("ignoretrust", SimpleCommand.IGNORE_TRUST);
         registerCommand("region", new CommandRegion());
         registerCommand("steal", SimpleCommand.STEAL);
+        registerCommand("toregion", SimpleCommand.TO_REGION);
         registerCommand("transferclaim", SimpleCommand.TRANSFER_CLAIM);
         registerCommand("trapped", SimpleCommand.TRAPPED);
         registerCommand("trust", new CommandTrust());

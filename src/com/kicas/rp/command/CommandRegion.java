@@ -385,7 +385,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             // Don't suggest names if we're creating a region
             if ("create".equalsIgnoreCase(args[0]))
                 return Collections.emptyList();
-                // Global flags allowed
+            // Global flags allowed
             else if ("info".equalsIgnoreCase(args[0]) || "flag".equalsIgnoreCase(args[0])) {
                 return filterStartingWith(args[1], RegionProtection.getDataManager()
                         .getRegionNames(((Player) sender).getWorld(), true));
