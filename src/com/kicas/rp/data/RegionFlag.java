@@ -112,7 +112,7 @@ public enum RegionFlag {
      */
     @SuppressWarnings("unchecked")
     public <T> T getRegionDefaultValue() {
-        return (T)DEFAULT_VALUES.get(this).getFirst();
+        return (T) DEFAULT_VALUES.get(this).getFirst();
     }
 
     /**
@@ -120,13 +120,13 @@ public enum RegionFlag {
      * the global flag container does not cause conflicts based on configured defaults.
      *
      * @param world the world to get the default value for.
-     * @param <T> the meta type.
+     * @param <T>   the meta type.
      * @return this flag's default value for the world.
      */
     @SuppressWarnings("unchecked")
     public <T> T getWorldDefaultValue(World world) {
         Pair<Object, Function<World, Object>> def = DEFAULT_VALUES.get(this);
-        return def.getSecond() == null ? (T)def.getFirst() : (T)def.getSecond().apply(world);
+        return def.getSecond() == null ? (T) def.getFirst() : (T) def.getSecond().apply(world);
     }
 
     /**
@@ -139,13 +139,13 @@ public enum RegionFlag {
     public static String toString(RegionFlag flag, Object meta) {
         String metaString;
 
-        if(flag.isBoolean())
-            metaString = (boolean)meta ? "allow" : "deny";
-        else if(flag == DENY_SPAWN || flag == DENY_AGGRO || flag == DENY_ENTITY_USE)
-            metaString = ((EnumFilter)meta).toString(EntityType.class);
-        else if(flag == DENY_PLACE || flag == DENY_BREAK || flag == DENY_BLOCK_USE || flag == DENY_ITEM_USE ||
+        if (flag.isBoolean())
+            metaString = (boolean) meta ? "allow" : "deny";
+        else if (flag == DENY_SPAWN || flag == DENY_AGGRO || flag == DENY_ENTITY_USE)
+            metaString = ((EnumFilter) meta).toString(EntityType.class);
+        else if (flag == DENY_PLACE || flag == DENY_BREAK || flag == DENY_BLOCK_USE || flag == DENY_ITEM_USE ||
                 flag == DENY_WEAPON_USE)
-            metaString = ((EnumFilter)meta).toString(Material.class);
+            metaString = ((EnumFilter) meta).toString(Material.class);
         else
             metaString = meta.toString();
 
@@ -156,11 +156,11 @@ public enum RegionFlag {
      * Parses the given meta string based on the associated flag, and returns the flag metadata derived from the given
      * string.
      *
-     * @param flag the flag associated with the given metadata in string form.
+     * @param flag       the flag associated with the given metadata in string form.
      * @param metaString the string to parse.
      * @return the flag metadata resulting from the given string.
      * @throws IllegalArgumentException if the given metadata string is invalid in some way. The message of this
-     * exception will give details as to what the error was.
+     *                                  exception will give details as to what the error was.
      */
     public static Object metaFromString(RegionFlag flag, String metaString) throws IllegalArgumentException {
         switch (flag) {
@@ -206,9 +206,9 @@ public enum RegionFlag {
             case RESPAWN_LOCATION: {
                 String[] args = metaString.split(" ");
 
-                if(args.length == 1)
+                if (args.length == 1)
                     throw new IllegalArgumentException("Please provide a y and z value.");
-                else if(args.length == 2)
+                else if (args.length == 2)
                     throw new IllegalArgumentException("Please provide a z value.");
 
                 double x, y, z;
@@ -220,12 +220,12 @@ public enum RegionFlag {
                     throw new IllegalArgumentException("Failed to parse coordinate values.");
                 }
 
-                if(args.length == 3)
+                if (args.length == 3)
                     return new LocationMeta(Bukkit.getWorld("world"), x, y, z);
 
-                if(args.length == 4) {
+                if (args.length == 4) {
                     World world = Bukkit.getWorld(Utils.getWorldName(args[3]));
-                    if(world == null)
+                    if (world == null)
                         throw new IllegalArgumentException("Invalid world name: " + args[3]);
                     return new LocationMeta(world, x, y, z);
                 }
@@ -234,15 +234,15 @@ public enum RegionFlag {
                 try {
                     yaw = Float.parseFloat(args[3]);
                     pitch = Float.parseFloat(args[4]);
-                }catch (NumberFormatException ex) {
+                } catch (NumberFormatException ex) {
                     throw new IllegalArgumentException("Failed to parse rotation values.");
                 }
 
-                if(args.length == 5)
+                if (args.length == 5)
                     return new LocationMeta(Bukkit.getWorld("world"), x, y, z, yaw, pitch);
 
                 World world = Bukkit.getWorld(Utils.getWorldName(args[5]));
-                if(world == null)
+                if (world == null)
                     throw new IllegalArgumentException("Invalid world name: " + args[5]);
 
                 return new LocationMeta(world, x, y, z, yaw, pitch);
@@ -284,7 +284,7 @@ public enum RegionFlag {
         registerDefault(POTION_SPLASH, config.getBoolean("region.potion-splash"), world -> true);
         registerDefault(FORCE_CHEST_ACCESS, false);
         registerDefault(PVP, config.getBoolean("player.pvp"),
-                world -> ((CraftServer)Bukkit.getServer()).getServer().getDedicatedServerProperties().pvp);
+                world -> ((CraftServer) Bukkit.getServer()).getServer().getDedicatedServerProperties().pvp);
         registerDefault(BED_ENTER, true);
         registerDefault(WATER_FLOW, true);
         registerDefault(LAVA_FLOW, true);
@@ -320,9 +320,9 @@ public enum RegionFlag {
      * Registers the given flag with the given region default value, and given function to get the default value for a
      * world.
      *
-     * @param flag the flag to register default values for.
+     * @param flag          the flag to register default values for.
      * @param regionDefault the region default value.
-     * @param worldDefault the function to get world default values.
+     * @param worldDefault  the function to get world default values.
      */
     private static void registerDefault(RegionFlag flag, Object regionDefault, Function<World, Object> worldDefault) {
         DEFAULT_VALUES.put(flag, new Pair<>(regionDefault, worldDefault));
@@ -332,7 +332,7 @@ public enum RegionFlag {
      * Registers the given flag with the given default value, which will be both the region default value and world
      * default value.
      *
-     * @param flag the flag to register the default value for.
+     * @param flag  the flag to register the default value for.
      * @param value the default value.
      */
     private static void registerDefault(RegionFlag flag, Object value) {

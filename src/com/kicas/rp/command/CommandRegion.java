@@ -2,6 +2,7 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.data.flagdata.AbstractFilter;
 import com.kicas.rp.data.flagdata.Augmentable;
 import com.kicas.rp.util.Materials;
 import com.kicas.rp.util.ReflectionHelper;
@@ -72,9 +73,12 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
             // Get the list of regions to detail
             List<Region> regions;
-            if (args.length == 1) // Get the regions the player is standing in
+            // Get the regions the player is standing in
+            if (args.length == 1) {
                 regions = RegionProtection.getDataManager().getRegionsAt(((Player) sender).getLocation());
-            else { // Get the region specified by name
+            }
+            // Get the region specified by name
+            else {
                 Region region = RegionProtection.getDataManager().getRegionByName(((Player) sender).getWorld(), args[1]);
 
                 // Invalid region name
@@ -149,14 +153,15 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                     }
                 }
                 // Get the parent region's name
-                else if (args[i].toLowerCase().startsWith("parent:"))
+                else if (args[i].toLowerCase().startsWith("parent:")) {
                     parentName = args[i].substring(args[i].indexOf(':') + 1);
-                    // Whether or not to forcefully create the region (IE ignore overlap)
-                else if (args[i].equalsIgnoreCase("force"))
+                }
+                // Whether or not to forcefully create the region (IE ignore overlap)
+                else if (args[i].equalsIgnoreCase("force")) {
                     force = true;
-                    // Skip invalid tags
-                else
-                    sender.sendMessage(ChatColor.RED + "Ignoring argument \"" + args[i] + "\" since it is invalid.");
+                }
+                // Skip invalid tags
+                else sender.sendMessage(ChatColor.RED + "Ignoring argument \"" + args[i] + "\" since it is invalid.");
             }
 
             // Attempt to register the region (parent name checked here)
@@ -216,12 +221,15 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
             // If no value is specified, notify the player of the current value
             if (args.length == 3) {
+                // Make sure the sender isn't trying to do a different flag modification
                 if (modification == FlagModification.SET_OR_NONE) {
                     String metaString = RegionFlag.toString(flag, flags.getFlagMeta(flag));
                     sender.sendMessage(ChatColor.GOLD + Utils.formattedName(flag) + " in region " + args[1] +
                             " is set to: " + ChatColor.GRAY + (metaString.contains("\n") ? "\n" + metaString : metaString));
-                } else
-                    sender.sendMessage(ChatColor.RED + "A flag value must be specified to augment a flag.");
+                }
+                // Improper use of a flag modifier
+                else sender.sendMessage(ChatColor.RED + "A flag value must be specified to augment a flag.");
+
                 return true;
             }
 
@@ -236,9 +244,11 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             }
 
             // Regular set
-            if (modification == FlagModification.SET_OR_NONE)
+            if (modification == FlagModification.SET_OR_NONE) {
                 flags.setFlag(flag, meta);
-            else { // Augmentation or reduction
+            }
+            // Augmentation or reduction
+            else {
                 // This requires metadata to already exist
                 Object currentMeta = flags.getFlagMeta(flag);
                 if (currentMeta == null) {
@@ -268,10 +278,8 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         if (region == null) {
             if (DataManager.GLOBAL_FLAG_NAME.equals(args[1]))
                 sender.sendMessage(ChatColor.RED + "This operation cannot be performed on the global flag set.");
-            else {
-                sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] +
-                        "\" in your world.");
-            }
+            else
+                sender.sendMessage(ChatColor.RED + "Could not find a region with name \"" + args[1] + "\" in your world.");
             return true;
         }
 
@@ -297,7 +305,9 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 region.getMax().setY(region.getWorld().getMaxHeight());
 
                 sender.sendMessage(ChatColor.GREEN + "Extended region to bedrock and world height.");
-            } else { // Regular expansion and retraction
+            }
+            // Regular expansion and retraction
+            else {
                 // Final args check
                 if (args.length < 4) {
                     sender.sendMessage(ChatColor.RED + "Usage: /region expand|retract <name> <direction> <value>");
@@ -332,10 +342,15 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 if (RegionProtection.getDataManager().tryExpandRegion((Player) sender, region, side, amount))
                     sender.sendMessage(ChatColor.GREEN + "Successfully adjusted region " + args[1]);
             }
-        } else if ("rename".equals(args[0])) {
+        }
+        // Region renaming
+        else if ("rename".equals(args[0])) {
             if (RegionProtection.getDataManager().tryRenameRegion((Player) sender, region, args[2]))
                 sender.sendMessage(ChatColor.GREEN + "Renamed region \"" + args[1] + "\" to \"" + args[2] + "\".");
-        } else if ("set-priority".equals(args[0])) {
+        }
+        // Region priority changing
+        else if ("set-priority".equals(args[0])) {
+            // Parse the priority
             int newPriority;
             try {
                 newPriority = Integer.parseInt(args[2]);
@@ -344,14 +359,18 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 return true;
             }
 
+            // Make sure the priority is within bounds
             if (newPriority < 0 || newPriority > 127) {
                 sender.sendMessage(ChatColor.RED + "Region priorities must be between 0 and 127 inclusive.");
                 return true;
             }
 
+            // Perform the change
             region.setPriority(newPriority);
             sender.sendMessage(ChatColor.GREEN + "Set region priority to " + newPriority + ".");
-        } else if ("delete".equals(args[0])) { // Delete a region
+        }
+        // Delete a region
+        else if ("delete".equals(args[0])) {
             boolean includeChildren = args.length == 3 && "true".equalsIgnoreCase(args[2]);
             // This can fail if includeChildren is false and the region has children
             if (RegionProtection.getDataManager().tryDeleteRegion((Player) sender, region, includeChildren)) {
@@ -373,25 +392,26 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             location = ((Player) sender).getLocation();
         else if (sender instanceof BlockCommandSender)
             location = ((BlockCommandSender) sender).getBlock().getLocation();
+        else {
             // Add default to prevent errors
-        else
             location = new Location(Bukkit.getWorlds().get(0), 0, 0, 0);
+        }
 
         // Show sub-commands
-        if (args.length == 1)
+        if (args.length == 1) {
             return filterStartingWith(args[0], SUB_COMMANDS);
-            // Suggest region names (if applicable)
+        }
+        // Suggest region names (if applicable)
         else if (args.length == 2) {
             // Don't suggest names if we're creating a region
             if ("create".equalsIgnoreCase(args[0]))
                 return Collections.emptyList();
-            // Global flags allowed
             else if ("info".equalsIgnoreCase(args[0]) || "flag".equalsIgnoreCase(args[0])) {
+                // Global flags allowed
                 return filterStartingWith(args[1], RegionProtection.getDataManager()
                         .getRegionNames(((Player) sender).getWorld(), true));
-            }
-            // Global flags aren't allowed
-            else {
+            } else {
+                // Global flags aren't allowed
                 return filterStartingWith(args[1], RegionProtection.getDataManager()
                         .getRegionNames(((Player) sender).getWorld(), false));
             }
@@ -408,6 +428,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             // Suggest the tag prefixes that are left
             else if (args[args.length - 1].indexOf(':') < 0) {
                 return Stream.of("priority:", "parent:", "force").filter(tag -> {
+                    // Remove the tags that have already been used
                     for (int i = 2; i < args.length; ++i) {
                         if (args[i].toLowerCase().startsWith(tag))
                             return false;
@@ -451,18 +472,14 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                             if (sender instanceof Player && (args[6].isEmpty() || args[6].matches("(-)?[\\d.]+"))) {
                                 return Collections.singletonList(Integer.toString((int) ((Player) sender).getLocation()
                                         .getYaw()));
-                            }
-                            // If the player starts typing a non-number, suggest world values instead
-                            else
+                            } else // If the player starts typing a non-number, suggest world values instead
                                 return filterStartingWith(args[6], Bukkit.getWorlds().stream().map(World::getName));
                         case 8: // Pitch if the sender is a player, otherwise suggest world values again
                             // Pitch
                             if (sender instanceof Player) {
                                 return Collections.singletonList(Integer.toString((int) ((Player) sender).getLocation()
                                         .getPitch()));
-                            }
-                            // World values
-                            else {
+                            } else { // World values
                                 return filterStartingWith(args[7], Bukkit.getWorlds().stream().map(World::getName));
                             }
                         case 9: // World values
@@ -539,8 +556,9 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             return filterStartingWith(args[2], EXPANSION_DIRECTIONS);
         }
         // Suggestion for the includeChildren option
-        else if ("delete".equalsIgnoreCase(args[0]) && args.length == 3)
+        else if ("delete".equalsIgnoreCase(args[0]) && args.length == 3) {
             return filterStartingWith(args[2], Stream.of("true", "false"));
+        }
 
         // By default return no suggestions
         return Collections.emptyList();
@@ -556,12 +574,14 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
     // Convert a stream of some object into the EnumFilter format using the given toString method and prefix
     private static <T> List<String> filterFormat(String prefix, Stream<T> stream, Function<T, String> toString) {
         return filterStartingWith(prefix, stream.map(x -> prefix.substring(0, prefix.lastIndexOf(',') + 1) +
-                (prefix.contains("*") ? "!" : "") + (toString == null ? (String) x : toString.apply(x))));
+                (prefix.contains(AbstractFilter.ALL_ELEMENTS) ? AbstractFilter.ELEMENT_NEGATION : "") +
+                (toString == null ? (String) x : toString.apply(x))));
     }
 
     private enum FlagModification {
         SET_OR_NONE(""), DELETE("!"), AUGMENT("+"), REDUCE("-");
 
+        // The character the denotes the modification
         final String marker;
 
         static final FlagModification[] VALUES = values();
@@ -570,6 +590,12 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             this.marker = marker;
         }
 
+        /**
+         * Returns the flag modification corresponding to the given flag string based on the start of the string.
+         *
+         * @param flag the flag string.
+         * @return the flag modification corresponding to the given flag string.
+         */
         static FlagModification forFlagString(String flag) {
             if (flag.isEmpty())
                 return SET_OR_NONE;

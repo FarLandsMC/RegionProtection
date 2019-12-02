@@ -32,7 +32,7 @@ public class Serializer implements AutoCloseable {
         encoder.write(formatVersion);
 
         encoder.write(worldData.size());
-        for(WorldData wd : worldData) {
+        for (WorldData wd : worldData) {
             encoder.writeUuid(wd.getWorldUid());
             writeFlags(wd);
             encoder.writeUintCompressed(wd.getRegions().size());
@@ -53,7 +53,7 @@ public class Serializer implements AutoCloseable {
         encoder.write(formatVersion);
 
         encoder.writeUintCompressed(playerData.size());
-        for(PersistentPlayerData ppd : playerData) {
+        for (PersistentPlayerData ppd : playerData) {
             encoder.writeUuid(ppd.getUuid());
             encoder.writeUintCompressed(ppd.getClaimBlocks());
         }
@@ -74,7 +74,7 @@ public class Serializer implements AutoCloseable {
         encoder.write(meta);
 
         // Write the actual owner
-        if(!region.hasParent() && !region.isAdminOwned())
+        if (!region.hasParent() && !region.isAdminOwned())
             encoder.writeUuid(region.getOwner());
 
         // Bounds
@@ -93,9 +93,9 @@ public class Serializer implements AutoCloseable {
         writeFlags(region);
 
         // Children
-        if(!region.hasParent()) {
+        if (!region.hasParent()) {
             encoder.writeUintCompressed(region.getChildren().size());
-            for(Region child : region.getChildren())
+            for (Region child : region.getChildren())
                 writeRegion(child);
         }
     }
@@ -109,7 +109,7 @@ public class Serializer implements AutoCloseable {
     private void writeFlags(FlagContainer container) throws IOException {
         Map<RegionFlag, Object> flags = container.getFlags();
         encoder.writeUintCompressed(flags.size());
-        for(Map.Entry<RegionFlag, Object> entry : flags.entrySet())
+        for (Map.Entry<RegionFlag, Object> entry : flags.entrySet())
             writeFlag(entry.getKey(), entry.getValue());
     }
 
@@ -122,35 +122,35 @@ public class Serializer implements AutoCloseable {
      */
     private void writeFlag(RegionFlag flag, Object meta) throws IOException {
         encoder.writeUintCompressed(flag.ordinal());
-        if(flag.isBoolean())
-            encoder.writeBoolean((boolean)meta);
-        else if(meta instanceof CommandMeta) {
-            encoder.writeBoolean(((CommandMeta)meta).runFromConsole());
-            encoder.writeUTF8Raw(((CommandMeta)meta).getCommand());
-        }else if(meta instanceof EnumFilter) {
-            encoder.writeBoolean(((EnumFilter)meta).isWhitelist());
-            Set<Integer> filter = ((EnumFilter)meta).getFilter();
+        if (flag.isBoolean())
+            encoder.writeBoolean((boolean) meta);
+        else if (meta instanceof CommandMeta) {
+            encoder.writeBoolean(((CommandMeta) meta).runFromConsole());
+            encoder.writeUTF8Raw(((CommandMeta) meta).getCommand());
+        } else if (meta instanceof EnumFilter) {
+            encoder.writeBoolean(((EnumFilter) meta).isWhitelist());
+            Set<Integer> filter = ((EnumFilter) meta).getFilter();
             encoder.writeUintCompressed(filter.size());
-            for(Integer integer : filter)
+            for (Integer integer : filter)
                 encoder.writeUintCompressed(integer);
-        }else if(meta instanceof LocationMeta) {
-            Location loc = ((LocationMeta)meta).getLocation();
+        } else if (meta instanceof LocationMeta) {
+            Location loc = ((LocationMeta) meta).getLocation();
             encoder.writeUuid(loc.getWorld().getUID());
             encoder.writeDouble(loc.getX());
             encoder.writeDouble(loc.getY());
             encoder.writeDouble(loc.getZ());
             encoder.writeFloat(loc.getYaw());
             encoder.writeFloat(loc.getPitch());
-        }else if(meta instanceof StringFilter) {
-            encoder.writeBoolean(((StringFilter)meta).isWhitelist());
-            encoder.writeArray(((StringFilter)meta).getFilter(), String.class);
-        }else if(meta instanceof TextMeta)
-            encoder.writeUTF8Raw(((TextMeta)meta).getText());
-        else if(meta instanceof TrustMeta) {
-            encoder.write(((TrustMeta)meta).getPublicTrustLevel().ordinal());
-            Map<UUID, TrustLevel> rawTrustData = ((TrustMeta)meta).getRawTrustDataCopy();
+        } else if (meta instanceof StringFilter) {
+            encoder.writeBoolean(((StringFilter) meta).isWhitelist());
+            encoder.writeArray(((StringFilter) meta).getFilter(), String.class);
+        } else if (meta instanceof TextMeta)
+            encoder.writeUTF8Raw(((TextMeta) meta).getText());
+        else if (meta instanceof TrustMeta) {
+            encoder.write(((TrustMeta) meta).getPublicTrustLevel().ordinal());
+            Map<UUID, TrustLevel> rawTrustData = ((TrustMeta) meta).getRawTrustDataCopy();
             encoder.writeUintCompressed(rawTrustData.size());
-            for(Map.Entry<UUID, TrustLevel> trust : rawTrustData.entrySet()) {
+            for (Map.Entry<UUID, TrustLevel> trust : rawTrustData.entrySet()) {
                 encoder.writeUuid(trust.getKey());
                 encoder.write(trust.getValue().ordinal());
             }

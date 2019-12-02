@@ -48,13 +48,13 @@ public class StringFilter extends AbstractFilter<String> {
     public String toString() {
         // ~ = empty filter, IE everything is allowed
         if (!isWhitelist && filter.isEmpty())
-            return "~";
+            return NO_ELEMENTS;
 
         // A whitelist means everything is disallowed with some exceptions, so *,!a,!b
-        String base = isWhitelist ? "*" : "";
+        String base = isWhitelist ? ALL_ELEMENTS : "";
         // Convert the ordinals to formatted names and apply the formatting
         return filter.isEmpty() ? base : (isWhitelist ? base + ", " : "") + filter.stream()
-                .map(string -> (isWhitelist ? "!" : "") + string).sorted().collect(Collectors.joining(", "));
+                .map(string -> (isWhitelist ? ELEMENT_NEGATION : "") + string).sorted().collect(Collectors.joining(", "));
     }
 
     /**
@@ -68,15 +68,15 @@ public class StringFilter extends AbstractFilter<String> {
      * @return the string filter resulting from the given string.
      */
     public static StringFilter fromString(String string) {
-        if ("~".equals(string))
+        if (NO_ELEMENTS.equals(string))
             return EMPTY_FILTER;
 
-        boolean isWhitelist = string.contains("*");
+        boolean isWhitelist = string.contains(ALL_ELEMENTS);
         StringFilter sf = new StringFilter(isWhitelist);
         for (String element : string.split(",")) {
             element = element.trim();
             // Ignore negation depending on the filter type (! = negation)
-            if (!"*".equals(element) && isWhitelist == element.startsWith("!")) {
+            if (!ALL_ELEMENTS.equals(element) && isWhitelist == element.startsWith(ELEMENT_NEGATION)) {
                 // Convert the element into the actual enum name
                 sf.filter.add(isWhitelist ? element.substring(1) : element);
             }

@@ -186,8 +186,9 @@ public class Region extends FlagContainer {
      * @return true if the co-owner was removed, false if not.
      */
     public boolean removeCoOwner(UUID owner) {
-        if(!this.coOwners.remove(owner))
+        if (!this.coOwners.remove(owner))
             return false;
+
         children.forEach(child -> child.removeCoOwner(owner));
         return true;
     }

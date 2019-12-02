@@ -170,14 +170,17 @@ public class RegionProtection extends JavaPlugin {
                     config.getString("general.claim-creation-item"));
             claimCreationTool = Material.GOLDEN_SHOVEL;
         }
+
         claimViewer = Utils.safeValueOf(Material::valueOf, config.getString("general.claim-viewer"));
         if (claimViewer == null) {
             log("Invalid material found in config under general.claim-viewer: " +
                     config.getString("general.claim-viewer"));
             claimViewer = Material.STICK;
         }
+
         // Put claim block addition in a usable form
         claimBlocksGainedPerMinute = (double) config.getInt("general.claim-blocks-gained-per-hour") / 60.0;
+
         // Convert the world names to UUIDs, filtering out invalid names in the process
         claimableWorlds = config.getStringList("general.enable-claims-in-worlds").stream().map(name -> {
             World world = Bukkit.getWorld(Utils.getWorldName(name));

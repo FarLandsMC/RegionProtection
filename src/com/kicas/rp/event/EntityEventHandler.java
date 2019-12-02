@@ -44,10 +44,13 @@ public class EntityEventHandler implements Listener {
             }
 
             ProjectileSource shooter = ((Arrow) event.getEntity()).getShooter();
-            if (shooter instanceof Player) { // For players check trust
+            // For players check trust
+            if (shooter instanceof Player) {
                 event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter,
                         TrustLevel.BUILD, flags));
-            } else if (shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
+            }
+            // Check for region crosses if fired by a dispenser
+            else if (shooter instanceof BlockProjectileSource) {
                 event.setCancelled(dm.crossesRegions(((BlockProjectileSource) shooter).getBlock().getLocation(),
                         event.getBlock().getLocation()));
             }

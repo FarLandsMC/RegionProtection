@@ -15,7 +15,9 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Deserializes plugin data files, including regions.dat and playerdata.dat.
+ * Deserializes plugin data files, including regions.dat and playerdata.dat. The methods and order of read operations in
+ * this class are meant to mirror those in the Serializer class. The Serializer class is considered to be "always right"
+ * and this class must conform to it and previous versions of it.
  */
 public class Deserializer implements AutoCloseable {
     private final Decoder decoder;
@@ -226,7 +228,9 @@ public class Deserializer implements AutoCloseable {
                 meta = trustMeta;
             } else
                 throw new InternalError("Invalid flag meta class: " + flag.getMetaClass().getName());
-        } catch (IndexOutOfBoundsException ex) {
+        }
+        // A stray index means we're derailed
+        catch (IndexOutOfBoundsException ex) {
             fail("An invalid index was encountered. The region data file is likely corrupted.");
             return null;
         }

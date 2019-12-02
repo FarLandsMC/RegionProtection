@@ -396,6 +396,7 @@ public class DataManager implements Listener {
                 if (!flags.hasFlag(flag))
                     flags.setFlag(flag, meta);
             });
+
             if (flags.getOwner() == null)
                 flags.setOwner(region.getOwner());
         });
@@ -555,6 +556,7 @@ public class DataManager implements Listener {
         if (!force && failsCollisionCheck(delegate, region)) {
             if (region.hasParent())
                 region.getParent().getChildren().remove(region);
+
             return false;
         }
 
@@ -576,11 +578,17 @@ public class DataManager implements Listener {
      */
     public Region tryCreateAndRegisterRegion(Location vertex1, Location vertex2, String name, int priority,
                                              Region parent, boolean force) {
+        // Create it
         Region region = tryCreateAdminRegion(vertex1, vertex2);
+
+        // Try registration
         if (!tryRegisterRegion(null, region, name, priority, null, force))
             return null;
+
+        // Parent-related registration
         if (parent != null && !parent.hasParent())
             associate(parent, region);
+
         return region;
     }
 
@@ -881,6 +889,7 @@ public class DataManager implements Listener {
         else {
             if (unregister)
                 worlds.get(region.getWorld().getUID()).getRegions().remove(region);
+
             if (!region.isAdminOwned())
                 modifyClaimBlocks(region.getOwner(), (int) region.area());
         }
@@ -1048,9 +1057,10 @@ public class DataManager implements Listener {
      */
     public synchronized PlayerSession getPlayerSession(Player player) {
         // Get the cached entry
-        if (playerSessionCache.containsKey(player.getUniqueId()))
+        if (playerSessionCache.containsKey(player.getUniqueId())) {
             return playerSessionCache.get(player.getUniqueId());
-            // Enter a new cached entry
+        }
+        // Enter a new cached entry
         else {
             playerData.putIfAbsent(player.getUniqueId(), new PersistentPlayerData(player));
             PlayerSession ps = new PlayerSession(playerData.get(player.getUniqueId()));
@@ -1069,12 +1079,14 @@ public class DataManager implements Listener {
      */
     public synchronized int getClaimBlocks(UUID uuid) {
         // Use the live player session if it exists
-        if (playerSessionCache.containsKey(uuid))
+        if (playerSessionCache.containsKey(uuid)) {
             return playerSessionCache.get(uuid).getClaimBlocks();
-            // Default to the persistent player data if the session is not present
-        else if (playerData.containsKey(uuid))
+        }
+        // Default to the persistent player data if the session is not present
+        else if (playerData.containsKey(uuid)) {
             return playerData.get(uuid).getClaimBlocks();
-            // If there's no player data either, make new player data
+        }
+        // If there's no player data either, make new player data
         else {
             PersistentPlayerData ppd = new PersistentPlayerData(uuid);
             playerData.put(uuid, ppd);
@@ -1091,12 +1103,14 @@ public class DataManager implements Listener {
      */
     public synchronized void modifyClaimBlocks(UUID uuid, int amount) {
         // Use the live player session if it exists
-        if (playerSessionCache.containsKey(uuid))
+        if (playerSessionCache.containsKey(uuid)) {
             playerSessionCache.get(uuid).addClaimBlocks(amount);
-            // Default to the persistent player data if the session is not present
-        else if (playerData.containsKey(uuid))
+        }
+        // Default to the persistent player data if the session is not present
+        else if (playerData.containsKey(uuid)) {
             playerData.get(uuid).addClaimBlocks(amount);
-            // If there's no player data either, make new player data
+        }
+        // If there's no player data either, make new player data
         else {
             PersistentPlayerData ppd = new PersistentPlayerData(uuid);
             ppd.addClaimBlocks(amount);

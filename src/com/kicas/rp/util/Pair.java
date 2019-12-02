@@ -103,6 +103,6 @@ public final class Pair<A, B> {
      */
     @Override
     public String toString() {
-        return '{' + Objects.toString(first) + ", " + second + '}';
+        return "{" + first + ", " + second + "}";
     }
 }

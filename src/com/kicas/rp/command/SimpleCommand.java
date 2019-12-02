@@ -60,10 +60,12 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
                 sender.sendMessage(ChatColor.GREEN + "Successfully deleted this claim." + (claim.hasParent() ? ""
                         : " You now have " + ps.getClaimBlocks() + " claim blocks."));
                 ps.setRegionHighlighter(null);
-            } else { // Failed deletion due to sub-claims present, show those claims
-                ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), null, null, false));
             }
-        } else { // Abandon all claims including their subdivisions
+            // Failed deletion due to sub-claims present, show those claims
+            else ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), null, null, false));
+        }
+        // Abandon all claims including their subdivisions
+        else {
             dm.tryDeleteRegions(player, player.getWorld(), region -> region.isOwner(player.getUniqueId()) &&
                     !region.isAdminOwned(), true);
 
@@ -109,7 +111,9 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
 
             region.addCoOwner(coOwner);
             sender.sendMessage(ChatColor.GREEN + args[0] + " is now a co-owner of this region.");
-        } else {
+        }
+        // "removecoowner"
+        else {
             if (region.removeCoOwner(coOwner))
                 sender.sendMessage(ChatColor.GREEN + args[0] + " is no longer a co-owner of this region.");
             else
@@ -301,7 +305,7 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        // Do the expansion
+        // Do the expansion and highlight the new region
         BlockFace facing = ((Player) sender).getFacing();
         if (RegionProtection.getDataManager().tryExpandRegion((Player) sender, claim, facing, amount)) {
             PlayerSession ps = RegionProtection.getDataManager().getPlayerSession((Player) sender);
@@ -452,6 +456,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+
+        // Get and check the region
         Region region = RegionProtection.getDataManager().getRegionByName(player.getWorld(), args[0]);
         if (region == null) {
             sender.sendMessage(ChatColor.RED + "Region not found.");

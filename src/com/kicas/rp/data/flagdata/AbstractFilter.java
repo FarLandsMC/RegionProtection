@@ -7,6 +7,10 @@ public abstract class AbstractFilter<T> implements Augmentable<AbstractFilter<T>
     protected boolean isWhitelist;
     protected Set<T> filter;
 
+    public static final String ELEMENT_NEGATION = "!";
+    public static final String ALL_ELEMENTS = "*";
+    public static final String NO_ELEMENTS = "~";
+
     protected AbstractFilter(boolean isWhitelist, Set<T> filter) {
         this.isWhitelist = isWhitelist;
         this.filter = filter;

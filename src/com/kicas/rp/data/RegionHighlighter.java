@@ -197,6 +197,7 @@ public class RegionHighlighter {
                     && replacement.getBlockY() < replacement.getWorld().getMaxHeight()) {
                 replacement.setY(replacement.getY() + 1);
             }
+
             replacement.setY(replacement.getY() - 1); // make sure it's in the ground and not above it
         } else {
             // Replacement is in the air, so we need to move down

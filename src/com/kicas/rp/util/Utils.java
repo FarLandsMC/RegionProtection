@@ -58,7 +58,7 @@ public final class Utils {
     public static int constrain(int n, int min, int max) {
         if (max < min)
             throw new IllegalArgumentException("The maximum bound cannot be less than the minimum bound.");
-        return n < min ? min : (n > max ? max : n);
+        return Math.max(min, Math.min(n, max));
     }
 
     /**
@@ -71,7 +71,7 @@ public final class Utils {
      */
     public static String getWorldName(String alias) {
         String formattedAlias = alias.toLowerCase();
-        if (WORLD_NAME_ALIASES.values().contains(formattedAlias))
+        if (WORLD_NAME_ALIASES.containsValue(formattedAlias))
             return formattedAlias;
 
         formattedAlias = formattedAlias.replaceAll("[\\-\\s]", "_");
@@ -116,11 +116,13 @@ public final class Utils {
     public static String capitalize(String x) {
         if (x == null || x.isEmpty())
             return x;
+
         String[] split = x.split(" ");
         for (int i = 0; i < split.length; ++i) {
             if (!split[i].isEmpty())
                 split[i] = Character.toUpperCase(split[i].charAt(0)) + split[i].substring(1).toLowerCase();
         }
+
         return String.join(" ", split);
     }
 
@@ -166,8 +168,8 @@ public final class Utils {
 
     /**
      * If a player would be teleported to the location of this block, confirm they cannot:
-     *  fall through or take damage
-     *  unless the block water
+     * fall through or take damage
+     * unless the block water
      *
      * @param block the block to check
      * @return if the block can be stood on without the block damaging the player
@@ -175,14 +177,14 @@ public final class Utils {
     private static boolean canStand(Block block) {
         return !(
                 block.isPassable() ||
-                Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(block.getType())
+                        Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(block.getType())
         ) || block.getType().equals(Material.WATER);
     }
 
     /**
      * If a player would be teleported to this location, confirm they cannot:
-     *  take damage from the block at    the location (body)
-     *  take damage from the block above the location (head)
+     * take damage from the block at    the location (body)
+     * take damage from the block above the location (head)
      *
      * @param location the location to check
      * @return if a player would be damaged by any of the blocks at this location upon tp ignoring the block below
@@ -190,7 +192,7 @@ public final class Utils {
     private static boolean isSafe(Location location) {
         return !(
                 doesDamage(location.add(0, 1, 0).getBlock()) ||
-                doesDamage(location.add(0, 1, 0).getBlock())
+                        doesDamage(location.add(0, 1, 0).getBlock())
         );
     }
 
@@ -213,11 +215,11 @@ public final class Utils {
      * We search a column at the x z of the origin
      * The algorithm treats this column as being sorted with ground at the bottom and sky above it
      * Because of this we can make assumptions that the ground will always have:
-     *  2 non damaging blocks above (air|vines|etc) and
-     *  1 block the player can stand on below (non passable and non damaging)
+     * 2 non damaging blocks above (air|vines|etc) and
+     * 1 block the player can stand on below (non passable and non damaging)
      * Because bottom and top specify search range for Y they should satisfy these ranges:
-     *  0 < bottom < top < 256   for the overworld
-     *  0 < bottom < top < 124   for the nether (124 instead of 128 because the bedrock roof guarantees unsafe tp)
+     * 0 < bottom < top < 256   for the overworld
+     * 0 < bottom < top < 124   for the nether (124 instead of 128 because the bedrock roof guarantees unsafe tp)
      *
      * @param origin the location to check for safety
      * @param bottom where to set the bottom of the "binary search", 0 < bottom < top
@@ -248,12 +250,12 @@ public final class Utils {
 
     /**
      * Search for a safe location using findSafe starting at and including origin in steps of dx dz where
-     *  these values are multiplied by 16 when there is Liquid at y62 as this usually indicates being in an ocean and
-     *  oceans provide a lower probability for findSafe to return a non null location.
+     * these values are multiplied by 16 when there is Liquid at y62 as this usually indicates being in an ocean and
+     * oceans provide a lower probability for findSafe to return a non null location.
      *
      * @param origin the location to start searching from
-     * @param dx the x offset we tend towards
-     * @param dz the x offset we tend towards
+     * @param dx     the x offset we tend towards
+     * @param dz     the x offset we tend towards
      * @return the first safe location we find
      */
     public static Location walk(Location origin, int dx, int dz) {

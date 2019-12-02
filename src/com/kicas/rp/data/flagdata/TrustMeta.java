@@ -49,6 +49,7 @@ public class TrustMeta implements Augmentable<TrustMeta> {
     public void augment(TrustMeta other) {
         if (other.publicTrustLevel != TrustLevel.NONE)
             publicTrustLevel = other.publicTrustLevel;
+
         trustData.putAll(other.trustData);
     }
 
@@ -62,6 +63,7 @@ public class TrustMeta implements Augmentable<TrustMeta> {
     public void reduce(TrustMeta other) {
         if (publicTrustLevel == other.publicTrustLevel)
             publicTrustLevel = TrustLevel.NONE;
+
         other.trustData.forEach((uuid, trust) -> {
             if (trustData.get(uuid) == trust)
                 trustData.remove(uuid);
@@ -275,9 +277,11 @@ public class TrustMeta implements Augmentable<TrustMeta> {
                     meta.trustPublic(level);
                     continue;
                 }
+
                 UUID uuid = RegionProtection.getDataManager().uuidForUsername(player);
                 if (uuid == null)
                     throw new IllegalArgumentException("Invalid player name: " + player);
+
                 meta.trustData.put(uuid, level);
             }
         }

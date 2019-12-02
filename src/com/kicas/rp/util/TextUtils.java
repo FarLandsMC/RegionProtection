@@ -77,14 +77,17 @@ public class TextUtils {
             if (cur == '\\' && next == VALUE_MARKER) {
                 sb.append(VALUE_MARKER);
                 ++i;
-            } else if (cur == VALUE_MARKER) { // Insert a value
+            }
+            // Insert a value
+            else if (cur == VALUE_MARKER) {
                 // Use hex for more indices
                 int index = Character.digit(next, 16);
                 if (index < values.length)
                     sb.append(values[index]);
                 ++i;
-            } else // Just append the next character
-                sb.append(cur);
+            }
+            // Just append the next character
+            else sb.append(cur);
         }
 
         return sb.toString();
@@ -240,7 +243,8 @@ public class TextUtils {
                         component.setLength(0);
                     }
 
-                    if ("link".equalsIgnoreCase(args.get(0))) { // Args: link, text
+                    // Args: link, text
+                    if ("link".equalsIgnoreCase(args.get(0))) {
                         if (args.size() < 3)
                             throw new SyntaxException("Link function usage: $(link,url,text)");
 
@@ -256,7 +260,9 @@ public class TextUtils {
                             bc.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, args.get(1)));
 
                         expr.addAll(Arrays.asList(text));
-                    } else if ("hover".equalsIgnoreCase(args.get(0))) { // Args: hover text, base text
+                    }
+                    // Args: hover text, base text
+                    else if ("hover".equalsIgnoreCase(args.get(0))) {
                         if (args.size() < 3)
                             throw new SyntaxException("Hover function usage: $(hover,hoverText,text)");
 
@@ -277,7 +283,9 @@ public class TextUtils {
                             bc.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover));
 
                         expr.addAll(Arrays.asList(text));
-                    } else if ("inflect".equalsIgnoreCase(args.get(0))) { // Args: value index, word
+                    }
+                    // Args: value index, word
+                    else if ("inflect".equalsIgnoreCase(args.get(0))) {
                         if (args.size() < 4)
                             throw new SyntaxException("Conjugate function usage: $(inflect,noun|verb,argIndex,word)");
 
@@ -303,7 +311,9 @@ public class TextUtils {
                         int count = ((Number) values[index]).intValue();
                         if ((noun && count != 1) || (!noun && count == 1))
                             component.append('s');
-                    } else if ("command".equalsIgnoreCase(args.get(0))) { // Args: command, text
+                    }
+                    // Args: command, text
+                    else if ("command".equalsIgnoreCase(args.get(0))) {
                         if (args.size() < 3)
                             throw new SyntaxException("Command function usage: $(command,command,text)");
 
@@ -320,7 +330,9 @@ public class TextUtils {
                             bc.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, args.get(1)));
 
                         expr.addAll(Arrays.asList(text));
-                    } else if ("hovercmd".equalsIgnoreCase(args.get(0))) { // Args: command, hover text, base text
+                    }
+                    // Args: command, hover text, base text
+                    else if ("hovercmd".equalsIgnoreCase(args.get(0))) {
                         if (args.size() < 4)
                             throw new SyntaxException("Hover-command function usage: " +
                                     "$(hovercmd,command,hoverText,text)");
@@ -344,7 +356,9 @@ public class TextUtils {
                         }
 
                         expr.addAll(Arrays.asList(text));
-                    } else if ("hoverlink".equalsIgnoreCase(args.get(0))) { // Args: link, hover text, base text
+                    }
+                    // Args: link, hover text, base text
+                    else if ("hoverlink".equalsIgnoreCase(args.get(0))) {
                         if (args.size() < 4)
                             throw new SyntaxException("Hover-link function usage: $(hoverlink,url,hoverText,text)");
 
@@ -427,15 +441,25 @@ public class TextUtils {
     private static Pair<String, Integer> getEnclosed(int start, String string) {
         boolean curved = string.charAt(start) == '('; // ()s or {}s
         int depth = 1, i = start + 1;
-        while (depth > 0) { // Exits when there are no pairs of open brackets
-            if (i == string.length()) // Avoid index out of bound errors
+
+        // Exits when there are no pairs of open brackets
+        while (depth > 0) {
+            // Avoid index out of bound errors
+            if (i == string.length())
                 return new Pair<>(null, -1);
+
             char c = string.charAt(i++);
-            if (c == (curved ? ')' : '}')) // We've closed off a pair
+
+            // We've closed off a pair
+            if (c == (curved ? ')' : '}')) {
                 --depth;
-            else if (c == (curved ? '(' : '{')) // We've started a pair
+            }
+            // We've started a pair
+            else if (c == (curved ? '(' : '{')) {
                 ++depth;
+            }
         }
+
         // Return the stuff inside the brackets, and the index of the char after the last bracket
         return new Pair<>(string.substring(start + 1, i - 1), i);
     }

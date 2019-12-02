@@ -51,14 +51,14 @@ public class EnumFilter extends AbstractFilter<Integer> {
     public <E extends Enum<E>> String toString(Class<E> clazz) {
         // ~ = empty filter, IE everything is allowed
         if (!isWhitelist && filter.isEmpty())
-            return "~";
+            return NO_ELEMENTS;
 
         // A whitelist means everything is disallowed with some exceptions, so *,!a,!b
-        String base = isWhitelist ? "*" : "";
+        String base = isWhitelist ? ALL_ELEMENTS : "";
         // Convert the ordinals to formatted names and apply the formatting
         Enum<E>[] values = (Enum<E>[]) ReflectionHelper.invoke("values", clazz, null);
         return filter.isEmpty() ? base : (isWhitelist ? base + ", " : "") + filter.stream()
-                .map(ordinal -> (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal]))
+                .map(ordinal -> (isWhitelist ? ELEMENT_NEGATION : "") + Utils.formattedName(values[ordinal]))
                 .sorted().collect(Collectors.joining(", "));
     }
 
@@ -77,15 +77,15 @@ public class EnumFilter extends AbstractFilter<Integer> {
      * @see com.kicas.rp.util.Utils#formattedName(Enum) Formatted enum constand names.
      */
     public static <E extends Enum<E>> EnumFilter fromString(String string, Class<E> clazz) {
-        if ("~".equals(string))
+        if (NO_ELEMENTS.equals(string))
             return EMPTY_FILTER;
 
-        boolean isWhitelist = string.contains("*");
+        boolean isWhitelist = string.contains(ALL_ELEMENTS);
         EnumFilter ef = new EnumFilter(isWhitelist);
         for (String element : string.split(",")) {
             element = element.trim();
             // Ignore negation depending on the filter type (! = negation)
-            if (!"*".equals(element) && isWhitelist == element.startsWith("!")) {
+            if (!ALL_ELEMENTS.equals(element) && isWhitelist == element.startsWith(ELEMENT_NEGATION)) {
                 // Convert the element into the actual enum name
                 String name = isWhitelist ? element.substring(1) : element;
 

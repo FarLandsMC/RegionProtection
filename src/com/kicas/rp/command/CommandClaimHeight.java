@@ -109,16 +109,22 @@ public class CommandClaimHeight extends TabCompleterBase implements CommandExecu
                         sender.sendMessage(ChatColor.RED + "A subdivision must have a height of at least " +
                                 RegionProtection.getRPConfig().getInt("general.minimum-subdivision-height") +
                                 " blocks.");
-                    } else { // Success: modify the height
+                    }
+                    // Success: modify the height
+                    else {
                         vertex.setY(newY);
                         sender.sendMessage(ChatColor.GOLD + "The top of this claim is now set to " + ChatColor.AQUA +
                                 "y=" + newY);
                     }
-                } else { // Don't allow modification of the top of a regular claim
+                }
+                // Don't allow modification of the top of a regular claim
+                else {
                     sender.sendMessage(ChatColor.RED + "You cannot modify the position of the ceiling of a parent " +
                             "claim.");
                 }
-            } else { // Modify the bottom
+            }
+            // Modify the bottom
+            else {
                 // Subdivisions
                 if (region.hasParent()) {
                     // Make sure the subdivision meets the minimum height requirement
@@ -127,17 +133,21 @@ public class CommandClaimHeight extends TabCompleterBase implements CommandExecu
                         sender.sendMessage(ChatColor.RED + "A subdivision must have a height of at least " +
                                 RegionProtection.getRPConfig().getInt("general.minimum-subdivision-height") +
                                 " blocks.");
-                    } else if (newY < region.getParent().getMin().getBlockY()) {
-                        // Ensure the claim does not extend below the parent
-
+                    }
+                    // Ensure the claim does not extend below the parent
+                    else if (newY < region.getParent().getMin().getBlockY()) {
                         sender.sendMessage(ChatColor.RED + "You cannot extend this subdivision below the minimum " +
                                 "y-level of its parent claim (y=" + region.getParent().getMin().getBlockY() + ").");
-                    } else { // Success: modify the height
+                    }
+                    // Success: modify the height
+                    else {
                         vertex.setY(newY);
                         sender.sendMessage(ChatColor.GOLD + "The bottom of this claim is now set to " + ChatColor.AQUA +
                                 "y=" + newY);
                     }
-                } else { // Regular claims
+                }
+                // Regular claims
+                else {
                     // Enforce a maximum bound on the bottom of the claim
                     if (newY > 62) {
                         sender.sendMessage(ChatColor.RED + "Your claim must extend down to at least y=62.");
@@ -154,8 +164,9 @@ public class CommandClaimHeight extends TabCompleterBase implements CommandExecu
                             "y=" + newY);
                 }
             }
-        } else // Invalid sub-command
-            sender.sendMessage(ChatColor.RED + "Invalid sub-command: " + args[0]);
+        }
+        // Invalid sub-command
+        else sender.sendMessage(ChatColor.RED + "Invalid sub-command: " + args[0]);
 
         return true;
     }

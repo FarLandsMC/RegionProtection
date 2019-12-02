@@ -149,12 +149,10 @@ public class PlayerEventHandler implements Listener {
 
                 if (relativeBlock.getType() == Material.FIRE || blockType == Material.DRAGON_EGG) {
                     // Admin flag then trust flag
-                    if (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK)
-                            .isAllowed(Materials.blockType(event.getClickedBlock()))) {
+                    if (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(Materials.blockType(event.getClickedBlock()))) {
                         event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
                         event.setCancelled(true);
-                    } else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST)
-                            .hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+                    } else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
                         event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                         event.setCancelled(true);
                     }
@@ -173,8 +171,7 @@ public class PlayerEventHandler implements Listener {
 
             // Handle every block related right-click interaction
             case RIGHT_CLICK_BLOCK: {
-                if (event.getClickedBlock().getType().name().endsWith("CHEST") &&
-                        flags.hasFlag(RegionFlag.FORCE_CHEST_ACCESS)) {
+                if (event.getClickedBlock().getType().name().endsWith("CHEST") && flags.hasFlag(RegionFlag.FORCE_CHEST_ACCESS)) {
                     if (!flags.isAllowed(RegionFlag.FORCE_CHEST_ACCESS)) {
                         event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
                         event.setCancelled(true);
@@ -196,6 +193,7 @@ public class PlayerEventHandler implements Listener {
                     if (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_PLACE).isAllowed(heldItem)) {
                         if (EquipmentSlot.HAND.equals(event.getHand()))
                             event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
+
                         event.setCancelled(true);
                         return;
                     }
@@ -214,11 +212,10 @@ public class PlayerEventHandler implements Listener {
                 if (Materials.isInventoryHolder(blockType) || blockType == Material.ANVIL ||
                         blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
                     // Container trust
-                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER,
-                            flags)) {
+                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
                         if (EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED +
-                                    "This belongs to " + flags.getOwnerName() + ".");
+                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+
                         event.setCancelled(true);
                         return;
                     }
@@ -229,6 +226,7 @@ public class PlayerEventHandler implements Listener {
                     if (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isAllowed(blockType)) {
                         if (EquipmentSlot.HAND.equals(event.getHand()))
                             event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+
                         event.setCancelled(true);
                         return;
                     }
@@ -237,8 +235,8 @@ public class PlayerEventHandler implements Listener {
                     if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags) &&
                             !(blockType == Material.CRAFTING_TABLE || blockType == Material.ENCHANTING_TABLE)) {
                         if (EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED +
-                                    "This belongs to " + flags.getOwnerName() + ".");
+                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+
                         event.setCancelled(true);
                         return;
                     }
@@ -253,8 +251,7 @@ public class PlayerEventHandler implements Listener {
                     // Handle trampling
                     if (blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) {
                         event.setCancelled(!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(blockType) ||
-                                !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
-                                        TrustLevel.BUILD, flags));
+                                !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags));
                         return;
                     }
 
@@ -318,6 +315,7 @@ public class PlayerEventHandler implements Listener {
                 !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
             if (EquipmentSlot.HAND.equals(event.getHand()))
                 event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+
             event.setCancelled(true);
             return;
         }
@@ -328,6 +326,7 @@ public class PlayerEventHandler implements Listener {
             if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
                 if (EquipmentSlot.HAND.equals(event.getHand()))
                     event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+
                 event.setCancelled(true);
                 return;
             }
@@ -339,6 +338,7 @@ public class PlayerEventHandler implements Listener {
             if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
                 if (EquipmentSlot.HAND.equals(event.getHand()))
                     event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+
                 event.setCancelled(true);
             }
         }
@@ -352,8 +352,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onLecternBookTaken(PlayerTakeLecternBookEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLectern().getLocation());
-        if (flags != null && !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
-                TrustLevel.CONTAINER, flags)) {
+        if (flags != null && !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
             event.getPlayer().sendMessage(ChatColor.RED + "That belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
         }
@@ -410,11 +409,11 @@ public class PlayerEventHandler implements Listener {
         // Only check trust for non-hostile entities
         if (event.getDamager() instanceof Player) {
             if (!flags.isEffectiveOwner((Player) event.getDamager())) {
-                Material weapon = Materials.stackType(Materials.heldItem((Player) event.getDamager(),
-                        EquipmentSlot.HAND));
+                Material weapon = Materials.stackType(Materials.heldItem((Player) event.getDamager(), EquipmentSlot.HAND));
                 if (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isAllowed(weapon)) {
                     if (weapon != Material.AIR)
                         event.getDamager().sendMessage(ChatColor.RED + "You cannot use that weapon here.");
+
                     event.setCancelled(true);
                     return;
                 }
@@ -471,14 +470,17 @@ public class PlayerEventHandler implements Listener {
         else if (event.getDamager() instanceof AreaEffectCloud)
             shooter = ((AreaEffectCloud) event.getDamager()).getSource();
 
-        if (shooter instanceof Player) { // For players check trust and PvP
+        // For players check trust and PvP
+        if (shooter instanceof Player) {
             if (event.getEntity() instanceof Player) {
                 event.setCancelled(!flags.isAllowed(RegionFlag.PVP));
             } else {
-                event.setCancelled(!Entities.isHostile((Player)shooter, event.getEntity()) &&
+                event.setCancelled(!Entities.isHostile((Player) shooter, event.getEntity()) &&
                         !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter, TrustLevel.BUILD, flags));
             }
-        } else if (shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
+        }
+        // Check for region crosses if fired by a dispenser
+        else if (shooter instanceof BlockProjectileSource) {
             event.setCancelled(RegionProtection.getDataManager().crossesRegions(((BlockProjectileSource) shooter)
                     .getBlock().getLocation(), event.getEntity().getLocation()));
         }
@@ -548,6 +550,7 @@ public class PlayerEventHandler implements Listener {
                 flags.isEffectiveOwner((Player) event.getRemover()))) {
             if (event.getRemover() instanceof Player)
                 event.getRemover().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+
             event.setCancelled(true);
             return;
         }
@@ -564,10 +567,12 @@ public class PlayerEventHandler implements Listener {
         // Prevent arrows from breaking these entities
         if (event.getRemover() != null && event.getRemover().getType() == EntityType.ARROW) {
             ProjectileSource shooter = ((Arrow) event.getEntity()).getShooter();
-            if (shooter instanceof Player) { // For players check trust
-                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter,
-                        TrustLevel.BUILD, flags));
-            } else if (shooter instanceof BlockProjectileSource) { // Check for region crosses if fired by a dispenser
+            // For players check trust
+            if (shooter instanceof Player) {
+                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter, TrustLevel.BUILD, flags));
+            }
+            // Check for region crosses if fired by a dispenser
+            else if (shooter instanceof BlockProjectileSource) {
                 event.setCancelled(RegionProtection.getDataManager().crossesRegions(((BlockProjectileSource) shooter)
                         .getBlock().getLocation(), event.getEntity().getLocation()));
             }
@@ -701,8 +706,8 @@ public class PlayerEventHandler implements Listener {
                     fromFlags != null && fromFlags.hasFlag(RegionFlag.FLIGHT))) {
                 boolean allowFlight = toFlags == null ? event.getPlayer().getServer().getAllowFlight()
                         : toFlags.isAllowed(RegionFlag.FLIGHT);
-
                 event.getPlayer().setAllowFlight(allowFlight);
+
                 if (!allowFlight) {
                     event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 200, 4,
                             false, false, false));
@@ -714,6 +719,7 @@ public class PlayerEventHandler implements Listener {
                     event.getPlayer().spigot().sendMessage(fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL)
                             .getFormatted());
                 }
+
                 if (fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
                     fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(event.getPlayer());
             }
@@ -743,12 +749,20 @@ public class PlayerEventHandler implements Listener {
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
         if (flags != null) {
-            String message = event.getMessage().trim().replaceAll("^(/+)?", ""); // Remove beginning /'s
+            // Remove beginning /'s
+            String message = event.getMessage().trim().replaceAll("^(/+)?", "");
+
+            // Go past the namespace if they do something like /minecraft:tp, and also find the end of the command
             int start = message.indexOf(':') + 1, end = message.indexOf(' ');
+
+            // No spaces means that the end of the command is the end of the line
             if (end < 0)
                 end = message.length();
+
+            // If start >= end it means we picked up a colon in the arguments, so ignore it and set the start to 0
             if (start >= end)
                 start = 0;
+
             if (!flags.<StringFilter>getFlagMeta(RegionFlag.DENY_COMMAND).isAllowed(message.substring(start, end))) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that command here.");

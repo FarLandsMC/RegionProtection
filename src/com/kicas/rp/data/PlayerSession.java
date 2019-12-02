@@ -72,7 +72,9 @@ public class PlayerSession {
     public void setRegionHighlighter(RegionHighlighter highlighter) {
         if (currentHighlighter != null && !currentHighlighter.isComplete())
             currentHighlighter.remove();
+
         currentHighlighter = highlighter;
+
         if (highlighter != null)
             Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(), currentHighlighter::showChanges, 1L);
     }

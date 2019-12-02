@@ -29,17 +29,15 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockMove(BlockFromToEvent event) {
-        if (RegionProtection.getDataManager().crossesRegions(event.getBlock().getLocation(),
-                event.getToBlock().getLocation()))
+        if (RegionProtection.getDataManager().crossesRegions(event.getBlock().getLocation(), event.getToBlock().getLocation()))
             event.setCancelled(true);
         else {
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
 
-            if (Material.WATER == event.getBlock().getType()) {
+            if (Material.WATER == event.getBlock().getType())
                 event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.WATER_FLOW));
-            } else {
+            else
                 event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.LAVA_FLOW));
-            }
         }
     }
 
@@ -75,8 +73,7 @@ public class WorldEventHandler implements Listener {
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         if (flags != null) {
-            if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.LIGHTNING &&
-                    !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE)) {
+            if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.LIGHTNING && !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE)) {
                 event.setCancelled(true);
             } else if (!Entities.isArtificialSpawn(event.getSpawnReason()) &&
                     !flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType())) {
@@ -130,11 +127,10 @@ public class WorldEventHandler implements Listener {
             return;
 
         if (!flags.isAllowed(RegionFlag.ICE_CHANGE) &&
-                (event.getBlock().getType() == Material.ICE || event.getBlock().getType() == Material.FROSTED_ICE))
+                (event.getBlock().getType() == Material.ICE || event.getBlock().getType() == Material.FROSTED_ICE)) {
             event.setCancelled(true);
-        else if (!flags.isAllowed(RegionFlag.SNOW_CHANGE) && event.getBlock().getType() == Material.SNOW)
+        } else if (!flags.isAllowed(RegionFlag.SNOW_CHANGE) && event.getBlock().getType() == Material.SNOW)
             event.setCancelled(true);
-            // 2DO: prevent fire decay
         else if (!flags.isAllowed(RegionFlag.CORAL_DEATH) && Materials.isCoral(event.getBlock().getType()))
             event.setCancelled(true);
     }
