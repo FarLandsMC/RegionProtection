@@ -14,10 +14,7 @@ import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -106,7 +103,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                         region.hasParent() ? region.getParent().getDisplayName() : "none",
                         region.getCoOwners().isEmpty() ? "" : "\nCo-Owners: {&(gray)" + region.getCoOwners().stream()
                                 .map(RegionProtection.getDataManager()::currentUsernameForUuid)
-                                .collect(Collectors.joining(", ")) + "}",
+                                .sorted(Comparator.comparing(String::toLowerCase)).collect(Collectors.joining(", ")) + "}",
                         region.isEmpty() ? "" : "\nFlags:\n" + formatFlags(region)
                 );
             });
@@ -549,11 +546,11 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         return Collections.emptyList();
     }
 
-    // Convert the flags and their meta in the given container into a readable format
+    // Convert the flags and their meta in the given container into an alphabetical, readable format
     private static String formatFlags(FlagContainer flags) {
-        return flags.getFlags().entrySet().stream().map(entry -> "- " + Utils.formattedName(entry.getKey()) +
-                ": {&(gray)" + RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n").reduce("",
-                String::concat).trim();
+        return flags.getFlags().entrySet().stream().sorted(Comparator.comparing(entry -> entry.getKey().name()))
+                .map(entry -> "- " + Utils.formattedName(entry.getKey()) + ": {&(gray)" +
+                        RegionFlag.toString(entry.getKey(), entry.getValue()) + "}\n").reduce("", String::concat).trim();
     }
 
     // Convert a stream of some object into the EnumFilter format using the given toString method and prefix

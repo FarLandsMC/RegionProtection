@@ -2,6 +2,7 @@ package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.Utils;
 import org.bukkit.entity.Player;
 
@@ -183,12 +184,11 @@ public class TrustMeta implements Augmentable<TrustMeta> {
             list.put(publicTrustLevel, "public");
 
         // Built the individual formatted strings
-        trustData.forEach((uuid, trust) -> {
-            String name = RegionProtection.getDataManager().currentUsernameForUuid(uuid);
-            if (name != null) {
-                String current = list.get(trust);
-                list.put(trust, current.isEmpty() ? name : current + ", " + name);
-            }
+        trustData.entrySet().stream().map(entry -> new Pair<>(entry.getValue(), RegionProtection.getDataManager()
+                .currentUsernameForUuid(entry.getKey()))).filter(entry -> entry.getSecond() != null)
+                .sorted(Comparator.comparing(entry -> entry.getSecond().toLowerCase())).forEach(entry -> {
+            String current = list.get(entry.getFirst());
+            list.put(entry.getFirst(), current.isEmpty() ? entry.getSecond() : current + ", " + entry.getSecond());
         });
 
         return list;

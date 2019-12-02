@@ -3,6 +3,7 @@ package com.kicas.rp.data.flagdata;
 import com.kicas.rp.util.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Can act as a blacklist or whitelist for any given enum.
@@ -56,9 +57,9 @@ public class EnumFilter extends AbstractFilter<Integer> {
         String base = isWhitelist ? "*" : "";
         // Convert the ordinals to formatted names and apply the formatting
         Enum<E>[] values = (Enum<E>[]) ReflectionHelper.invoke("values", clazz, null);
-        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*, ") + String.join(", ", filter.stream()
+        return filter.isEmpty() ? base : (isWhitelist ? base + ", " : "") + filter.stream()
                 .map(ordinal -> (isWhitelist ? "!" : "") + Utils.formattedName(values[ordinal]))
-                .toArray(String[]::new));
+                .sorted().collect(Collectors.joining(", "));
     }
 
     /**

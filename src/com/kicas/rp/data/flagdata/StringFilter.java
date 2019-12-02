@@ -1,6 +1,7 @@
 package com.kicas.rp.data.flagdata;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is functionally the same as the EnumFilter except rather than filtering enum constants it filters string
@@ -52,8 +53,8 @@ public class StringFilter extends AbstractFilter<String> {
         // A whitelist means everything is disallowed with some exceptions, so *,!a,!b
         String base = isWhitelist ? "*" : "";
         // Convert the ordinals to formatted names and apply the formatting
-        return filter.isEmpty() ? base : (base.isEmpty() ? "" : "*, ") + String.join(", ", filter.stream()
-                .map(string -> (isWhitelist ? "!" : "") + string).toArray(String[]::new));
+        return filter.isEmpty() ? base : (isWhitelist ? base + ", " : "") + filter.stream()
+                .map(string -> (isWhitelist ? "!" : "") + string).sorted().collect(Collectors.joining(", "));
     }
 
     /**
