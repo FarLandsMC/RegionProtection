@@ -1,11 +1,13 @@
 package com.kicas.rp.util;
 
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +31,19 @@ public class TextUtils {
      */
     public static void sendFormatted(CommandSender sender, String input, Object... values) {
         sender.spigot().sendMessage(format(input, values));
+    }
+
+    /**
+     * Parses the given input text and substitutes in the given values and sends the result to the given player as the
+     * given message type.
+     *
+     * @param player the recipient of the formatted message.
+     * @param type   the message type.
+     * @param input  the input text.
+     * @param values the values to substitute in.
+     */
+    public static void sendFormatted(Player player, ChatMessageType type, String input, Object... values) {
+        player.spigot().sendMessage(type, format(input, values));
     }
 
     /**
