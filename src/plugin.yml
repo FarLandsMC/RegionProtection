@@ -1,9 +1,9 @@
-api-version: 1.14
+api-version: 1.15
 main: com.kicas.rp.RegionProtection
 name: RegionProtection
 description: A plugin that protects regions.
 author: [xCassyx, Kishiko73]
-version: 1.0-beta
+version: 2.0-beta
 commands:
   abandonclaim:
     description: Abandon the claim you are currently standing in.

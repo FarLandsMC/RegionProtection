@@ -1139,12 +1139,13 @@ public class DataManager implements Listener {
             } else {
                 Deserializer deserializer = new Deserializer(regionsFile, REGION_FORMAT_VERSION);
                 worlds.putAll(deserializer.readWorldData());
-                worlds.values().forEach(wd -> wd.generateLookupTable(LOOKUP_TABLE_SCALE));
             }
         } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file:\n" + ex.getClass().getName() + ": " + ex.getMessage());
             ex.printStackTrace();
         }
+
+        worlds.values().forEach(wd -> wd.generateLookupTable(LOOKUP_TABLE_SCALE));
 
         // Load player data
         try {
