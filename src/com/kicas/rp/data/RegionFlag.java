@@ -8,7 +8,7 @@ import org.bukkit.GameRule;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
 import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;
