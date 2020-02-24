@@ -171,7 +171,8 @@ public class PlayerEventHandler implements Listener {
 
             // Handle every block related right-click interaction
             case RIGHT_CLICK_BLOCK: {
-                if (event.getClickedBlock().getType().name().endsWith("CHEST") && flags.hasFlag(RegionFlag.FORCE_CHEST_ACCESS)) {
+                if (event.getClickedBlock().getType().name().endsWith("CHEST") && blockType != Material.ENDER_CHEST &&
+                        flags.hasFlag(RegionFlag.FORCE_CHEST_ACCESS)) {
                     if (!flags.isAllowed(RegionFlag.FORCE_CHEST_ACCESS)) {
                         event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
                         event.setCancelled(true);
