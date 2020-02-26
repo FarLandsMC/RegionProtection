@@ -223,9 +223,13 @@ public class PlayerEventHandler implements Listener {
                 }
 
                 // Handle "doors", redstone inputs
-                if (blockType.isInteractable()) {
+                if (blockType.isInteractable()  &&
+                        !(blockType == Material.CRAFTING_TABLE || blockType == Material.ENCHANTING_TABLE ||
+                                blockType == Material.ENDER_CHEST || blockType == Material.CAMPFIRE ||
+                                blockType == Material.STONECUTTER || blockType == Material.LOOM ||
+                                blockType == Material.CARTOGRAPHY_TABLE || blockType == Material.GRINDSTONE)) {
                     if (!flags.<EnumFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isAllowed(blockType)) {
-                        if (EquipmentSlot.HAND.equals(event.getHand()))
+                        if (EquipmentSlot.HAND == event.getHand())
                             event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
 
                         event.setCancelled(true);
@@ -233,9 +237,8 @@ public class PlayerEventHandler implements Listener {
                     }
 
                     // Access trust
-                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags) &&
-                            !(blockType == Material.CRAFTING_TABLE || blockType == Material.ENCHANTING_TABLE)) {
-                        if (EquipmentSlot.HAND.equals(event.getHand()))
+                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
+                        if (EquipmentSlot.HAND == event.getHand())
                             event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
 
                         event.setCancelled(true);
