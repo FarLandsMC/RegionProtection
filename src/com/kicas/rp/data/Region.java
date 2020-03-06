@@ -218,7 +218,7 @@ public class Region extends FlagContainer {
      * @return true if the given location is in this region, false otherwise.
      */
     public boolean contains(Location loc) {
-        return min.getBlockX() <= loc.getBlockX() && loc.getBlockX() <= max.getBlockX() &&
+        return  min.getBlockX() <= loc.getBlockX() && loc.getBlockX() <= max.getBlockX() &&
                 min.getBlockY() <= loc.getBlockY() && loc.getBlockY() <= max.getBlockY() &&
                 min.getBlockZ() <= loc.getBlockZ() && loc.getBlockZ() <= max.getBlockZ();
     }
@@ -230,7 +230,7 @@ public class Region extends FlagContainer {
      * @return true if the given location is in this region ignoring the y-axis, false otherwise.
      */
     public boolean containsIgnoreY(Location loc) {
-        return min.getBlockX() <= loc.getBlockX() && loc.getBlockX() <= max.getBlockX() &&
+        return  min.getBlockX() <= loc.getBlockX() && loc.getBlockX() <= max.getBlockX() &&
                 min.getBlockZ() <= loc.getBlockZ() && loc.getBlockZ() <= max.getBlockZ();
     }
 

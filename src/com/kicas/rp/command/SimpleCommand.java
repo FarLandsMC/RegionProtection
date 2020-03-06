@@ -348,24 +348,31 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        // Check the player exists
+        // Check the player exists and is in the claim
         Player player = Bukkit.getPlayer(args[0]);
-        if (player == null) {
-            sender.sendMessage(ChatColor.RED + "Could not find player " + args[0]);
+        if (player == null || !claim.containsIgnoreY(player.getLocation())) {
+            sender.sendMessage(ChatColor.RED + "Could not find player " + args[0] + " on your claim");
+            return true;
+        }
+
+        // Do not allow the command to function on op players
+        if (player.isOp()) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to expel this player");
             return true;
         }
 
         // Find a safe place to send the player
-        int w = claim.getMax().getBlockX() - claim.getMin().getBlockX(),
-                l = claim.getMax().getBlockZ() - claim.getMin().getBlockZ();
-        Location ejection = claim.getMin().clone().add(w >> 1, 0, l >> 1); // Move to center of the claim
+        int width  = claim.getMax().getBlockX() - claim.getMin().getBlockX(),
+            length = claim.getMax().getBlockZ() - claim.getMin().getBlockZ();
+        Location ejection = claim.getMin().clone().add(width >> 1, 0, length >> 1); // Move to center of the claim
         // Calculate a dx & dz that tend to world center to avoid potential world border issues
         int dx = ejection.getBlockX() < 0 ? 1 : -1,
-                dz = ejection.getBlockZ() < 0 ? 1 : -1;
-        ejection.add(w * dx, 0, l * dz); // Move to the edge of the claim closest to world center
+            dz = ejection.getBlockZ() < 0 ? 1 : -1;
+        ejection.add(width * dx, 0, length * dz); // Move to the edge of the claim closest to world center
 
         // Expel the player
         player.teleport(Utils.walk(ejection, 4 * dx, 4 * dz));
+        player.sendMessage(ChatColor.RED + "You have been expelled by the owner of this claim");
         sender.sendMessage(ChatColor.GREEN + "Expelled player " + player.getName() + " from your claim");
 
         return true;
