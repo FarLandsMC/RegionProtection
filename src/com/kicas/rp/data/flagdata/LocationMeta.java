@@ -11,7 +11,7 @@ import java.util.UUID;
  * Allows a minecraft location (including its world and rotation values) to be stored. Used for the respawn-location
  * flag.
  */
-public class LocationMeta {
+public class LocationMeta extends FlagMeta {
     private UUID world;
     private double x, y, z;
     private float yaw, pitch;
@@ -53,6 +53,44 @@ public class LocationMeta {
         return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
     }
 
+    @Override
+    public void readMetaString(String metaString) {
+        String[] args = metaString.split(" ");
+
+        if (args.length == 1)
+            throw new IllegalArgumentException("Please provide a y and z value.");
+        else if (args.length == 2)
+            throw new IllegalArgumentException("Please provide a z value.");
+
+        try {
+            x = Double.parseDouble(args[0]);
+            y = Double.parseDouble(args[1]);
+            z = Double.parseDouble(args[2]);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Failed to parse coordinate values.");
+        }
+
+        if (args.length <= 4) {
+            World world = Bukkit.getWorld(args.length == 4 ? Utils.getWorldName(args[3]) : "world");
+            if (world == null)
+                throw new IllegalArgumentException("Invalid world name: " + args[3]);
+            this.world = world.getUID();
+            return;
+        }
+
+        try {
+            yaw = Float.parseFloat(args[3]);
+            pitch = Float.parseFloat(args[4]);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Failed to parse rotation values.");
+        }
+
+        World world = Bukkit.getWorld(args.length == 6 ? Utils.getWorldName(args[5]) : "world");
+        if (world == null)
+            throw new IllegalArgumentException("Invalid world name: " + args[5]);
+        this.world = world.getUID();
+    }
+
     /**
      * Converts this location meta to a string form. The resulting string will only contain the x, y, and z parts of
      * this meta and each number will be truncated to three decimal points.
@@ -60,7 +98,7 @@ public class LocationMeta {
      * @return this location meta in string form.
      */
     @Override
-    public String toString() {
+    public String toMetaString() {
         return Utils.doubleToString(x, 3) + "x, " + Utils.doubleToString(y, 3) + "y, " + Utils.doubleToString(z, 3) +
                 "z (" + Bukkit.getWorld(world).getName() + ")";
     }

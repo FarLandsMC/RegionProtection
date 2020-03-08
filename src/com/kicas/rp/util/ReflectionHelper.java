@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 public final class ReflectionHelper {
     // Wrapper to primitive
     private static final Map<Class<?>, Class<?>> W2P = new HashMap<>();
+    private static final Map<Class<?>, Object> PRIMITIVE_DEFAULTS = new HashMap<>();
 
     static {
         W2P.put(Integer.class, int.class);
@@ -32,9 +33,25 @@ public final class ReflectionHelper {
         W2P.put(Boolean[].class, boolean[].class);
         W2P.put(Byte[].class, byte[].class);
         W2P.put(Character[].class, char[].class);
+
+        PRIMITIVE_DEFAULTS.put(int.class, 0);
+        PRIMITIVE_DEFAULTS.put(long.class, 0L);
+        PRIMITIVE_DEFAULTS.put(short.class, (short) 0);
+        PRIMITIVE_DEFAULTS.put(double.class, 0.0D);
+        PRIMITIVE_DEFAULTS.put(float.class, 0.0F);
+        PRIMITIVE_DEFAULTS.put(boolean.class, false);
+        PRIMITIVE_DEFAULTS.put(byte.class, (byte) 0);
+        PRIMITIVE_DEFAULTS.put(char.class, (char) 0);
     }
 
     private ReflectionHelper() {
+    }
+
+    private static Object defaultValue(Class<?> type) {
+        type = asPrimitive(type);
+        if (PRIMITIVE_DEFAULTS.containsKey(type))
+            return PRIMITIVE_DEFAULTS.get(type);
+        return null;
     }
 
     /**
@@ -189,6 +206,10 @@ public final class ReflectionHelper {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             return null;
         }
+    }
+
+    public static <T> T instantiateWithDefaultParams(Class<T> clazz) {
+        return instantiate(clazz, ReflectionHelper::defaultValue);
     }
 
     public static Object invoke(String methodName, Class<?> clazz, Object target, Object... parameters) {

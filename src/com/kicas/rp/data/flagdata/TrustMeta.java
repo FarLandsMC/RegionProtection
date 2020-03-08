@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * The metadata class for the trust region flag.
  */
-public class TrustMeta implements Augmentable<TrustMeta> {
+public class TrustMeta extends FlagMeta implements Augmentable<TrustMeta> {
     // Key: player UUID, value: trust level
     private final Map<UUID, TrustLevel> trustData;
     private TrustLevel publicTrustLevel;
@@ -204,7 +204,7 @@ public class TrustMeta implements Augmentable<TrustMeta> {
      * @return this trust meta in string form.
      */
     @Override
-    public String toString() {
+    public String toMetaString() {
         if (trustData.isEmpty()) {
             if (publicTrustLevel == TrustLevel.NONE)
                 return "[No Trust]";
@@ -235,6 +235,49 @@ public class TrustMeta implements Augmentable<TrustMeta> {
 
         TrustMeta tm = (TrustMeta) other;
         return trustData.equals(tm.trustData) && publicTrustLevel.equals(tm.publicTrustLevel);
+    }
+
+    @Override
+    public void readMetaString(String metaString) {
+        // Trim off any excess whitespace and check for an empty string, resulting in an empty trust meta
+        metaString = metaString.trim();
+        if (metaString.isEmpty()) {
+            publicTrustLevel = TrustLevel.NONE;
+            trustData.clear();
+            return;
+        }
+
+        // Create the metadata and begin parsing the individual trust levels
+        for (String trust : metaString.split(" ")) {
+            // Ignore extra spaces
+            if (trust.isEmpty())
+                continue;
+
+            // Error: missing ':'
+            if (!trust.contains(":"))
+                throw new IllegalArgumentException("Expected a : in \"" + trust + "\"");
+
+            // Get and check the level
+            String trustLevel = trust.substring(0, trust.indexOf(':')),
+                    players = trust.substring(trust.indexOf(':') + 1);
+            TrustLevel level = Utils.safeValueOf(TrustLevel::valueOf, trustLevel.toUpperCase());
+            if (level == null)
+                throw new IllegalArgumentException("Invalid trust level: " + trustLevel);
+
+            // Parse the players
+            for (String player : players.split(",")) {
+                if ("public".equals(player)) {
+                    publicTrustLevel = level;
+                    continue;
+                }
+
+                UUID uuid = RegionProtection.getDataManager().uuidForUsername(player);
+                if (uuid == null)
+                    throw new IllegalArgumentException("Invalid player name: " + player);
+
+                trustData.put(uuid, level);
+            }
+        }
     }
 
     /**

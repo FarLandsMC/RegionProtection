@@ -9,7 +9,7 @@ import java.util.Objects;
  * Represents metadata for flags that contain formatted in-game text. The format stored follows that which is parsed by
  * the TextUtils utility.
  */
-public class TextMeta {
+public class TextMeta extends FlagMeta {
     private String text;
     // Computed on construction for efficiency later on
     private BaseComponent[] formatted;
@@ -43,12 +43,18 @@ public class TextMeta {
         return text;
     }
 
+    @Override
+    public void readMetaString(String metaString) {
+        text = metaString.replaceAll("\\\\n|\\\\r", "\n");
+        formatted = TextUtils.format(Objects.requireNonNull(text));
+    }
+
     /**
      * @see TextMeta#getText()
      */
     @Override
-    public String toString() {
-        return getText();
+    public String toMetaString() {
+        return text.replaceAll("\n|\r\n", "\\\\n");
     }
 
     /**

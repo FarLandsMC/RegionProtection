@@ -418,6 +418,15 @@ public class Region extends FlagContainer {
             }
         }
 
+        // Check co-owners
+        for (UUID coOwner : coOwners) {
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(coOwner);
+            if (offlinePlayer.isOnline())
+                return false;
+            if (offlinePlayer.getLastPlayed() > mostRecentLogin)
+                mostRecentLogin = offlinePlayer.getLastPlayed();
+        }
+
         // Don't forget the owner
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
         if (offlinePlayer.isOnline())

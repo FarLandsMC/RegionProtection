@@ -2,8 +2,9 @@ package com.kicas.rp.data.flagdata;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public abstract class AbstractFilter<T> implements Augmentable<AbstractFilter<T>> {
+public abstract class AbstractFilter<T> extends FlagMeta implements Augmentable<AbstractFilter<T>> {
     protected boolean isWhitelist;
     protected Set<T> filter;
 
@@ -15,6 +16,10 @@ public abstract class AbstractFilter<T> implements Augmentable<AbstractFilter<T>
         this.isWhitelist = isWhitelist;
         this.filter = filter;
     }
+
+    protected abstract T elementFromString(String s);
+
+    protected abstract String elementToString(T e);
 
     /**
      * Returns true if this filter is a whitelist, or false if this filter is a blacklist. A whitelist filter only
@@ -31,6 +36,18 @@ public abstract class AbstractFilter<T> implements Augmentable<AbstractFilter<T>
      */
     public Set<T> getFilter() {
         return Collections.unmodifiableSet(filter);
+    }
+
+    /**
+     * Returns whether or not this filter allows the given element. More specifically, returns true if this filter
+     * contains the given element and this filter is a whitelist, or true if this filter does not contain the given
+     * element and is a blacklist.
+     *
+     * @param e the element to test.
+     * @return true if the given element is allowed by this filter, false otherwise.
+     */
+    public boolean isAllowed(T e) {
+        return isWhitelist == filter.contains(e);
     }
 
     /**
@@ -69,5 +86,56 @@ public abstract class AbstractFilter<T> implements Augmentable<AbstractFilter<T>
 
         AbstractFilter af = (AbstractFilter) other;
         return filter.equals(af.filter) && isWhitelist == af.isWhitelist;
+    }
+
+    /**
+     * Converts the given string to a filter of the inferred type. Each individual element should be separated by a
+     * comma. If the string contains an asterisk (*), then the resulting filter will be a whitelist and only elements
+     * prefixed with ! will be added to the filter. If no asterisks are in the input string, then the resulting filter
+     * will be a blacklist filter, and elements prefixed with ! will be ignored. If the given input string is just a
+     * tilde (~), then an empty filter will be returned.
+     *
+     * @param metaString the input string.
+     * @throws IllegalArgumentException if a filter element cannot be parsed.
+     */
+    @Override
+    public void readMetaString(String metaString) {
+        if (NO_ELEMENTS.equals(metaString))
+            return;
+
+        isWhitelist = metaString.contains(ALL_ELEMENTS);
+        for (String elementString : metaString.split(",")) {
+            elementString = elementString.trim();
+            // Ignore negation depending on the filter type (! = negation)
+            if (!ALL_ELEMENTS.equals(elementString) && isWhitelist == elementString.startsWith(ELEMENT_NEGATION)) {
+                // Convert the element into the actual enum name
+                String rawElementString = isWhitelist ? elementString.substring(1) : elementString;
+                T element = elementFromString(rawElementString);
+                if (element == null)
+                    throw new IllegalArgumentException(elementString);
+                else
+                    filter.add(element);
+            }
+        }
+    }
+
+    /**
+     * Converts this string filter to a string. Whitelist filters will be prefixed with a * and all subsequent
+     * comma-separated elements will be preceded by a !. For a blacklist filter, simply a list of comma separated string
+     * constants is returned.
+     *
+     * @return a string representation of this string filter.
+     */
+    @Override
+    public String toMetaString() {
+        // ~ = empty filter, IE everything is allowed
+        if (!isWhitelist && filter.isEmpty())
+            return NO_ELEMENTS;
+
+        // A whitelist means everything is disallowed with some exceptions, so *,!a,!b
+        String base = isWhitelist ? ALL_ELEMENTS : "";
+        // Convert the ordinals to formatted names and apply the formatting
+        return filter.isEmpty() ? base : (isWhitelist ? base + ", " : "") + filter.stream().map(this::elementToString)
+                .map(string -> (isWhitelist ? ELEMENT_NEGATION : "") + string).sorted().collect(Collectors.joining(", "));
     }
 }

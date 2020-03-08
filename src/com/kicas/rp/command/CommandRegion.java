@@ -2,8 +2,7 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
-import com.kicas.rp.data.flagdata.AbstractFilter;
-import com.kicas.rp.data.flagdata.Augmentable;
+import com.kicas.rp.data.flagdata.*;
 import com.kicas.rp.util.Materials;
 import com.kicas.rp.util.ReflectionHelper;
 import com.kicas.rp.util.TextUtils;
@@ -206,7 +205,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             }
 
             if ((modification == FlagModification.AUGMENT || modification == FlagModification.REDUCE) &&
-                    !Augmentable.class.isAssignableFrom(flag.getMetaClass())) {
+                    (flag.isBoolean() || !Augmentable.class.isAssignableFrom(flag.getMetaClass()))) {
                 sender.sendMessage(ChatColor.RED + "This flag cannot be augmented or reduced.");
                 return true;
             }
@@ -454,12 +453,15 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 if (flag == null)
                     return Collections.emptyList();
 
+                if (flag.isBoolean())
+                    return filterStartingWith(args[3], ALLOW_DENY);
+
                 // Too complex, not worth giving suggestions for
-                if (flag == RegionFlag.TRUST || flag == RegionFlag.GREETING || flag == RegionFlag.FAREWELL)
+                if (TrustMeta.class.equals(flag.getMetaClass()) || TextMeta.class.equals(flag.getMetaClass()))
                     return Collections.emptyList();
 
-                // Special case flag(s) that can accept more that one argument
-                if (flag == RegionFlag.RESPAWN_LOCATION) {
+                // Location meta suggestion
+                if (LocationMeta.class.equals(flag.getMetaClass())) {
                     switch (args.length) {
                         case 4: // x
                             return Collections.singletonList(Integer.toString(location.getBlockX()));
@@ -489,7 +491,24 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                     }
                 }
 
-                // These flags only accept one argument
+                if (CommandMeta.class.equals(flag.getMetaClass())) {
+                    // Suggest the allowed senders
+                    if (!args[3].contains(":"))
+                        return filterStartingWith(args[3], Stream.of("console:", "player:"));
+                    else { // Suggest the known commands matching the prefix
+                        String prefix = args[3].substring(0, args[3].indexOf(':') + 1);
+                        Map<String, org.bukkit.command.Command> knownCommands =
+                                (Map<String, org.bukkit.command.Command>) ReflectionHelper.getFieldValue
+                                        ("knownCommands", SimpleCommandMap.class, ((CraftServer) Bukkit.getServer())
+                                                .getCommandMap());
+
+                        return filterStartingWith(args[3], knownCommands.keySet().stream()
+                                .filter(cmd -> !cmd.contains(":"))
+                                .map(cmd -> prefix + cmd.toLowerCase()));
+                    }
+                }
+
+                // These are the filter flags
                 switch (flag) {
                     // Give suggestions following the enum filter format (entities)
                     case DENY_SPAWN:
@@ -515,25 +534,6 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                         return filterFormat(args[3], Stream.of(Material.values()).filter(mat -> !mat.isBlock()),
                                 Utils::formattedName);
 
-                    // Give suggestions according to the CommandMeta format
-                    case ENTER_COMMAND:
-                    case EXIT_COMMAND: {
-                        // Suggest the allowed senders
-                        if (!args[3].contains(":"))
-                            return filterStartingWith(args[3], Stream.of("console:", "player:"));
-                        else { // Suggest the known commands matching the prefix
-                            String prefix = args[3].substring(0, args[3].indexOf(':') + 1);
-                            Map<String, org.bukkit.command.Command> knownCommands =
-                                    (Map<String, org.bukkit.command.Command>) ReflectionHelper.getFieldValue
-                                            ("knownCommands", SimpleCommandMap.class, ((CraftServer) Bukkit.getServer())
-                                                    .getCommandMap());
-
-                            return filterStartingWith(args[3], knownCommands.keySet().stream()
-                                    .filter(cmd -> !cmd.contains(":"))
-                                    .map(cmd -> prefix + cmd.toLowerCase()));
-                        }
-                    }
-
                     // Suggest the known commands
                     case DENY_COMMAND: {
                         Map<String, org.bukkit.command.Command> knownCommands =
@@ -544,10 +544,6 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                         return filterFormat(args[3], knownCommands.keySet().stream().filter(s -> !s.contains(":")),
                                 null);
                     }
-
-                    // Boolean flags
-                    default:
-                        return filterStartingWith(args[3], ALLOW_DENY);
                 }
             }
         }

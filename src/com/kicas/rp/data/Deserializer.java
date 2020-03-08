@@ -4,6 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.*;
 import com.kicas.rp.util.Decoder;
 import com.kicas.rp.util.Pair;
+import com.kicas.rp.util.ReflectionHelper;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -202,7 +203,7 @@ public class Deserializer implements AutoCloseable {
                 meta = decoder.readBoolean();
             else if (CommandMeta.class.equals(flag.getMetaClass()))
                 meta = new CommandMeta(decoder.readBoolean(), decoder.readUTF8Raw());
-            else if (EnumFilter.class.equals(flag.getMetaClass())) {
+            else if (EnumFilter.class.isAssignableFrom(flag.getMetaClass())) {
                 boolean isWhitelist = decoder.readBoolean();
                 Set<Integer> filter = new HashSet<>();
                 int len = decoder.readCompressedUint();
@@ -210,7 +211,8 @@ public class Deserializer implements AutoCloseable {
                     filter.add(decoder.readCompressedUint());
                     --len;
                 }
-                meta = new EnumFilter(isWhitelist, filter);
+                meta = ReflectionHelper.instantiateWithDefaultParams(flag.getMetaClass());
+                ((EnumFilter) meta).setFilter(isWhitelist, filter);
             } else if (LocationMeta.class.equals(flag.getMetaClass())) {
                 meta = new LocationMeta(decoder.readUuid(), decoder.readDouble(), decoder.readDouble(),
                         decoder.readDouble(), decoder.readFloat(), decoder.readFloat());

@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
  * Represents the metadata for a command. This meta is used for the enter-command and exit-command flags, and specifies
  * the sender of the command as well as the command to execute.
  */
-public class CommandMeta {
+public class CommandMeta extends FlagMeta {
     private boolean runFromConsole;
     private String command;
 
@@ -36,6 +36,29 @@ public class CommandMeta {
      */
     public String getCommand() {
         return command;
+    }
+
+    @Override
+    public void readMetaString(String metaString) {
+        int index = metaString.indexOf(':');
+        if (index < 0)
+            throw new IllegalArgumentException("Invalid command format. Format: <console|player>:<command>");
+
+        String sender = metaString.substring(0, index);
+
+        if ("console".equalsIgnoreCase(sender))
+            runFromConsole = true;
+        else if ("player".equalsIgnoreCase(sender))
+            runFromConsole = false;
+        else
+            throw new IllegalArgumentException("Invalid sender: " + sender);
+
+        command = metaString.substring(index + 1);
+    }
+
+    @Override
+    public String toMetaString() {
+        return (runFromConsole ? "console:" : "player:") + command;
     }
 
     /**
