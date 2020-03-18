@@ -4,7 +4,7 @@
 SOURCE_DIR="./src"
 LIB_DIR="./lib"
 DIST_DIR="./out"
-SPIGOT_VERSION="1.14.4"
+SPIGOT_VERSION="1.15.2"
 
 # Non-configurables (transient)
 BUILD_DIR="./build"
