@@ -237,6 +237,16 @@ public class TrustMeta extends FlagMeta implements Augmentable<TrustMeta> {
         return trustData.equals(tm.trustData) && publicTrustLevel.equals(tm.publicTrustLevel);
     }
 
+
+    /**
+     * Updates this trust meta based on the given string. The format for a trust meta is as follows: for an individual
+     * trust level, the name of the trust level should be followed by a colon, then a comma separated list of the players
+     * who are to be designated that trust level. If "public" is encountered as a player name, then that trust level
+     * will be assigned to the public. Each individual trust level as defined above should be separated by a space
+     * character. If the given string is empty then an empty trust meta will be returned.
+     *
+     * @param metaString the string to parse.
+     */
     @Override
     public void readMetaString(String metaString) {
         // Trim off any excess whitespace and check for an empty string, resulting in an empty trust meta
@@ -278,57 +288,5 @@ public class TrustMeta extends FlagMeta implements Augmentable<TrustMeta> {
                 trustData.put(uuid, level);
             }
         }
-    }
-
-    /**
-     * Creates a trust meta based on the given string. The format for a trust meta is as follows: for an individual
-     * trust level, the name of the trust level should be followed by a colon, then a comma separated list of the players
-     * who are to be designated that trust level. If "public" is encountered as a player name, then that trust level
-     * will be assigned to the public. Each individual trust level as defined above should be separated by a space
-     * character. If the given string is empty then an empty trust meta will be returned.
-     *
-     * @param string the string to parse.
-     * @return the trust meta derived from
-     */
-    public static TrustMeta fromString(String string) {
-        // Trim off any excess whitespace and check for an empty string, resulting in an empty trust meta
-        string = string.trim();
-        if (string.isEmpty())
-            return NO_TRUST.copy();
-
-        // Create the metadata and begin parsing the individual trust levels
-        TrustMeta meta = new TrustMeta();
-        for (String trust : string.split(" ")) {
-            // Ignore extra spaces
-            if (trust.isEmpty())
-                continue;
-
-            // Error: missing ':'
-            if (!trust.contains(":"))
-                throw new IllegalArgumentException("Expected a : in \"" + trust + "\"");
-
-            // Get and check the level
-            String trustLevel = trust.substring(0, trust.indexOf(':')),
-                    players = trust.substring(trust.indexOf(':') + 1);
-            TrustLevel level = Utils.safeValueOf(TrustLevel::valueOf, trustLevel.toUpperCase());
-            if (level == null)
-                throw new IllegalArgumentException("Invalid trust level: " + trustLevel);
-
-            // Parse the players
-            for (String player : players.split(",")) {
-                if ("public".equals(player)) {
-                    meta.trustPublic(level);
-                    continue;
-                }
-
-                UUID uuid = RegionProtection.getDataManager().uuidForUsername(player);
-                if (uuid == null)
-                    throw new IllegalArgumentException("Invalid player name: " + player);
-
-                meta.trustData.put(uuid, level);
-            }
-        }
-
-        return meta;
     }
 }

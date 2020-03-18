@@ -132,7 +132,7 @@ public class Serializer implements AutoCloseable {
             Set<? extends Enum<?>> filter = ((EnumFilter<? extends Enum<?>>) meta).getFilter();
             encoder.writeUintCompressed(filter.size());
             for (Enum<?> element : filter)
-                encoder.writeUintCompressed(element.ordinal());
+                encoder.writeIdentifier(element.name());
         } else if (meta instanceof LocationMeta) {
             Location loc = ((LocationMeta) meta).getLocation();
             encoder.writeUuid(loc.getWorld().getUID());

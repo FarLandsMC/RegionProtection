@@ -3,8 +3,7 @@ package com.kicas.rp.data.flagdata;
 import java.util.*;
 
 /**
- * This class is functionally the same as the EnumFilter except rather than filtering enum constants it filters string
- * literals.
+ * Can act as a blacklist or whitelist for strings.
  */
 public class StringFilter extends AbstractFilter<String> {
     public static final StringFilter EMPTY_FILTER = new StringFilter();
@@ -21,13 +20,19 @@ public class StringFilter extends AbstractFilter<String> {
         this(false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected String elementFromString(String s) {
-        return s;
+    protected String elementFromString(String string) {
+        return string;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    protected String elementToString(String e) {
-        return e;
+    protected String elementToString(String element) {
+        return element;
     }
 }

@@ -4,6 +4,12 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * This class defines the outline of a filter, or a set of rules to allow or deny elements of a certain type. A filter
+ * can act as a blacklist or whitelist for a set of values of a given type.
+ *
+ * @param <T> the element type.
+ */
 public abstract class AbstractFilter<T> extends FlagMeta implements Augmentable<AbstractFilter<T>> {
     protected boolean isWhitelist;
     protected Set<T> filter;
@@ -17,9 +23,21 @@ public abstract class AbstractFilter<T> extends FlagMeta implements Augmentable<
         this.filter = filter;
     }
 
-    protected abstract T elementFromString(String s);
+    /**
+     * Converts the given string form of an element into an element.
+     *
+     * @param string the string form of an element.
+     * @return an elements based off the given string.
+     */
+    protected abstract T elementFromString(String string);
 
-    protected abstract String elementToString(T e);
+    /**
+     * Converts the given element into a string.
+     *
+     * @param element the element.
+     * @return the string form of the given element.
+     */
+    protected abstract String elementToString(T element);
 
     /**
      * Returns true if this filter is a whitelist, or false if this filter is a blacklist. A whitelist filter only
@@ -46,8 +64,8 @@ public abstract class AbstractFilter<T> extends FlagMeta implements Augmentable<
      * @param e the element to test.
      * @return true if the given element is allowed by this filter, false otherwise.
      */
-    public boolean isAllowed(T e) {
-        return isWhitelist == filter.contains(e);
+    public boolean isBlocked(T e) {
+        return isWhitelist != filter.contains(e);
     }
 
     /**

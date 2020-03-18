@@ -49,7 +49,7 @@ public class PlayerEventHandler implements Listener {
             return;
 
         // Check admin flag first
-        if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(event.getBlock().getType())) {
+        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(event.getBlock().getType())) {
             event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
             event.setCancelled(true);
             return;
@@ -89,7 +89,7 @@ public class PlayerEventHandler implements Listener {
             return;
 
         // Check admin flag first
-        if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isAllowed(event.getBlock().getType())) {
+        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(event.getBlock().getType())) {
             event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
             event.setCancelled(true);
             return;
@@ -136,7 +136,7 @@ public class PlayerEventHandler implements Listener {
                 : event.getClickedBlock().getType();
 
         if (event.getAction() != Action.PHYSICAL && !heldItem.isBlock() &&
-                !flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isAllowed(heldItem)) {
+                flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(heldItem)) {
             if (event.getHand() == EquipmentSlot.HAND)
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
             event.setCancelled(true);
@@ -151,7 +151,7 @@ public class PlayerEventHandler implements Listener {
 
                 if (relativeBlock.getType() == Material.FIRE || blockType == Material.DRAGON_EGG) {
                     // Admin flag then trust flag
-                    if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(Materials.blockType(event.getClickedBlock()))) {
+                    if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(Materials.blockType(event.getClickedBlock()))) {
                         event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
                         event.setCancelled(true);
                     } else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
@@ -193,7 +193,7 @@ public class PlayerEventHandler implements Listener {
                 // held item is used on the clicked block.
                 if (Materials.isPlaceable(heldItem) || Materials.changesOnUse(blockType, heldItem)) {
                     // Deny placement of boats, paintings, etc.
-                    if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isAllowed(heldItem)) {
+                    if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(heldItem)) {
                         if (EquipmentSlot.HAND.equals(event.getHand()))
                             event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
 
@@ -230,7 +230,7 @@ public class PlayerEventHandler implements Listener {
                                 blockType == Material.ENDER_CHEST || blockType == Material.CAMPFIRE ||
                                 blockType == Material.STONECUTTER || blockType == Material.LOOM ||
                                 blockType == Material.CARTOGRAPHY_TABLE || blockType == Material.GRINDSTONE)) {
-                    if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isAllowed(blockType)) {
+                    if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isBlocked(blockType)) {
                         if (EquipmentSlot.HAND == event.getHand())
                             event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
 
@@ -256,7 +256,7 @@ public class PlayerEventHandler implements Listener {
                 if (Materials.isPressureSensitive(blockType)) {
                     // Handle trampling
                     if (blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) {
-                        event.setCancelled(!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(blockType) ||
+                        event.setCancelled(flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType) ||
                                 !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags));
                         return;
                     }
@@ -289,7 +289,7 @@ public class PlayerEventHandler implements Listener {
         if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
 
-        if (!flags.<EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isAllowed(event.getRightClicked().getType())) {
+        if (flags.<EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isBlocked(event.getRightClicked().getType())) {
             if (EquipmentSlot.HAND.equals(event.getHand()))
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
             event.setCancelled(true);
@@ -298,7 +298,7 @@ public class PlayerEventHandler implements Listener {
 
         // Handle breaking leash hitches
         if (event.getRightClicked().getType() == EntityType.LEASH_HITCH) {
-            if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isAllowed(Material.LEAD)) {
+            if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(Material.LEAD)) {
                 if (EquipmentSlot.HAND.equals(event.getHand()))
                     event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
                 event.setCancelled(true);
@@ -416,7 +416,7 @@ public class PlayerEventHandler implements Listener {
         if (event.getDamager() instanceof Player) {
             if (!flags.isEffectiveOwner((Player) event.getDamager())) {
                 Material weapon = Materials.stackType(Materials.heldItem((Player) event.getDamager(), EquipmentSlot.HAND));
-                if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isAllowed(weapon)) {
+                if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isBlocked(weapon)) {
                     if (weapon != Material.AIR)
                         event.getDamager().sendMessage(ChatColor.RED + "You cannot use that weapon here.");
 
@@ -504,8 +504,8 @@ public class PlayerEventHandler implements Listener {
             return;
 
         if (event.getAttacker() instanceof Player && !flags.isEffectiveOwner((Player) event.getAttacker())) {
-            if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK)
-                    .isAllowed(Materials.forEntity(event.getVehicle()))) {
+            if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK)
+                    .isBlocked(Materials.forEntity(event.getVehicle()))) {
                 event.getAttacker().sendMessage(ChatColor.RED + "You can't break that here.");
                 event.setCancelled(true);
                 return;
@@ -551,8 +551,8 @@ public class PlayerEventHandler implements Listener {
         if (flags == null)
             return;
 
-        if (!flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK)
-                .isAllowed(Materials.forEntity(event.getEntity())) && !(event.getRemover() instanceof Player &&
+        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK)
+                .isBlocked(Materials.forEntity(event.getEntity())) && !(event.getRemover() instanceof Player &&
                 flags.isEffectiveOwner((Player) event.getRemover()))) {
             if (event.getRemover() instanceof Player)
                 event.getRemover().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
@@ -769,7 +769,7 @@ public class PlayerEventHandler implements Listener {
             if (start >= end)
                 start = 0;
 
-            if (!flags.<StringFilter>getFlagMeta(RegionFlag.DENY_COMMAND).isAllowed(message.substring(start, end))) {
+            if (flags.<StringFilter>getFlagMeta(RegionFlag.DENY_COMMAND).isBlocked(message.substring(start, end))) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that command here.");
             }

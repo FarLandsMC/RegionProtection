@@ -76,7 +76,7 @@ public class WorldEventHandler implements Listener {
             if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.LIGHTNING && !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE)) {
                 event.setCancelled(true);
             } else if (!Entities.isArtificialSpawn(event.getSpawnReason()) &&
-                    !flags.<EnumFilter.EntityFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isAllowed(event.getEntity().getType())) {
+                    flags.<EnumFilter.EntityFilter>getFlagMeta(RegionFlag.DENY_SPAWN).isBlocked(event.getEntity().getType())) {
                 event.setCancelled(true);
             }
         }

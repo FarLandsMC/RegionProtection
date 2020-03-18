@@ -288,6 +288,16 @@ public class Decoder implements Closeable {
     }
 
     /**
+     * Reads a compressed identifier from the input stream.
+     *
+     * @return the next identifier in the stream.
+     * @throws IOException if an I/O error occurs.
+     */
+    public String readIdentifier() throws IOException {
+        return Utils.decompressIdentifier(in);
+    }
+
+    /**
      * Reads a UUID from the input stream.
      *
      * @return the next UUID in the input stream.

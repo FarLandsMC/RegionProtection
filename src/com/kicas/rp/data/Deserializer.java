@@ -193,6 +193,7 @@ public class Deserializer implements AutoCloseable {
      * @return a pair with the read flag and its metadata.
      * @throws IOException if an I/O error occurs.
      */
+    @SuppressWarnings("deprecation")
     private Pair<RegionFlag, Object> readFlag(int format) throws IOException {
         RegionFlag flag = readFlagEnum();
 
@@ -204,15 +205,25 @@ public class Deserializer implements AutoCloseable {
             else if (CommandMeta.class.equals(flag.getMetaClass()))
                 meta = new CommandMeta(decoder.readBoolean(), decoder.readUTF8Raw());
             else if (EnumFilter.class.isAssignableFrom(flag.getMetaClass())) {
-                boolean isWhitelist = decoder.readBoolean();
-                Set<Integer> filter = new HashSet<>();
-                int len = decoder.readCompressedUint();
-                while (len > 0) {
-                    filter.add(decoder.readCompressedUint());
-                    --len;
-                }
                 meta = ReflectionHelper.instantiateWithDefaultParams(flag.getMetaClass());
-                ((EnumFilter) meta).setFilter(isWhitelist, filter);
+                boolean isWhitelist = decoder.readBoolean();
+                int len = decoder.readCompressedUint();
+
+                if (format < 2) {
+                    Set<Integer> filter = new HashSet<>();
+                    while (len > 0) {
+                        filter.add(decoder.readCompressedUint());
+                        --len;
+                    }
+                    ((EnumFilter) meta).setFilter(isWhitelist, filter);
+                } else {
+                    Set<String> filter = new HashSet<>();
+                    while (len > 0) {
+                        filter.add(decoder.readIdentifier());
+                        --len;
+                    }
+                    ((EnumFilter) meta).setNameFilter(isWhitelist, filter);
+                }
             } else if (LocationMeta.class.equals(flag.getMetaClass())) {
                 meta = new LocationMeta(decoder.readUuid(), decoder.readDouble(), decoder.readDouble(),
                         decoder.readDouble(), decoder.readFloat(), decoder.readFloat());

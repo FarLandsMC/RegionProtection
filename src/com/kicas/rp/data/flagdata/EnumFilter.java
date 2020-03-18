@@ -4,11 +4,14 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
- * Can act as a blacklist or whitelist for any given enum.
+ * Provides common functionality for filters of enums.
  */
 public abstract class EnumFilter<E extends Enum<E>> extends AbstractFilter<E> {
     protected final Class<E> enumClass;
@@ -26,6 +29,15 @@ public abstract class EnumFilter<E extends Enum<E>> extends AbstractFilter<E> {
         this(false, enumClass);
     }
 
+    /**
+     * Updates this filter based on the given whitelist flag and ordinal values.
+     *
+     * @param isWhitelist whether or not this filter is a whitelist.
+     * @param ordinalFilter the ordinals of the enum elements to add to the filter.
+     * @deprecated This method is inherently unsafe as ordinals may refer to different elements between sessions. The
+     * name filter method should be used instead.
+     */
+    @Deprecated
     public void setFilter(boolean isWhitelist, Set<Integer> ordinalFilter) {
         this.isWhitelist = isWhitelist;
         filter.clear();
@@ -33,16 +45,55 @@ public abstract class EnumFilter<E extends Enum<E>> extends AbstractFilter<E> {
         ordinalFilter.stream().map(ordinal -> enumConstants[ordinal]).forEach(filter::add);
     }
 
-    @Override
-    protected E elementFromString(String s) {
-        return Utils.valueOfFormattedName(s, enumClass);
+    /**
+     * Updates this filter based on the given whitelist flag and enum constant names.
+     *
+     * @param isWhitelist whether or not this filter is a whitelist.
+     * @param nameFilter the enum constants to add to the filter.
+     */
+    public void setNameFilter(boolean isWhitelist, Set<String> nameFilter)  {
+        this.isWhitelist = isWhitelist;
+        filter.clear();
+
+        final Method valueOf;
+        try {
+            valueOf = enumClass.getMethod("valueOf", String.class);
+        } catch (NoSuchMethodException ex) {
+            throw new InternalError(ex);
+        }
+
+        nameFilter.stream().map(name -> {
+            try {
+                return enumClass.cast(valueOf.invoke(null, name));
+            } catch (ClassCastException | IllegalAccessException | InvocationTargetException ex) {
+                return null;
+            }
+        }).filter(Objects::nonNull).forEach(filter::add);
     }
 
+    /**
+     * Converts the given string (a formatted enum constant name) into an enum constant.
+     *
+     * @param string the string form of an element.
+     * @return the enum constant with the given name, or null if such a constant does not exist.
+     */
     @Override
-    protected String elementToString(E e) {
-        return Utils.formattedName(e);
+    protected E elementFromString(String string) {
+        return Utils.valueOfFormattedName(string, enumClass);
     }
 
+    /**
+     * @param element the element.
+     * @return the formatted name of the given enum constant.
+     */
+    @Override
+    protected String elementToString(E element) {
+        return Utils.formattedName(element);
+    }
+
+    /**
+     * Implementation of a filter for the EntityType enum.
+     */
     public static class EntityFilter extends EnumFilter<EntityType> {
         public static final EntityFilter EMPTY_FILTER = new EntityFilter();
 
@@ -51,6 +102,9 @@ public abstract class EnumFilter<E extends Enum<E>> extends AbstractFilter<E> {
         }
     }
 
+    /**
+     * Implementation of a filter for the Material enum.
+     */
     public static class MaterialFilter extends EnumFilter<Material> {
         public static final MaterialFilter EMPTY_FILTER = new MaterialFilter();
 

@@ -313,7 +313,7 @@ public class Encoder implements Flushable, Closeable {
      * Writes an unmodified UTF-8 string to the output stream.
      *
      * @param s the string.
-     * @throws IOException if an I/O error occur.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeUTF8Raw(String s) throws IOException {
         if (s.isEmpty())
@@ -326,10 +326,20 @@ public class Encoder implements Flushable, Closeable {
     }
 
     /**
+     * Writes a compressed identifier (valid according to Java's specification) to the output stream.
+     *
+     * @param id the identifier.
+     * @throws IOException if an I/O error occurs.
+     */
+    public void writeIdentifier(String id) throws IOException {
+        out.write(Utils.compressIdentifier(id));
+    }
+
+    /**
      * Writes an unmodified ASCII string to the output stream.
      *
      * @param s the string.
-     * @throws IOException if an I/O error occur.
+     * @throws IOException if an I/O error occurs.
      */
     public void writeASCIIRaw(String s) throws IOException {
         if (s.isEmpty())
@@ -346,7 +356,7 @@ public class Encoder implements Flushable, Closeable {
      * Writes a <code>UUID</code> to the output stream.
      *
      * @param uuid the UUID.
-     * @throws IOException if an I/O error occur.
+     * @throws IOException if an I/O error occurs.
      * @see java.util.UUID
      */
     public void writeUuid(UUID uuid) throws IOException {

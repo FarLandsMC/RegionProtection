@@ -4,6 +4,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +31,118 @@ public final class Utils {
     }
 
     private Utils() {
+    }
+
+    /**
+     * Converts certain 8-bit ASCII character codes to 6-bit codes. Characters that apply: <code>$0-9A-Z_a-z</code>.
+     */
+    private static final int[] IDENTIFIER_COMPRESSION = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 0, 0, 0, 0, 0, 11, 12, 13, 14, 15,
+            16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 0, 0, 0, 0, 37, 0, 38,
+            39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
+    };
+
+    /**
+     * Converts 6-bit identifier character codes to Java characters.
+     */
+    private static final char[] IDENTIFIER_DECOMPRESSION = {
+            '$', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
+            'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f',
+            'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
+    };
+
+    /**
+     * Compresses a string that matches the regex <code>[a-zA-Z0-9$_]+</code>. This compression method will fail by
+     * returning null if either an invalid character is detected, or if the string is longer than 255 characters. This
+     * algorithm is best suited for short identifiers, and will on average deflate the size of the object by 25%.
+     * <p>
+     * The format for the compressed string is as follows:
+     * <ul>
+     *     <li>One byte representing the length of the string.</li>
+     *     <li>Sections of three bytes that contain 6-bit character codes, if there are any.</li>
+     *     <li>A number of bytes equal to the length of the input string mod 4 which each contain one character code.</li>
+     * </ul>
+     *
+     * @param string the string to compress.
+     * @return the compressed byte array, or null if there was an error compressing the string.
+     */
+    static byte[] compressIdentifier(String string) {
+        final int slen = string.length();
+        if (slen == 0) // No computation needed
+            return new byte[]{0};
+        if (slen > 255)
+            return null;
+
+        final int loopCount = slen - (slen % 4);
+        // Compute the size of the finalized byte array and initialize it
+        final byte[] b = new byte[1 + ((3 * slen + (slen % 4)) / 4)];
+        b[0] = (byte) slen;
+        final char[] cs = string.toCharArray();
+        int c1, c2, c3, c4; // The current characters we're handling
+        int i = 0, k = 1; // i: first character index, k: compressed byte array index
+        // Take batches of four characters, check them, and compress them into three bytes
+        for (; i < loopCount; i += 4, k += 3) {
+            c1 = cs[i];
+            c2 = cs[i + 1];
+            c3 = cs[i + 2];
+            c4 = cs[i + 3];
+            // Handle invalid characters
+            if (((c1 < 'a' || c1 > 'z') && (c1 < 'A' || c1 > 'Z') && (c1 < '0' || c1 > '9') && c1 != '_' && c1 != '$') ||
+                    ((c2 < 'a' || c2 > 'z') && (c2 < 'A' || c2 > 'Z') && (c2 < '0' || c2 > '9') && c2 != '_' && c2 != '$') ||
+                    ((c3 < 'a' || c3 > 'z') && (c3 < 'A' || c3 > 'Z') && (c3 < '0' || c3 > '9') && c3 != '_' && c3 != '$') ||
+                    ((c4 < 'a' || c4 > 'z') && (c4 < 'A' || c4 > 'Z') && (c4 < '0' || c4 > '9') && c4 != '_' && c4 != '$')) {
+                return null;
+            }
+            c2 = IDENTIFIER_COMPRESSION[c2];
+            c3 = IDENTIFIER_COMPRESSION[c3];
+            // Compression model (each character represents one bit):
+            // 00aaaaaa 00bbbbbb 00cccccc 00dddddd -> aaaaaabb bbbbcccc ccdddddd
+            b[k] = (byte) ((IDENTIFIER_COMPRESSION[c1] << 2) | ((c2 & 0x30) >>> 4));
+            b[k + 1] = (byte) ((c2 << 4) | ((c3 & 0x3C) >>> 2));
+            b[k + 2] = (byte) ((c3 << 6) | IDENTIFIER_COMPRESSION[c4]);
+        }
+
+        // Add the extra characters at the end (this does not affect the deflation percentage)
+        for (c2 = 0; c2 < slen % 4; ++c2, ++i, ++k) {
+            c1 = cs[i];
+            if ((c1 < 'a' || c1 > 'z') && (c1 < 'A' || c1 > 'Z') && (c1 < '0' || c1 > '9') && c1 != '_' && c1 != '$')
+                return null;
+            b[k] = (byte) c1;
+        }
+
+        return b;
+    }
+
+    /**
+     * Decompresses an identifier read from an input stream.
+     * @param in the input stream.
+     * @return the identifier.
+     * @throws IOException if an I/O error occurs.
+     */
+    static String decompressIdentifier(InputStream in) throws IOException {
+        final int length = in.read();
+        if(length == 0)
+            return "";
+        final char[] cs = new char[length];
+        final int loopCount = (3 * (length - length % 4)) / 4;
+        int b1, b2, b3; // The current bytes being handled
+        int i = 0, k = 1;
+        for(;k < loopCount;i += 4, k += 3) {
+            b1 = in.read();
+            b2 = in.read();
+            b3 = in.read();
+            // Decompression model (each character represents one bit):
+            // aaaaaabb bbbbcccc ccdddddd -> 00aaaaaa 00bbbbbb 00cccccc 00dddddd
+            cs[i] = IDENTIFIER_DECOMPRESSION[(b1 >>> 2) & 0x3F];
+            cs[i + 1] = IDENTIFIER_DECOMPRESSION[((b1 & 0x3) << 4) & 0x30 | (b2 >>> 4) & 0xF];
+            cs[i + 2] = IDENTIFIER_DECOMPRESSION[((b2 & 0xF) << 2) & 0x3C | (b3 >>> 6) & 0x3];
+            cs[i + 3] = IDENTIFIER_DECOMPRESSION[b3 & 0x3F];
+        }
+        // Add the extra characters at the end
+        for(b1 = 0;b1 < length % 4;++ i, ++ k, ++ b1)
+            cs[i] = (char)in.read();
+        return new String(cs);
     }
 
     /**

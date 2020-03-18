@@ -53,6 +53,19 @@ public class LocationMeta extends FlagMeta {
         return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
     }
 
+    /**
+     * Updates this location meta based on the given string. Valid inputs include:
+     * <ul>
+     *     <li>x y z</li>
+     *     <li>x y z world</li>
+     *     <li>x y z yaw pitch</li>
+     *     <li>x y z yaw pitch world</li>
+     * </ul>
+     *
+     * If no world is provided, the parser will default to the overworld.
+     *
+     * @param metaString the metadata in string form.
+     */
     @Override
     public void readMetaString(String metaString) {
         String[] args = metaString.split(" ");

@@ -38,6 +38,12 @@ public class CommandMeta extends FlagMeta {
         return command;
     }
 
+    /**
+     * Updates this metadata based on the given input string. The valid format for a command meta string is:
+     * &lt;console|player&gt;:&lt;command&gt; where console and player specify the command sender to use.
+     *
+     * @param metaString the metadata in string form.
+     */
     @Override
     public void readMetaString(String metaString) {
         int index = metaString.indexOf(':');
