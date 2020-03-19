@@ -370,7 +370,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         }
         // Delete a region
         else if ("delete".equals(args[0])) {
-            boolean includeChildren = args.length == 3 && "true".equalsIgnoreCase(args[2]);
+            boolean includeChildren = args.length == 3 && "include-children".equalsIgnoreCase(args[2]);
             // This can fail if includeChildren is false and the region has children
             if (RegionProtection.getDataManager().tryDeleteRegion((Player) sender, region, includeChildren)) {
                 sender.sendMessage(ChatColor.GREEN + "Deleted region " + args[1] + (includeChildren
@@ -553,7 +553,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         }
         // Suggestion for the includeChildren option
         else if ("delete".equalsIgnoreCase(args[0]) && args.length == 3) {
-            return filterStartingWith(args[2], Stream.of("true", "false"));
+            return filterStartingWith(args[2], Stream.of("include-children"));
         }
 
         // By default return no suggestions
