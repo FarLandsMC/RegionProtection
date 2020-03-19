@@ -697,10 +697,8 @@ public class PlayerEventHandler implements Listener {
 
         if (!Objects.equals(fromFlags, toFlags)) {
             if (toFlags != null) {
-                if (toFlags.hasFlag(RegionFlag.GREETING)) {
-                    event.getPlayer().spigot().sendMessage(toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING)
-                            .getFormatted());
-                }
+                toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).sendTo(event.getPlayer());
+
                 if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND))
                     toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(event.getPlayer());
             }
@@ -721,10 +719,7 @@ public class PlayerEventHandler implements Listener {
             }
 
             if (fromFlags != null) {
-                if (fromFlags.hasFlag(RegionFlag.FAREWELL)) {
-                    event.getPlayer().spigot().sendMessage(fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL)
-                            .getFormatted());
-                }
+                fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL).sendTo(event.getPlayer());
 
                 if (fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
                     fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(event.getPlayer());

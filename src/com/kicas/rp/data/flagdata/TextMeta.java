@@ -1,9 +1,7 @@
 package com.kicas.rp.data.flagdata;
 
 import com.kicas.rp.util.TextUtils;
-import net.md_5.bungee.api.chat.BaseComponent;
-
-import java.util.Objects;
+import org.bukkit.entity.Player;
 
 /**
  * Represents metadata for flags that contain formatted in-game text. The format stored follows that which is parsed by
@@ -11,29 +9,16 @@ import java.util.Objects;
  */
 public class TextMeta extends FlagMeta {
     private String text;
-    // Computed on construction for efficiency later on
-    private BaseComponent[] formatted;
 
-    public static final TextMeta EMPTY_TEXT = new TextMeta("", new BaseComponent[0]);
-
-    private TextMeta(String text, BaseComponent[] formatted) {
-        this.text = text;
-        this.formatted = formatted;
-    }
+    public static final String EMPTY_TEXT_PLACEHOLDER = "~";
+    public static final TextMeta EMPTY_TEXT = new TextMeta();
 
     public TextMeta(String text) {
-        this(text, TextUtils.format(Objects.requireNonNull(text)));
+        this.text = text;
     }
 
     public TextMeta() {
-        this(null, null);
-    }
-
-    /**
-     * @return the base components parsed upon instantiation of this object.
-     */
-    public BaseComponent[] getFormatted() {
-        return formatted;
+        this("");
     }
 
     /**
@@ -43,18 +28,33 @@ public class TextMeta extends FlagMeta {
         return text;
     }
 
-    @Override
-    public void readMetaString(String metaString) {
-        text = metaString.replaceAll("\\\\n|\\\\r", "\n");
-        formatted = TextUtils.format(Objects.requireNonNull(text));
+    /**
+     * Sends the formatted form of the text in this metadata to the given player, substituting instances of '%player%'
+     * for the given player's name.
+     *
+     * @param player the player to send the message to.
+     */
+    public void sendTo(Player player) {
+        if (!text.isEmpty())
+            TextUtils.sendFormatted(player, text.replaceAll("%player%", "%0"), player.getName());
     }
 
     /**
-     * @see TextMeta#getText()
+     * Sets this metadata's internal text to the given string after converting '\n' and '\r' to line breaks.
+     *
+     * @param metaString the metadata in string form.
+     */
+    @Override
+    public void readMetaString(String metaString) {
+        text = EMPTY_TEXT_PLACEHOLDER.equals(metaString) ? "" : metaString.replaceAll("\\\\n|\\\\r", "\n");
+    }
+
+    /**
+     * @return this metadata's internal text after converting line breaks to '\n'
      */
     @Override
     public String toMetaString() {
-        return text.replaceAll("\n|\r\n", "\\\\n");
+        return text.isEmpty() ? EMPTY_TEXT_PLACEHOLDER : text.replaceAll("\n|\r\n", "\\\\n");
     }
 
     /**
