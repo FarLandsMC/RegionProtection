@@ -71,7 +71,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             }
 
             // Get the list of regions to detail
-            List<Region> regions;
+            final List<Region> regions;
             // Get the regions the player is standing in
             if (args.length == 1) {
                 regions = RegionProtection.getDataManager().getRegionsAt(((Player) sender).getLocation());
@@ -103,11 +103,18 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                         "&(gold)Showing info for region {&(green)%0:}\nPriority: {&(aqua)%1}\nParent: {&(aqua)%2}%3%4",
                         region.getDisplayName(),
                         region.getPriority(),
-                        region.hasParent() ? region.getParent().getDisplayName() : "none",
-                        region.getCoOwners().isEmpty() ? "" : "\nCo-Owners: {&(gray)" + region.getCoOwners().stream()
+                        region.hasParent()
+                                ? region.getParent().getDisplayName()
+                                : "none",
+                        region.getCoOwners().isEmpty()
+                                ? ""
+                                : "\nCo-Owners: {&(gray)" + region.getCoOwners().stream()
                                 .map(RegionProtection.getDataManager()::currentUsernameForUuid)
                                 .sorted(Comparator.comparing(String::toLowerCase)).collect(Collectors.joining(", ")) + "}",
-                        region.isEmpty() ? "" : "\nFlags:\n" + formatFlags(region)
+                        region.isEmpty() || (region.hasParent() && region.getPriority() == region.getParent().getPriority() &&
+                                regions.contains(region.getParent()))
+                                ? ""
+                                : "\nFlags:\n" + formatFlags(region)
                 );
             });
 
