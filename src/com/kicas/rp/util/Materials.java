@@ -24,16 +24,20 @@ public final class Materials {
 
     // Initialize categories
     static {
-        INVENTORY_HOLDERS.addAll(Arrays.asList(FURNACE, BLAST_FURNACE, SMOKER, JUKEBOX, CHEST, TRAPPED_CHEST, DROPPER,
-                DISPENSER, HOPPER, BREWING_STAND, BARREL, COMPOSTER, CAULDRON, SHULKER_BOX));
+        INVENTORY_HOLDERS.addAll(Arrays.asList(
+                FURNACE, BLAST_FURNACE, SMOKER, JUKEBOX, CHEST, TRAPPED_CHEST, DROPPER, DISPENSER, HOPPER,
+                BREWING_STAND, BARREL, COMPOSTER, CAULDRON
+        ));
         INVENTORY_HOLDERS.addAll(materialsEndingWith("SHULKER_BOX"));
 
-        PLACEABLES.addAll(Arrays.asList(BONE_MEAL, ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, PAINTING, ITEM_FRAME));
+        PLACEABLES.addAll(Arrays.asList(
+                BONE_MEAL, ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, FIRE_CHARGE, PAINTING, ITEM_FRAME
+        ));
         PLACEABLES.addAll(materialsEndingWith("BUCKET"));
-        PLACEABLES.addAll(materialsEndingWith("BOAT"));
-        PLACEABLES.addAll(materialsEndingWith("MINECART"));
+        PLACEABLES.addAll(materialsEndingWith("_BOAT"));
+        PLACEABLES.addAll(materialsEndingWith("_MINECART"));
         Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
-                .forEach(c -> CORALS.addAll(materialsEndingWith(c)));
+                .forEach(c -> CORALS.addAll(materialsEndingWith("_" + c)));
     }
 
     private Materials() {
@@ -59,7 +63,7 @@ public final class Materials {
     @SuppressWarnings("deprecation")
     public static List<Material> materialsEndingWith(String with, List<Material> except) {
         return Arrays.stream(Material.values()).filter(material -> !material.isLegacy() &&
-                material.name().endsWith("_" + with) && !except.contains(material)).collect(Collectors.toList());
+                material.name().endsWith(with) && !except.contains(material)).collect(Collectors.toList());
     }
 
     /**
@@ -113,7 +117,7 @@ public final class Materials {
      */
     public static boolean changesOnUse(Material material, Material tool) {
         if (CAKE.equals(material) || material == REPEATER || material == COMPARATOR || material == DAYLIGHT_DETECTOR ||
-                END_PORTAL_FRAME.equals(material) && ENDER_EYE.equals(tool))
+                END_PORTAL_FRAME == material && ENDER_EYE == tool)
             return true;
 
         if (tool.name().endsWith("AXE"))
