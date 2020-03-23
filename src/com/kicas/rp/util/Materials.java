@@ -12,6 +12,7 @@ import static org.bukkit.Material.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Helps to categorize materials.
@@ -33,10 +34,10 @@ public final class Materials {
         PLACEABLES.addAll(Arrays.asList(
                 BONE_MEAL, ARMOR_STAND, END_CRYSTAL, FLINT_AND_STEEL, FIRE_CHARGE, PAINTING, ITEM_FRAME
         ));
-        PLACEABLES.addAll(materialsEndingWith("BUCKET"));
+        PLACEABLES.addAll(materialsEndingWith("BUCKET", Collections.singletonList(MILK_BUCKET)));
         PLACEABLES.addAll(materialsEndingWith("_BOAT"));
-        PLACEABLES.addAll(materialsEndingWith("_MINECART"));
-        Arrays.asList("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
+        PLACEABLES.addAll(materialsEndingWith("MINECART"));
+        Stream.of("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
                 .forEach(c -> CORALS.addAll(materialsEndingWith("_" + c)));
     }
 

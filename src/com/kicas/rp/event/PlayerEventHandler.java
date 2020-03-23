@@ -8,12 +8,10 @@ import static com.kicas.rp.data.flagdata.EnumFilter.MaterialFilter;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -103,6 +101,227 @@ public class PlayerEventHandler implements Listener {
     }
 
     /**
+     * Tests whether or not the given block type can be broken according to the given flags.
+     *
+     * @param event the event.
+     * @param flags the flags.
+     * @param blockType the type of block being broken.
+     * @return whether or not the event is cancelled.
+     */
+    private <T extends PlayerEvent & Cancellable> boolean testBreakInteraction(T event, FlagContainer flags,
+                                                                               Material blockType) {
+        // Admin flag then trust flag
+        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
+            event.setCancelled(true);
+            return true;
+        }
+        // Build trust
+        else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Tests whether or not the given held item can be placed according to the given flags.
+     *
+     * @param event the event.
+     * @param flags the flags.
+     * @param heldItem the item the player is holding.
+     * @return whether or not the event is cancelled.
+     */
+    private <T extends PlayerEvent & Cancellable> boolean testPlaceInteraction(T event, EquipmentSlot hand,
+                                                                               FlagContainer flags, Material heldItem) {
+        // Deny placement of boats, paintings, etc.
+        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(heldItem)) {
+            if (EquipmentSlot.HAND.equals(hand))
+                event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
+
+            event.setCancelled(true);
+            return true;
+        }
+        // Build trust
+        else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+            if (EquipmentSlot.HAND.equals(hand))
+                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Handles interactions concerning the actual block clicked by the player, such as punching a dragon egg or
+     * trampling crops.
+     *
+     * @param event the event.
+     * @param blockFlags the flags at the block the player directly interacted with.
+     * @param heldItem the item the player is holding.
+     * @return whether or not the event is cancelled.
+     */
+    private boolean handleBlockInteraction(PlayerInteractEvent event, FlagContainer blockFlags, Material heldItem) {
+        Material blockType = Materials.blockType(event.getClickedBlock());
+
+        switch (event.getAction()) {
+            // Disable dragon egg punching.
+            case LEFT_CLICK_BLOCK:
+                if (blockType == Material.DRAGON_EGG && testBreakInteraction(event, blockFlags, Material.DRAGON_EGG))
+                    return true;
+                break;
+
+            // Handle every block related right-click interaction
+            case RIGHT_CLICK_BLOCK:
+                // Force chest access flag
+                if (blockType.name().endsWith("CHEST") && blockType != Material.ENDER_CHEST &&
+                        blockFlags.hasFlag(RegionFlag.FORCE_CHEST_ACCESS)) {
+                    if (!blockFlags.isAllowed(RegionFlag.FORCE_CHEST_ACCESS)) {
+                        event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
+                        event.setCancelled(true);
+                        return true;
+                    }
+                    return false;
+                }
+
+                // Block TNT ignition
+                if ((heldItem == Material.FLINT_AND_STEEL || heldItem == Material.FIRE_CHARGE) &&
+                        blockType == Material.TNT && !blockFlags.isAllowed(RegionFlag.TNT)) {
+                    event.getPlayer().sendMessage(ChatColor.RED + "TNT is not allowed here.");
+                    event.setCancelled(true);
+                    return true;
+                }
+
+                // Handle stuff like grass path making
+                if (Materials.changesOnUse(blockType, heldItem) && testBreakInteraction(event, blockFlags, blockType))
+                    return true;
+
+                // Handle the opening of block inventory holders
+                if (Materials.isInventoryHolder(blockType) || blockType == Material.ANVIL ||
+                        blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
+                    // Container trust
+                    if (!blockFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, blockFlags)) {
+                        if (EquipmentSlot.HAND.equals(event.getHand()))
+                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + blockFlags.getOwnerName() + ".");
+
+                        event.setCancelled(true);
+                        return true;
+                    }
+                }
+
+                // Handle "doors", redstone inputs
+                if (blockType.isInteractable()  &&
+                        !(blockType == Material.CRAFTING_TABLE || blockType == Material.ENCHANTING_TABLE ||
+                                blockType == Material.ENDER_CHEST || blockType == Material.CAMPFIRE ||
+                                blockType == Material.STONECUTTER || blockType == Material.LOOM ||
+                                blockType == Material.CARTOGRAPHY_TABLE || blockType == Material.GRINDSTONE)) {
+                    if (blockFlags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isBlocked(blockType)) {
+                        if (EquipmentSlot.HAND == event.getHand())
+                            event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+
+                        event.setCancelled(true);
+                        return true;
+                    }
+
+                    // Access trust
+                    if (!blockFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, blockFlags)) {
+                        if (EquipmentSlot.HAND == event.getHand())
+                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + blockFlags.getOwnerName() + ".");
+
+                        event.setCancelled(true);
+                        return true;
+                    }
+                }
+
+                break;
+
+            // Handle players stepping on things such as turtle eggs, tripwires, farmland, and pressure plates
+            case PHYSICAL:
+                blockType = Materials.blockType(event.getPlayer().getLocation().subtract(0, 0.5, 0).getBlock());
+
+                if (Materials.isPressureSensitive(blockType)) {
+                    // Handle trampling
+                    if ((blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) &&
+                            (blockFlags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType) ||
+                            !blockFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, blockFlags))) {
+                        event.setCancelled(true);
+                        return true;
+                    }
+
+                    // Pressure plates and tripwires require access trust
+                    if (!blockFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, blockFlags)) {
+                        event.setCancelled(true);
+                        return true;
+                    }
+                }
+
+                break;
+        }
+
+        return false;
+    }
+
+    /**
+     * Handles an interaction concerning the face of a given block, such as fire extinguishing or armor stand placement.
+     *
+     * @param event the event.
+     * @param faceFlags the flags at the face of the clicked block.
+     * @param block the block adjacent to the clicked face.
+     * @param heldItem the item the player is holding.
+     * @return whether or not the event is cancelled.
+     */
+    private boolean handleBlockFaceInteraction(PlayerInteractEvent event, FlagContainer faceFlags, Block block, Material heldItem) {
+        // disable fire extinguishing
+        if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
+            if (Materials.blockType(block) == Material.FIRE && testBreakInteraction(event, faceFlags, Material.FIRE)) {
+                // There's a client side glitch where even though the event is cancelled, the fire still disappears
+                // for the player, therefore we resend the block so it stays visible for the player.
+                Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(),
+                        () -> event.getPlayer().sendBlockChange(block.getLocation(), block.getBlockData().clone()), 1L);
+
+                return true;
+            }
+        } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            // Handle the placing of entities and other items as well as other changes that happen when the player's
+            // held item is used on the clicked block.
+            return Materials.isPlaceable(heldItem) && testPlaceInteraction(event, event.getHand(), faceFlags, heldItem);
+        }
+
+        return false;
+    }
+
+    /**
+     * Prevent players from dumping out buckets in protected areas.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
+            return;
+
+        testPlaceInteraction(event, EquipmentSlot.HAND, flags, Materials.stackType(event.getItemStack()));
+    }
+
+    /**
+     * Prevent players from filling buckets in protected areas.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerBucketFill(PlayerBucketFillEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
+            return;
+
+        testBreakInteraction(event, flags, Materials.blockType(event.getBlock()));
+    }
+
+    /**
      * Handles multiple different types of block interactions as detailed below.
      * Left click block:
      * <ul>
@@ -126,148 +345,29 @@ public class PlayerEventHandler implements Listener {
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
-        if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
-            return;
-
         Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
-        Material blockType = event.getClickedBlock() == null
-                ? event.getPlayer().getLocation().subtract(0, 0.5, 0).getBlock().getType()
-                : event.getClickedBlock().getType();
 
-        if (event.getAction() != Action.PHYSICAL && !heldItem.isBlock() &&
-                flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(heldItem)) {
-            if (event.getHand() == EquipmentSlot.HAND)
-                event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
-            event.setCancelled(true);
-            return;
-        }
-
-        switch (event.getAction()) {
-            // Disable fire extinguishing and dragon egg punching.
-            case LEFT_CLICK_BLOCK: {
-                // For fire extinguishing
-                Block relativeBlock = event.getClickedBlock().getRelative(event.getBlockFace());
-
-                if (relativeBlock.getType() == Material.FIRE || blockType == Material.DRAGON_EGG) {
-                    // Admin flag then trust flag
-                    if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(Materials.blockType(event.getClickedBlock()))) {
-                        event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
-                        event.setCancelled(true);
-                    } else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-                        event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-                        event.setCancelled(true);
-                    }
-
-                    // There's a client side glitch where even though the event is cancelled, the fire still disappears
-                    // for the player, therefore we resend the block so it stays visible for the player.
-                    if (Material.FIRE.equals(relativeBlock.getType())) {
-                        Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(),
-                                () -> event.getPlayer().sendBlockChange(relativeBlock.getLocation(),
-                                        relativeBlock.getBlockData().clone()), 1L);
-                    }
-                }
-
-                break;
+        // Handle interactions concerning the actual block clicked
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
+        if (flags != null && !flags.isEffectiveOwner(event.getPlayer())) {
+            // Generic item-use denial, perhaps make this more robust in the future
+            if (event.getAction() != Action.PHYSICAL && !heldItem.isBlock() &&
+                    flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(heldItem)) {
+                if (event.getHand() == EquipmentSlot.HAND)
+                    event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+                event.setCancelled(true);
+                return;
             }
 
-            // Handle every block related right-click interaction
-            case RIGHT_CLICK_BLOCK: {
-                if (event.getClickedBlock().getType().name().endsWith("CHEST") && blockType != Material.ENDER_CHEST &&
-                        flags.hasFlag(RegionFlag.FORCE_CHEST_ACCESS)) {
-                    if (!flags.isAllowed(RegionFlag.FORCE_CHEST_ACCESS)) {
-                        event.getPlayer().sendMessage(ChatColor.RED + "You cannot open that here.");
-                        event.setCancelled(true);
-                    }
-                    return;
-                }
-
-                if ((heldItem == Material.FLINT_AND_STEEL || heldItem == Material.FIRE_CHARGE) &&
-                        blockType == Material.TNT && !flags.isAllowed(RegionFlag.TNT)) {
-                    event.getPlayer().sendMessage(ChatColor.RED + "TNT is not allowed here.");
-                    event.setCancelled(true);
-                    return;
-                }
-
-                // Handle the placing of entities and other items as well as other changes that happen when the player's
-                // held item is used on the clicked block.
-                if (Materials.isPlaceable(heldItem) || Materials.changesOnUse(blockType, heldItem)) {
-                    // Deny placement of boats, paintings, etc.
-                    if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(heldItem)) {
-                        if (EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
-
-                        event.setCancelled(true);
-                        return;
-                    }
-
-                    // Build trust
-                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-                        if (EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED +
-                                    "This belongs to " + flags.getOwnerName() + ".");
-                        event.setCancelled(true);
-                        return;
-                    }
-                }
-
-                // Handle the opening of block inventory holders
-                if (Materials.isInventoryHolder(blockType) || blockType == Material.ANVIL ||
-                        blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
-                    // Container trust
-                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
-                        if (EquipmentSlot.HAND.equals(event.getHand()))
-                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-
-                        event.setCancelled(true);
-                        return;
-                    }
-                }
-
-                // Handle "doors", redstone inputs
-                if (blockType.isInteractable()  &&
-                        !(blockType == Material.CRAFTING_TABLE || blockType == Material.ENCHANTING_TABLE ||
-                                blockType == Material.ENDER_CHEST || blockType == Material.CAMPFIRE ||
-                                blockType == Material.STONECUTTER || blockType == Material.LOOM ||
-                                blockType == Material.CARTOGRAPHY_TABLE || blockType == Material.GRINDSTONE)) {
-                    if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isBlocked(blockType)) {
-                        if (EquipmentSlot.HAND == event.getHand())
-                            event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
-
-                        event.setCancelled(true);
-                        return;
-                    }
-
-                    // Access trust
-                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
-                        if (EquipmentSlot.HAND == event.getHand())
-                            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-
-                        event.setCancelled(true);
-                        return;
-                    }
-                }
-
-                break;
-            }
-
-            // Handle players stepping on things such as turtle eggs, tripwires, farmland, and pressure plates
-            case PHYSICAL:
-                if (Materials.isPressureSensitive(blockType)) {
-                    // Handle trampling
-                    if (blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) {
-                        event.setCancelled(flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType) ||
-                                !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags));
-                        return;
-                    }
-
-                    // Pressure plates and tripwires require access trust
-                    if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags))
-                        event.setCancelled(true);
-                }
-
-                break;
+            if (handleBlockInteraction(event, flags, heldItem))
+                return;
         }
+
+        // Handle interactions on the face of the block clicked
+        Block faceBlock = event.getClickedBlock().getRelative(event.getBlockFace());
+        flags = RegionProtection.getDataManager().getFlagsAt(faceBlock.getLocation());
+        if (flags != null && !flags.isEffectiveOwner(event.getPlayer()))
+            handleBlockFaceInteraction(event, flags, faceBlock, heldItem);
     }
 
     /**
