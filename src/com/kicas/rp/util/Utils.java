@@ -292,7 +292,7 @@ public final class Utils {
         return !(
                 block.isPassable() ||
                         Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(block.getType())
-        ) || block.getType().equals(Material.WATER);
+        ) || block.getType() == Material.WATER;
     }
 
     /**

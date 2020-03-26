@@ -117,7 +117,7 @@ public final class Materials {
      * @return true if the given material changes when the given tool is used on it, false otherwise.
      */
     public static boolean changesOnUse(Material material, Material tool) {
-        if (CAKE.equals(material) || material == REPEATER || material == COMPARATOR || material == DAYLIGHT_DETECTOR ||
+        if (CAKE == material || material == REPEATER || material == COMPARATOR || material == DAYLIGHT_DETECTOR ||
                 END_PORTAL_FRAME == material && ENDER_EYE == tool)
             return true;
 
@@ -212,7 +212,7 @@ public final class Materials {
      * @return the item the player is holding in the given hand.
      */
     public static ItemStack heldItem(Player player, EquipmentSlot hand) {
-        return EquipmentSlot.HAND.equals(hand) ? player.getInventory().getItemInMainHand()
+        return EquipmentSlot.HAND == hand ? player.getInventory().getItemInMainHand()
                 : player.getInventory().getItemInOffHand();
     }
 }

@@ -138,7 +138,7 @@ public class PlayerEventHandler implements Listener {
                                                                                FlagContainer flags, Material heldItem) {
         // Deny placement of boats, paintings, etc.
         if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(heldItem)) {
-            if (EquipmentSlot.HAND.equals(hand))
+            if (EquipmentSlot.HAND == hand)
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
 
             event.setCancelled(true);
@@ -146,7 +146,7 @@ public class PlayerEventHandler implements Listener {
         }
         // Build trust
         else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-            if (EquipmentSlot.HAND.equals(hand))
+            if (EquipmentSlot.HAND == hand)
                 event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
             return true;
@@ -204,7 +204,7 @@ public class PlayerEventHandler implements Listener {
                         blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
                     // Container trust
                     if (!blockFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, blockFlags)) {
-                        if (EquipmentSlot.HAND.equals(event.getHand()))
+                        if (EquipmentSlot.HAND == event.getHand())
                             event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + blockFlags.getOwnerName() + ".");
 
                         event.setCancelled(true);
@@ -390,7 +390,7 @@ public class PlayerEventHandler implements Listener {
             return;
 
         if (flags.<EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isBlocked(event.getRightClicked().getType())) {
-            if (EquipmentSlot.HAND.equals(event.getHand()))
+            if (EquipmentSlot.HAND == event.getHand())
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
             event.setCancelled(true);
             return;
@@ -399,7 +399,7 @@ public class PlayerEventHandler implements Listener {
         // Handle breaking leash hitches
         if (event.getRightClicked().getType() == EntityType.LEASH_HITCH) {
             if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(Material.LEAD)) {
-                if (EquipmentSlot.HAND.equals(event.getHand()))
+                if (EquipmentSlot.HAND == event.getHand())
                     event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
                 event.setCancelled(true);
                 return;
@@ -407,7 +407,7 @@ public class PlayerEventHandler implements Listener {
 
             // Build trust
             if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-                if (EquipmentSlot.HAND.equals(event.getHand()))
+                if (EquipmentSlot.HAND == event.getHand())
                     event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
                 event.setCancelled(true);
                 return;
@@ -419,7 +419,7 @@ public class PlayerEventHandler implements Listener {
         if ((heldItem == Material.NAME_TAG ||
                 (heldItem == Material.SHEARS && event.getRightClicked().getType() == EntityType.MUSHROOM_COW)) &&
                 !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-            if (EquipmentSlot.HAND.equals(event.getHand()))
+            if (EquipmentSlot.HAND == event.getHand())
                 event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
 
             event.setCancelled(true);
@@ -430,7 +430,7 @@ public class PlayerEventHandler implements Listener {
         if (Entities.isInventoryHolder(event.getRightClicked().getType())) {
             // Container trust
             if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
-                if (EquipmentSlot.HAND.equals(event.getHand()))
+                if (EquipmentSlot.HAND == event.getHand())
                     event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
 
                 event.setCancelled(true);
@@ -442,7 +442,7 @@ public class PlayerEventHandler implements Listener {
         if (Entities.isInteractable(event.getRightClicked().getType())) {
             // Access trust
             if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
-                if (EquipmentSlot.HAND.equals(event.getHand()))
+                if (EquipmentSlot.HAND == event.getHand())
                     event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
 
                 event.setCancelled(true);
