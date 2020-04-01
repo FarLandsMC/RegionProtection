@@ -56,7 +56,8 @@ public enum RegionFlag {
     DENY_WEAPON_USE(EnumFilter.MaterialFilter.class),
     FLIGHT,
     HOSTILE_GRIEF_BLOCKS(true), // block damage caused by hostile mobs
-    HOSTILE_GRIEF_ENTITIES(true); // entity damage caused by hostile mobs
+    HOSTILE_GRIEF_ENTITIES(true), // entity damage caused by hostile mobs
+    LIGHTNING_STRIKES;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
@@ -224,6 +225,7 @@ public enum RegionFlag {
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(HOSTILE_GRIEF_ENTITIES, config.getBoolean("entity.hostile-grief-entities"),
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
+        registerDefault(LIGHTNING_STRIKES, true);
     }
 
     /**

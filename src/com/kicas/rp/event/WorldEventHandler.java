@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 
@@ -156,6 +157,18 @@ public class WorldEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         event.setCancelled(flags != null && event.getCause() == EntityDamageEvent.DamageCause.LIGHTNING &&
                 !(event.getEntity() instanceof Player) && !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE));
+    }
+
+    /**
+     * Handles lightning strikes.
+     *
+     * @param event the event.
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onLightningStrike(LightningStrikeEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLightning().getLocation());
+        event.setCancelled(flags != null && event.getCause() != LightningStrikeEvent.Cause.COMMAND &&
+                !flags.isAllowed(RegionFlag.LIGHTNING_STRIKES));
     }
 
     /**
