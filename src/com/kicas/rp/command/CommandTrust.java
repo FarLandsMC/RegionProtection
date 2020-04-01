@@ -18,7 +18,7 @@ import java.util.*;
 public class CommandTrust extends TabCompleterBase implements CommandExecutor {
     private static final Map<String, String> HELP_MESSAGES = new HashMap<>();
     private static final String ACCESS_HELP = ChatColor.GOLD + "Grant access to buttons, levers, switches, villager " +
-            "trade, crafting and enchant tables, sheep shearing, and animal breeding.";
+            "trade, crafting and enchant tables, sheep shearing, animal breeding, and boats.";
     private static final String CONTAINER_HELP = ChatColor.GOLD + "Grant someone access to containers, or any block " +
             "or entity which stores items.";
     private static final String BUILD_HELP = ChatColor.GOLD + "Grant someone full access to your claim in every way." +
