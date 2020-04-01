@@ -90,7 +90,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
         }
 
         // Grant the trust and notify the sender
-        if ("public".equals(args[0])) {
+        if ("public".equals(args[0]) || "all".equals(args[0]) || "everyone".equals(args[0]) || "*".equals(args[0])) {
             trustMeta.trustPublic(trust);
 
             if (trust == TrustLevel.NONE)
