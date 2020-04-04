@@ -541,6 +541,10 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                         return filterFormat(args[3], Stream.of(Material.values()).filter(mat -> !mat.isBlock()),
                                 Utils::formattedName);
 
+                    case DENY_ITEM_CONSUMPTION:
+                        return filterFormat(args[3], Stream.of(Material.values()).filter(Materials::isConsumable),
+                                Utils::formattedName);
+
                     // Suggest the known commands
                     case DENY_COMMAND: {
                         Map<String, org.bukkit.command.Command> knownCommands =

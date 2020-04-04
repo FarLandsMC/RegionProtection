@@ -22,6 +22,7 @@ public final class Materials {
     private static final List<Material> INVENTORY_HOLDERS = new ArrayList<>();
     private static final List<Material> PLACEABLES = new ArrayList<>();
     private static final List<Material> CORALS = new ArrayList<>();
+    private static final List<Material> CONSUMABLES = new ArrayList<>();
 
     // Initialize categories
     static {
@@ -37,8 +38,13 @@ public final class Materials {
         PLACEABLES.addAll(materialsEndingWith("BUCKET", Collections.singletonList(MILK_BUCKET)));
         PLACEABLES.addAll(materialsEndingWith("_BOAT"));
         PLACEABLES.addAll(materialsEndingWith("MINECART"));
+
         Stream.of("CORAL", "CORAL_BLOCK", "CORAL_FAN", "CORAL_WALL_FAN")
                 .forEach(c -> CORALS.addAll(materialsEndingWith("_" + c)));
+
+        CONSUMABLES.addAll(Arrays.asList(
+                MILK_BUCKET, POTION, CAKE
+        ));
     }
 
     private Materials() {
@@ -96,6 +102,16 @@ public final class Materials {
      */
     public static boolean isCoral(Material material) {
         return CORALS.contains(material);
+    }
+
+    /**
+     * Returns whether or not a player can eat or drink the given material.
+     *
+     * @param material the material.
+     * @return true if the material can be consumed as defined above, false otherwise.
+     */
+    public static boolean isConsumable(Material material) {
+        return material.isEdible() || CONSUMABLES.contains(material);
     }
 
     /**

@@ -199,6 +199,13 @@ public class PlayerEventHandler implements Listener {
                 if (Materials.changesOnUse(blockType, heldItem) && testBreakInteraction(event, blockFlags, blockType))
                     return true;
 
+                if (blockType == Material.CAKE && blockFlags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_CONSUMPTION)
+                        .isBlocked(Material.CAKE)) {
+                    event.getPlayer().sendMessage(ChatColor.RED + "You cannot eat that here.");
+                    event.setCancelled(true);
+                    return true;
+                }
+
                 // Handle the opening of block inventory holders
                 if (Materials.isInventoryHolder(blockType) || blockType == Material.ANVIL ||
                         blockType == Material.CHIPPED_ANVIL || blockType == Material.DAMAGED_ANVIL) {
@@ -868,6 +875,21 @@ public class PlayerEventHandler implements Listener {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that command here.");
             }
+        }
+    }
+
+    /**
+     * Handles the deny-item-consumption flag.
+     *
+     * @param event the event
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerItemConsume(PlayerItemConsumeEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+        if (flags != null && !flags.isEffectiveOwner(event.getPlayer()) &&
+                flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_CONSUMPTION).isBlocked(event.getItem().getType())) {
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot eat that here.");
+            event.setCancelled(true);
         }
     }
 }

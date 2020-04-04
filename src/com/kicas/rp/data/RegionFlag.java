@@ -57,7 +57,8 @@ public enum RegionFlag {
     FLIGHT,
     HOSTILE_GRIEF_BLOCKS(true), // block damage caused by hostile mobs
     HOSTILE_GRIEF_ENTITIES(true), // entity damage caused by hostile mobs
-    LIGHTNING_STRIKES;
+    LIGHTNING_STRIKES,
+    DENY_ITEM_CONSUMPTION(EnumFilter.MaterialFilter.class);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
