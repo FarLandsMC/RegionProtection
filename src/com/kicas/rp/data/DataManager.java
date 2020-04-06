@@ -696,6 +696,30 @@ public class DataManager implements Listener {
     }
 
     /**
+     * Attempts to set the bounds of the given region to the given new bounds.
+     *
+     * @param delegate  the player performing the operation.
+     * @param region    the region to modify.
+     * @param newBounds the new region bounds.
+     * @return true if the resizing was successful, false otherwise.
+     */
+    public synchronized boolean tryRedefineBounds(Player delegate, Region region, Pair<Location, Location> newBounds) {
+        // Save a copy for reversal upon failure
+        Pair<Location, Location> oldBounds = region.getBounds();
+
+        // Update bounds
+        region.setBounds(newBounds);
+
+        // Manage collisions, sides, claim blocks, and subdivisions becoming exclaves
+        if (failsResizeChecks(delegate, region, oldBounds))
+            return false;
+
+        worlds.get(region.getWorld().getUID()).getLookupTable().reAdd(region, oldBounds);
+
+        return true;
+    }
+
+    /**
      * Attempts to create a subdivision of a given claim with the given vertices. This method does not check to ensure
      * that the provided player has permission to subdivide this claim, this check should be performed outside of this
      * method. The provided vertices do not need to be minimums and maximums respectively, however they will be assumed

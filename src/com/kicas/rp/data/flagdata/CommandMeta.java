@@ -64,7 +64,7 @@ public class CommandMeta extends FlagMeta {
 
     @Override
     public String toMetaString() {
-        return (runFromConsole ? "console:" : "player:") + command;
+        return (runFromConsole ? "[console] " : "[player] ") + command;
     }
 
     /**
