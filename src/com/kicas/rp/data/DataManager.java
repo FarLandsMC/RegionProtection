@@ -399,6 +399,10 @@ public class DataManager implements Listener {
 
             if (flags.getOwner() == null)
                 flags.setOwner(region.getOwner());
+            else
+                flags.addCoOwner(region.getOwner());
+
+            region.getCoOwners().forEach(flags::addCoOwner);
         });
 
         // Copy the world flags

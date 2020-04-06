@@ -6,9 +6,7 @@ import com.kicas.rp.util.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Acts as a general container for region flags. All flag containers have an owner which is stored as a UUID. If the
@@ -17,10 +15,18 @@ import java.util.UUID;
 public class FlagContainer {
     protected final Map<RegionFlag, Object> flags;
     protected UUID owner;
+    protected final List<UUID> coOwners;
+
+    public FlagContainer(UUID owner, List<UUID> coOwners) {
+        this.flags = new HashMap<>();
+        this.owner = owner;
+        this.coOwners = new ArrayList<>(coOwners);
+    }
 
     public FlagContainer(UUID owner) {
         this.flags = new HashMap<>();
         this.owner = owner;
+        this.coOwners = new ArrayList<>();
     }
 
     /**
@@ -64,7 +70,8 @@ public class FlagContainer {
      */
     public boolean isEffectiveOwner(Player player) {
         return (isAdminOwned() ? player.isOp() : owner.equals(player.getUniqueId())) ||
-                RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust();
+                RegionProtection.getDataManager().getPlayerSession(player).isIgnoringTrust() ||
+                coOwners.contains(player.getUniqueId());
     }
 
     /**
@@ -85,6 +92,32 @@ public class FlagContainer {
      */
     public void setOwner(UUID uuid) {
         owner = uuid;
+    }
+
+    /**
+     * Adds the given UUID as a co-owner of this region and any child regions, making them an effective owner.
+     *
+     * @param owner the new co-owner.
+     */
+    public void addCoOwner(UUID owner) {
+        this.coOwners.add(owner);
+    }
+
+    /**
+     * Removes the given UUID from the list of co-owners in this region and all child regions.
+     *
+     * @param owner the co-owner to remove.
+     * @return true if the co-owner was removed, false if not.
+     */
+    public boolean removeCoOwner(UUID owner) {
+        return this.coOwners.remove(owner);
+    }
+
+    /**
+     * @return an unmodifiable list of the co-owners of this region.
+     */
+    public List<UUID> getCoOwners() {
+        return Collections.unmodifiableList(coOwners);
     }
 
     /**

@@ -7,7 +7,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.*;
 
@@ -25,11 +24,10 @@ public class Region extends FlagContainer {
     private Location min, max;
     private Region parent;
     private final List<Region> children;
-    private final List<UUID> coOwners;
 
     // Copies the given location
     public Region(String name, int priority, UUID owner, Location min, Location max, Region parent, List<UUID> coOwners) {
-        super(owner);
+        super(owner, coOwners);
         this.name = name;
         this.priority = priority;
         this.world = min.getWorld();
@@ -37,7 +35,6 @@ public class Region extends FlagContainer {
         this.max = max.clone();
         this.parent = parent;
         this.children = new ArrayList<>();
-        this.coOwners = coOwners;
     }
 
     // Create an admin region
@@ -55,12 +52,11 @@ public class Region extends FlagContainer {
         this.max = null;
         this.parent = null;
         this.children = new ArrayList<>();
-        this.coOwners = new ArrayList<>();
     }
 
     // For child creation in deserialization
     public Region(Region parent, List<UUID> coOwners) {
-        super(parent.getOwner());
+        super(parent.getOwner(), coOwners);
         this.name = null;
         this.priority = 0;
         this.world = parent.getWorld();
@@ -68,7 +64,6 @@ public class Region extends FlagContainer {
         this.max = null;
         this.parent = parent;
         this.children = new ArrayList<>();
-        this.coOwners = coOwners;
     }
 
     public String getRawName() {
@@ -191,23 +186,6 @@ public class Region extends FlagContainer {
 
         children.forEach(child -> child.removeCoOwner(owner));
         return true;
-    }
-
-    /**
-     * @return an unmodifiable list of the co-owners of this region.
-     */
-    public List<UUID> getCoOwners() {
-        return Collections.unmodifiableList(coOwners);
-    }
-
-    /**
-     * @param player the player.
-     * @return true if the method as defined in the flag container class returns true or if the given player is a
-     * co-owner of this region.
-     */
-    @Override
-    public boolean isEffectiveOwner(Player player) {
-        return super.isEffectiveOwner(player) || coOwners.contains(player.getUniqueId());
     }
 
     /**

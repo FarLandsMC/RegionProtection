@@ -151,7 +151,7 @@ public class Deserializer implements AutoCloseable {
     private Region readChildRegion(Region parent, int format) throws IOException {
         Region region = new Region(decoder.readUTF8Raw(), decoder.read() & 0x7F, parent.getOwner(),
                 readRegionBound(parent.getWorld()), readRegionBound(parent.getWorld()), parent,
-                format > 0 ? decoder.readArrayAsList(UUID.class) : new ArrayList<>());
+                format > 0 ? decoder.readArrayAsList(UUID.class) : parent.coOwners);
         readFlags(region, format);
         return region;
     }
