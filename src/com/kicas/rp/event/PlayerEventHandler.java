@@ -892,4 +892,22 @@ public class PlayerEventHandler implements Listener {
             event.setCancelled(true);
         }
     }
+
+    /**
+     * Handles deny-item-use for totems.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onEntityResurrect(EntityResurrectEvent event) {
+        if (!(event.getEntity() instanceof Player))
+            return;
+        Player player = (Player) event.getEntity();
+
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(player.getLocation());
+        if (flags != null && !flags.isEffectiveOwner(player) &&
+                flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(Material.TOTEM_OF_UNDYING)) {
+            event.setCancelled(true);
+        }
+    }
 }
