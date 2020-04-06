@@ -857,7 +857,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
-        if (flags != null) {
+        if (flags != null && !flags.isEffectiveOwner(event.getPlayer())) {
             // Remove beginning /'s
             String message = event.getMessage().trim().replaceAll("^(/+)?", "");
 
