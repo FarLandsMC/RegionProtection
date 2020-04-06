@@ -927,7 +927,28 @@ public class PlayerEventHandler implements Listener {
             if (flags == null || flags.isEffectiveOwner(player))
                 return;
 
-            if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(Materials.forEntity(event.getEntity()))) {
+            Material thrownMaterial = Materials.forEntity(event.getEntity());
+            if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(thrownMaterial) ||
+                    flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isBlocked(thrownMaterial)) {
+                player.sendMessage(ChatColor.RED + "You cannot use that here.");
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    /**
+     * Handles deny-weapon-use for bows and crossbows.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerShootBow(EntityShootBowEvent event) {
+        if (event.getEntity() instanceof Player) {
+            Player player = (Player) event.getEntity();
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(player.getLocation());
+
+            if (flags != null && !flags.isEffectiveOwner(player) &&
+                    flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isBlocked(event.getBow().getType())) {
                 player.sendMessage(ChatColor.RED + "You cannot use that here.");
                 event.setCancelled(true);
             }
