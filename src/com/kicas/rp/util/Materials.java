@@ -143,7 +143,8 @@ public final class Materials {
         if (tool.name().endsWith("HOE"))
             return material == GRASS_BLOCK || material == DIRT || material == GRASS_PATH;
 
-        return tool.name().endsWith("SHOVEL") && material == GRASS_BLOCK;
+        return (tool.name().endsWith("SHOVEL") && material == GRASS_BLOCK) ||
+                (tool.name().endsWith("DYE") && material.name().endsWith("SIGN"));
     }
 
     /**

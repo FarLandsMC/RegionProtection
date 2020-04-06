@@ -36,6 +36,68 @@ import java.util.Objects;
  */
 public class PlayerEventHandler implements Listener {
     /**
+     * Tests whether or not the given block type can be broken according to the given flags.
+     *
+     * @param event the event.
+     * @param player the associated player.
+     * @param flags the flags.
+     * @param blockType the type of block being broken.
+     * @return whether or not the event is cancelled.
+     */
+    private boolean testBreakInteraction(Cancellable event, Player player, FlagContainer flags, Material blockType) {
+        if (flags == null || flags.isEffectiveOwner(player))
+            return false;
+
+        // Admin flag then trust flag
+        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType)) {
+            player.sendMessage(ChatColor.RED + "You cannot break that here.");
+            event.setCancelled(true);
+            return true;
+        }
+        // Build trust
+        else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player, TrustLevel.BUILD, flags)) {
+            player.sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Tests whether or not the given held item can be placed according to the given flags.
+     *
+     * @param event the event.
+     * @param player the associated player.
+     * @param flags the flags.
+     * @param heldItem the item the player is holding.
+     * @return whether or not the event is cancelled.
+     */
+    private boolean testPlaceInteraction(Cancellable event, Player player, EquipmentSlot hand, FlagContainer flags,
+                                         Material heldItem) {
+        if (flags == null || flags.isEffectiveOwner(player))
+            return false;
+
+        // Deny placement of boats, paintings, etc.
+        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(heldItem)) {
+            if (EquipmentSlot.HAND == hand)
+                player.sendMessage(ChatColor.RED + "You cannot place that here.");
+
+            event.setCancelled(true);
+            return true;
+        }
+        // Build trust
+        else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player, TrustLevel.BUILD, flags)) {
+            if (EquipmentSlot.HAND == hand)
+                player.sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
+            event.setCancelled(true);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Handle players breaking blocks in a region.
      *
      * @param event the event.
@@ -43,21 +105,7 @@ public class PlayerEventHandler implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerBreakBlock(BlockBreakEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
-            return;
-
-        // Check admin flag first
-        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(event.getBlock().getType())) {
-            event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
-            event.setCancelled(true);
-            return;
-        }
-
-        // Check trust last
-        if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-            event.setCancelled(true);
-        }
+        testBreakInteraction(event, event.getPlayer(), flags, event.getBlock().getType());
     }
 
     /**
@@ -83,76 +131,7 @@ public class PlayerEventHandler implements Listener {
             return;
         }
 
-        if (flags.isEffectiveOwner(event.getPlayer()))
-            return;
-
-        // Check admin flag first
-        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(event.getBlock().getType())) {
-            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
-            event.setCancelled(true);
-            return;
-        }
-
-        // Check trust last
-        if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
-            event.setCancelled(true);
-        }
-    }
-
-    /**
-     * Tests whether or not the given block type can be broken according to the given flags.
-     *
-     * @param event the event.
-     * @param flags the flags.
-     * @param blockType the type of block being broken.
-     * @return whether or not the event is cancelled.
-     */
-    private <T extends PlayerEvent & Cancellable> boolean testBreakInteraction(T event, FlagContainer flags,
-                                                                               Material blockType) {
-        // Admin flag then trust flag
-        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType)) {
-            event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
-            event.setCancelled(true);
-            return true;
-        }
-        // Build trust
-        else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-            event.setCancelled(true);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Tests whether or not the given held item can be placed according to the given flags.
-     *
-     * @param event the event.
-     * @param flags the flags.
-     * @param heldItem the item the player is holding.
-     * @return whether or not the event is cancelled.
-     */
-    private <T extends PlayerEvent & Cancellable> boolean testPlaceInteraction(T event, EquipmentSlot hand,
-                                                                               FlagContainer flags, Material heldItem) {
-        // Deny placement of boats, paintings, etc.
-        if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_PLACE).isBlocked(heldItem)) {
-            if (EquipmentSlot.HAND == hand)
-                event.getPlayer().sendMessage(ChatColor.RED + "You cannot place that here.");
-
-            event.setCancelled(true);
-            return true;
-        }
-        // Build trust
-        else if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
-            if (EquipmentSlot.HAND == hand)
-                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
-            event.setCancelled(true);
-            return true;
-        }
-
-        return false;
+        testPlaceInteraction(event, event.getPlayer(), event.getHand(), flags, event.getBlock().getType());
     }
 
     /**
@@ -170,8 +149,10 @@ public class PlayerEventHandler implements Listener {
         switch (event.getAction()) {
             // Disable dragon egg punching.
             case LEFT_CLICK_BLOCK:
-                if (blockType == Material.DRAGON_EGG && testBreakInteraction(event, blockFlags, Material.DRAGON_EGG))
+                if (blockType == Material.DRAGON_EGG &&
+                        testBreakInteraction(event, event.getPlayer(), blockFlags, Material.DRAGON_EGG)) {
                     return true;
+                }
                 break;
 
             // Handle every block related right-click interaction
@@ -197,8 +178,10 @@ public class PlayerEventHandler implements Listener {
                 }
 
                 // Handle stuff like grass path making
-                if (Materials.changesOnUse(blockType, heldItem) && testBreakInteraction(event, blockFlags, blockType))
+                if (Materials.changesOnUse(blockType, heldItem) &&
+                        testBreakInteraction(event, event.getPlayer(), blockFlags, blockType)) {
                     return true;
+                }
 
                 if (blockType == Material.CAKE && blockFlags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_CONSUMPTION)
                         .isBlocked(Material.CAKE)) {
@@ -284,7 +267,8 @@ public class PlayerEventHandler implements Listener {
     private boolean handleBlockFaceInteraction(PlayerInteractEvent event, FlagContainer faceFlags, Block block, Material heldItem) {
         // disable fire extinguishing
         if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
-            if (Materials.blockType(block) == Material.FIRE && testBreakInteraction(event, faceFlags, Material.FIRE)) {
+            if (Materials.blockType(block) == Material.FIRE &&
+                    testBreakInteraction(event, event.getPlayer(), faceFlags, Material.FIRE)) {
                 // There's a client side glitch where even though the event is cancelled, the fire still disappears
                 // for the player, therefore we resend the block so it stays visible for the player.
                 Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(),
@@ -295,7 +279,8 @@ public class PlayerEventHandler implements Listener {
         } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             // Handle the placing of entities and other items as well as other changes that happen when the player's
             // held item is used on the clicked block.
-            return Materials.isPlaceable(heldItem) && testPlaceInteraction(event, event.getHand(), faceFlags, heldItem);
+            return Materials.isPlaceable(heldItem) &&
+                    testPlaceInteraction(event, event.getPlayer(), event.getHand(), faceFlags, heldItem);
         }
 
         return false;
@@ -312,7 +297,7 @@ public class PlayerEventHandler implements Listener {
         if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
 
-        testPlaceInteraction(event, EquipmentSlot.HAND, flags, Materials.stackType(event.getItemStack()));
+        testPlaceInteraction(event, event.getPlayer(), EquipmentSlot.HAND, flags, Materials.stackType(event.getItemStack()));
     }
 
     /**
@@ -326,7 +311,7 @@ public class PlayerEventHandler implements Listener {
         if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
 
-        testBreakInteraction(event, flags, Materials.blockType(event.getBlock()));
+        testBreakInteraction(event, event.getPlayer(), flags, Materials.blockType(event.getBlock()));
     }
 
     /**
