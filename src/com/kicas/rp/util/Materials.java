@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
-import org.bukkit.entity.minecart.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -179,26 +178,20 @@ public final class Materials {
                 default:
                     return Material.valueOf(((Boat) entity).getWoodType().name() + "_BOAT");
             }
-        } else if (entity instanceof CommandMinecart)
-            return Material.COMMAND_BLOCK_MINECART;
-        else if (entity instanceof StorageMinecart)
-            return Material.CHEST_MINECART;
-        else if (entity instanceof ExplosiveMinecart)
-            return Material.TNT_MINECART;
-        else if (entity instanceof RideableMinecart)
-            return Material.MINECART;
-        else if (entity instanceof PoweredMinecart)
-            return Material.FURNACE_MINECART;
-        else if (entity instanceof HopperMinecart)
-            return Material.HOPPER_MINECART;
-        else if (entity instanceof Painting)
-            return Material.PAINTING;
-        else if (entity instanceof ItemFrame)
-            return Material.ITEM_FRAME;
-        else if (entity instanceof LeashHitch)
-            return Material.LEAD;
-        else
-            return Material.AIR;
+        }
+        switch (entity.getType()) {
+            case MINECART_COMMAND: return COMMAND_BLOCK_MINECART;
+            case MINECART_CHEST: return CHEST_MINECART;
+            case MINECART_TNT: return TNT_MINECART;
+            case MINECART_FURNACE: return FURNACE_MINECART;
+            case MINECART_HOPPER: return HOPPER_MINECART;
+            case LEASH_HITCH: return LEAD;
+            default:
+            {
+                Material mat = Utils.safeValueOf(Material::valueOf, entity.getType().name());
+                return mat == null ? AIR : mat;
+            }
+        }
     }
 
     /**

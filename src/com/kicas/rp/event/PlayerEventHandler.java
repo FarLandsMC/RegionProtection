@@ -897,4 +897,40 @@ public class PlayerEventHandler implements Listener {
             event.setCancelled(true);
         }
     }
+
+    /**
+     * Handles deny-item-use for fishing rods.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerUseFishingRod(PlayerFishEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+        if (flags != null && !flags.isEffectiveOwner(event.getPlayer()) &&
+                flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(Material.FISHING_ROD)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Handles deny-item-use for ender pearls.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onProjectileLaunched(ProjectileLaunchEvent event) {
+        if (event.getEntity().getShooter() instanceof Player) {
+            Player player = (Player) event.getEntity().getShooter();
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(player.getLocation());
+
+            if (flags == null || flags.isEffectiveOwner(player))
+                return;
+
+            if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(Materials.forEntity(event.getEntity()))) {
+                player.sendMessage(ChatColor.RED + "You cannot use that here.");
+                event.setCancelled(true);
+            }
+        }
+    }
 }
