@@ -230,6 +230,10 @@ public enum RegionFlag {
         registerDefault(HOSTILE_GRIEF_ENTITIES, config.getBoolean("entity.hostile-grief-entities"),
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(LIGHTNING_STRIKES, true);
+        registerDefault(DENY_ITEM_CONSUMPTION, EnumFilter.MaterialFilter.EMPTY_FILTER);
+        registerDefault(TNT_IGNITION, true);
+        registerDefault(TNT_ENTITY_DAMAGE, true);
+        registerDefault(TNT_BLOCK_DAMAGE, true);
     }
 
     /**

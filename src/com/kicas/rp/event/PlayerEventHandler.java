@@ -484,7 +484,7 @@ public class PlayerEventHandler implements Listener {
             return;
 
         // Container trust
-        if (!flags.<EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isBlocked(EntityType.ARMOR_STAND) ||
+        if (flags.<EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isBlocked(EntityType.ARMOR_STAND) ||
                 !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.CONTAINER, flags)) {
             event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
