@@ -38,7 +38,8 @@ public class EntityEventHandler implements Listener {
             return;
 
         if ((event.getEntityType() == EntityType.ARROW || event.getEntityType() == EntityType.SMALL_FIREBALL)) {
-            if (event.getBlock().getType() == Material.TNT && !flags.isAllowed(RegionFlag.TNT)) {
+            if (event.getBlock().getType() == Material.TNT && (!flags.isAllowed(RegionFlag.TNT) ||
+                    !flags.isAllowed(RegionFlag.TNT_IGNITION))) {
                 event.setCancelled(true);
                 return;
             }
@@ -79,6 +80,19 @@ public class EntityEventHandler implements Listener {
                 event.setCancelled(shooter instanceof LivingEntity && Entities.isMonster(((LivingEntity) shooter).getType()));
         } else
             event.setCancelled(true);
+    }
+
+    /**
+     * Handles the tnt-entity-damage flag.
+     *
+     * @param event the event.
+     */
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+            if (flags != null && !flags.isAllowed(RegionFlag.TNT_ENTITY_DAMAGE))
+                event.setCancelled(true);
+        }
     }
 
     /**
@@ -133,7 +147,7 @@ public class EntityEventHandler implements Listener {
             // Just to make sure no damage is done on the border of a region
             event.blockList().removeIf(block -> {
                 FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
-                return flags0 != null && !flags0.isAllowed(RegionFlag.TNT);
+                return flags0 != null && (!flags0.isAllowed(RegionFlag.TNT) || !flags0.isAllowed(RegionFlag.TNT_BLOCK_DAMAGE));
             });
         } else {
             // If the mob explosion occurs in an area where mob grief is not allowed, cancel the event altogether

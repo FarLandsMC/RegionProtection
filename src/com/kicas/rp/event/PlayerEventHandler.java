@@ -189,7 +189,8 @@ public class PlayerEventHandler implements Listener {
 
                 // Block TNT ignition
                 if ((heldItem == Material.FLINT_AND_STEEL || heldItem == Material.FIRE_CHARGE) &&
-                        blockType == Material.TNT && !blockFlags.isAllowed(RegionFlag.TNT)) {
+                        blockType == Material.TNT && (!blockFlags.isAllowed(RegionFlag.TNT) ||
+                        !blockFlags.isAllowed(RegionFlag.TNT_IGNITION))) {
                     event.getPlayer().sendMessage(ChatColor.RED + "TNT is not allowed here.");
                     event.setCancelled(true);
                     return true;
