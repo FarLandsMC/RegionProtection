@@ -196,7 +196,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             return;
         }
 
-        if ((operation == FlagOperation.APPEND || operation == FlagOperation.REMOVE) &&
+        if ((operation == FlagOperation.APPEND || operation == FlagOperation.NEGATE) &&
                 (flag.isBoolean() || !Augmentable.class.isAssignableFrom(flag.getMetaClass()))) {
             TextUtils.sendFormatted(sender, "&(red)This flag cannot be appended to or reduced.");
             return;
@@ -512,7 +512,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                     return filterStartingWith(args[3], Stream.of(RegionFlag.VALUES).map(Utils::formattedName));
                 // Flag values
                 else
-                    return suggestFlagValue(sender, args, Utils.valueOfFormattedName(args[2], RegionFlag.class), location);
+                    return suggestFlagValue(sender, args, Utils.valueOfFormattedName(args[3], RegionFlag.class), location);
 
             case CREATE: {
                 String arg = args[args.length - 1];
@@ -571,39 +571,39 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         // Location meta suggestion
         if (LocationMeta.class.equals(flag.getMetaClass())) {
             switch (args.length) {
-                case 4: // x
+                case 5: // x
                     return Collections.singletonList(Integer.toString(location.getBlockX()));
-                case 5: // y
+                case 6: // y
                     return Collections.singletonList(Integer.toString(location.getBlockY()));
-                case 6: // z
+                case 7: // z
                     return Collections.singletonList(Integer.toString(location.getBlockZ()));
-                case 7:
+                case 8:
                     // By default suggest the yaw value
-                    if (sender instanceof Player && (args[6].isEmpty() || args[6].matches("(-)?[\\d.]+"))) {
+                    if (sender instanceof Player && (args[7].isEmpty() || args[7].matches("(-)?[\\d.]+"))) {
                         return Collections.singletonList(Integer.toString((int) ((Player) sender).getLocation()
                                 .getYaw()));
                     } else // If the player starts typing a non-number, suggest world values instead
-                        return filterStartingWith(args[6], Bukkit.getWorlds().stream().map(World::getName));
-                case 8: // Pitch if the sender is a player, otherwise suggest world values again
+                        return filterStartingWith(args[7], Bukkit.getWorlds().stream().map(World::getName));
+                case 9: // Pitch if the sender is a player, otherwise suggest world values again
                     // Pitch
                     if (sender instanceof Player) {
                         return Collections.singletonList(Integer.toString((int) ((Player) sender).getLocation()
                                 .getPitch()));
                     } else { // World values
-                        return filterStartingWith(args[7], Bukkit.getWorlds().stream().map(World::getName));
+                        return filterStartingWith(args[8], Bukkit.getWorlds().stream().map(World::getName));
                     }
-                case 9: // World values
-                    return filterStartingWith(args[8], Bukkit.getWorlds().stream().map(World::getName));
+                case 10: // World values
+                    return filterStartingWith(args[9], Bukkit.getWorlds().stream().map(World::getName));
                 default: // Nothing left to suggest
                     return Collections.emptyList();
             }
         }
 
-        if (args.length > 4)
+        if (args.length > 5)
             return Collections.emptyList();
 
         if (flag.isBoolean())
-            return filterStartingWith(args[3], ALLOW_DENY);
+            return filterStartingWith(args[4], ALLOW_DENY);
 
         // Too complex, not worth giving suggestions for
         if (TrustMeta.class.equals(flag.getMetaClass()) || TextMeta.class.equals(flag.getMetaClass()))
@@ -611,16 +611,16 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
         if (CommandMeta.class.equals(flag.getMetaClass())) {
             // Suggest the allowed senders
-            if (!args[3].contains(":"))
-                return filterStartingWith(args[3], Stream.of("console:", "player:"));
+            if (!args[4].contains(":"))
+                return filterStartingWith(args[4], Stream.of("console:", "player:"));
             else { // Suggest the known commands matching the prefix
-                String prefix = args[3].substring(0, args[3].indexOf(':') + 1);
+                String prefix = args[4].substring(0, args[4].indexOf(':') + 1);
                 Map<String, org.bukkit.command.Command> knownCommands =
                         (Map<String, org.bukkit.command.Command>) ReflectionHelper.getFieldValue
                                 ("knownCommands", SimpleCommandMap.class, ((CraftServer) Bukkit.getServer())
                                         .getCommandMap());
 
-                return filterStartingWith(args[3], knownCommands.keySet().stream()
+                return filterStartingWith(args[4], knownCommands.keySet().stream()
                         .filter(cmd -> !cmd.contains(":"))
                         .map(cmd -> prefix + cmd.toLowerCase()));
             }
@@ -632,28 +632,28 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             case DENY_SPAWN:
             case DENY_AGGRO:
             case DENY_ENTITY_USE:
-                return filterFormat(args[3], Stream.of(EntityType.values()), Utils::formattedName);
+                return filterFormat(args[4], Stream.of(EntityType.values()), Utils::formattedName);
 
             // Suggest placeable and breakable materials
             case DENY_BREAK:
             case DENY_PLACE:
-                return filterFormat(args[3], Stream.of(Material.values()).filter(mat ->
+                return filterFormat(args[4], Stream.of(Material.values()).filter(mat ->
                                 Materials.isPlaceable(mat) || mat == Material.LEAD || mat.isBlock()),
                         Utils::formattedName);
 
             // Suggest interactable blocks
             case DENY_BLOCK_USE:
-                return filterFormat(args[3], Stream.of(Material.values()).filter(mat ->
+                return filterFormat(args[4], Stream.of(Material.values()).filter(mat ->
                         mat.isInteractable() && mat.isBlock()), Utils::formattedName);
 
             // Suggest items
             case DENY_ITEM_USE:
             case DENY_WEAPON_USE:
-                return filterFormat(args[3], Stream.of(Material.values()).filter(mat -> !mat.isBlock()),
+                return filterFormat(args[4], Stream.of(Material.values()).filter(mat -> !mat.isBlock()),
                         Utils::formattedName);
 
             case DENY_ITEM_CONSUMPTION:
-                return filterFormat(args[3], Stream.of(Material.values()).filter(Materials::isConsumable),
+                return filterFormat(args[4], Stream.of(Material.values()).filter(Materials::isConsumable),
                         Utils::formattedName);
 
             // Suggest the known commands
@@ -665,7 +665,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                                 ((CraftServer) Bukkit.getServer()).getCommandMap()
                         );
 
-                return filterFormat(args[3], knownCommands.keySet().stream().filter(s -> !s.contains(":")), null);
+                return filterFormat(args[4], knownCommands.keySet().stream().filter(s -> !s.contains(":")), null);
             }
         }
 
@@ -693,7 +693,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
     }
 
     private enum FlagOperation {
-        GET, SET, DELETE, APPEND, REMOVE;
+        GET, SET, DELETE, APPEND, NEGATE;
 
         static final FlagOperation[] VALUES = values();
     }
