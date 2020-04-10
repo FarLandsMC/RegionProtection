@@ -11,10 +11,7 @@ import com.kicas.rp.util.Materials;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
+import org.bukkit.event.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -262,7 +259,7 @@ public class PlayerEventHandler implements Listener {
     }
 
     /**
-     * Handles trampling, pressure plates, tutle egg stomping, etc.
+     * Handles trampling, pressure plates, turtle egg stomping, etc.
      *
      * @param event the event.
      * @param flags the flags at the player's location.
@@ -340,12 +337,15 @@ public class PlayerEventHandler implements Listener {
      *
      * @param event the event.
      */
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW)
     public void onPlayerInteract(PlayerInteractEvent event) {
         Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
 
         // Handle interactions concerning the actual block clicked
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
+        Location location = event.getClickedBlock() == null
+                ? event.getPlayer().getLocation()
+                : event.getClickedBlock().getLocation();
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(location);
         if (flags != null) {
             if (event.getAction() == Action.PHYSICAL) {
                 handlePhysicalInteraction(event, flags);
@@ -363,15 +363,20 @@ public class PlayerEventHandler implements Listener {
                 return;
             }
 
+            if (event.useInteractedBlock() == Event.Result.DENY)
+                return;
+
             if (handleBlockInteraction(event, flags, heldItem))
                 return;
         }
 
-        // Handle interactions on the face of the block clicked
-        Block faceBlock = event.getClickedBlock().getRelative(event.getBlockFace());
-        flags = RegionProtection.getDataManager().getFlagsAt(faceBlock.getLocation());
-        if (flags != null && !flags.isEffectiveOwner(event.getPlayer()))
-            handleBlockFaceInteraction(event, flags, faceBlock, heldItem);
+        if (event.useInteractedBlock() != Event.Result.DENY) {
+            // Handle interactions on the face of the block clicked
+            Block faceBlock = event.getClickedBlock().getRelative(event.getBlockFace());
+            flags = RegionProtection.getDataManager().getFlagsAt(faceBlock.getLocation());
+            if (flags != null && !flags.isEffectiveOwner(event.getPlayer()))
+                handleBlockFaceInteraction(event, flags, faceBlock, heldItem);
+        }
     }
 
     /**
