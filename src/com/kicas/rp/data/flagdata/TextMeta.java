@@ -47,6 +47,7 @@ public class TextMeta extends FlagMeta {
     @Override
     public void readMetaString(String metaString) {
         text = EMPTY_TEXT_PLACEHOLDER.equals(metaString) ? "" : metaString.replaceAll("\\\\n|\\\\r", "\n");
+        TextUtils.format(text); // Check syntax
     }
 
     /**
