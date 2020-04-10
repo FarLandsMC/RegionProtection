@@ -235,6 +235,7 @@ public enum RegionFlag {
         registerDefault(TNT_IGNITION, true);
         registerDefault(TNT_ENTITY_DAMAGE, true);
         registerDefault(TNT_BLOCK_DAMAGE, true);
+        registerDefault(FALL_DAMAGE, true);
     }
 
     /**

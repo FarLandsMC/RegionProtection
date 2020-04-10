@@ -24,6 +24,8 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.BlockProjectileSource;
@@ -961,8 +963,19 @@ public class PlayerEventHandler implements Listener {
 
             if (flags != null && !flags.isEffectiveOwner(player) &&
                     flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_WEAPON_USE).isBlocked(event.getBow().getType())) {
-                player.sendMessage(ChatColor.RED + "You cannot use that here.");
                 event.setCancelled(true);
+
+                // There's a bug where crossbow arrows are not replaced when the event is cancelled, so fix that
+                if (event.getBow().getType() == Material.CROSSBOW) {
+                    Arrow arrow = (Arrow) event.getProjectile();
+                    if (arrow.getPickupStatus() == AbstractArrow.PickupStatus.ALLOWED) {
+                        ItemStack replacement = ((CrossbowMeta)event.getBow().getItemMeta()).getChargedProjectiles().get(0).clone();
+                        replacement.setAmount(1);
+                        player.getInventory().addItem(replacement);
+                        player.sendMessage(ChatColor.RED + "You cannot use that here.");
+                    }
+                } else
+                    player.sendMessage(ChatColor.RED + "You cannot use that here.");
             }
         }
     }
