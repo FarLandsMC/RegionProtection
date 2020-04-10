@@ -62,7 +62,8 @@ public enum RegionFlag {
     TNT_IGNITION,
     TNT_ENTITY_DAMAGE,
     TNT_BLOCK_DAMAGE,
-    FALL_DAMAGE;
+    FALL_DAMAGE,
+    ELYTRA_FLIGHT;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
@@ -236,6 +237,7 @@ public enum RegionFlag {
         registerDefault(TNT_ENTITY_DAMAGE, true);
         registerDefault(TNT_BLOCK_DAMAGE, true);
         registerDefault(FALL_DAMAGE, true);
+        registerDefault(ELYTRA_FLIGHT, true);
     }
 
     /**

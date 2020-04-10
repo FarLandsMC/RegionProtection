@@ -818,6 +818,11 @@ public class PlayerEventHandler implements Listener {
 
                 if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND))
                     toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(event.getPlayer());
+
+                if (!toFlags.isEffectiveOwner(event.getPlayer()) && !toFlags.isAllowed(RegionFlag.ELYTRA_FLIGHT) &&
+                        event.getPlayer().isGliding()) {
+                    event.getPlayer().setGliding(false);
+                }
             }
 
             // Flight only applies to players in survival or adventure mode, and only if one of the regions they are
@@ -986,6 +991,21 @@ public class PlayerEventHandler implements Listener {
                 } else
                     player.sendMessage(ChatColor.RED + "You cannot use that here.");
             }
+        }
+    }
+
+    /**
+     * Handles elytra-flight flag.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onElytraToggled(EntityToggleGlideEvent event) {
+        if (event.getEntity() instanceof Player) {
+            Player player = (Player) event.getEntity();
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(player.getLocation());
+            event.setCancelled(flags != null && !flags.isEffectiveOwner(player) &&
+                    !flags.isAllowed(RegionFlag.ELYTRA_FLIGHT) && event.isGliding());
         }
     }
 }
