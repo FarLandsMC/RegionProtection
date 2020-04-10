@@ -475,8 +475,13 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         if (region.hasFlag(RegionFlag.RESPAWN_LOCATION))
             player.teleport(region.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation());
         else {
-            player.teleport(Utils.findSafe(new Location(region.getWorld(), (region.getMin().getX() + region.getMax().getX()) / 2,
-                    128, (region.getMin().getZ() + region.getMax().getZ()) / 2)));
+            Location origin = new Location(
+                    region.getWorld(),
+                    (region.getMin().getX() + region.getMax().getX()) / 2,
+                    (region.getMin().getY() + region.getMax().getY()) / 2,
+                    (region.getMin().getZ() + region.getMax().getZ()) / 2
+            );
+            player.teleport(Utils.findSafe(origin, region.getMin().getBlockY(), region.getMax().getBlockY()));
         }
 
         return true;

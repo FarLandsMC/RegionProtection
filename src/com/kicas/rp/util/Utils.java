@@ -276,8 +276,8 @@ public final class Utils {
      * @return if a player can safely stand inside this block
      */
     private static boolean doesDamage(Block block) {
-        return block.getType().isSolid() || block.isLiquid() ||
-                Arrays.asList(Material.FIRE, Material.CACTUS).contains(block.getType());
+        return block.getType().isSolid() || block.isLiquid() || block.getType() == Material.FIRE ||
+                block.getType() == Material.CACTUS;
     }
 
     /**
@@ -290,8 +290,7 @@ public final class Utils {
      */
     private static boolean canStand(Block block) {
         return !(
-                block.isPassable() ||
-                        Arrays.asList(Material.MAGMA_BLOCK, Material.CACTUS).contains(block.getType())
+                block.isPassable() || block.getType() == Material.MAGMA_BLOCK || block.getType() == Material.CACTUS
         ) || block.getType() == Material.WATER;
     }
 
@@ -305,8 +304,8 @@ public final class Utils {
      */
     private static boolean isSafe(Location location) {
         return !(
-                doesDamage(location.add(0, 1, 0).getBlock()) ||
-                        doesDamage(location.add(0, 1, 0).getBlock())
+                doesDamage(location.clone().add(0, 1, 0).getBlock()) ||
+                        doesDamage(location.clone().add(0, 2, 0).getBlock())
         );
     }
 
@@ -340,26 +339,19 @@ public final class Utils {
      * @param top    where to set the top    of the "binary search", bottom < top < 256
      * @return a safe location if found, else null
      */
-    private static Location findSafe(Location origin, int bottom, int top) {
+    public static Location findSafe(Location origin, int bottom, int top) {
         Location safe = origin.clone();
 
         if (canStand(safe.getBlock()) && isSafe(safe.clone()))
             return safe.add(0, .5, 0);
 
-        do {
-            safe.setY((bottom + top) >> 1);
+        for (int i = 0;i < top - bottom;++ i) {
+            safe.setY((origin.getY() - bottom + i) % (top - bottom) + bottom);
+            if (canStand(safe.getBlock()) && isSafe(safe.clone()))
+                return safe.add(0, 1, 0);
+        }
 
-            if (canStand(safe.getBlock())) {
-                if (isSafe(safe.clone()))
-                    return safe.add(0, 1, 0);
-
-                bottom = safe.getBlockY();
-            } else
-                top = safe.getBlockY();
-        } while (top - bottom > 1);
-
-        safe.getChunk().unload();
-        return null;
+        return origin;
     }
 
     /**
@@ -373,21 +365,22 @@ public final class Utils {
      * @return the first safe location we find
      */
     public static Location walk(Location origin, int dx, int dz) {
-        origin.setX(origin.getBlockX() + .5);
-        origin.setZ(origin.getBlockZ() + .5);
-        final int bottom = 1,
-                top = origin.getWorld().getName().equals("world_nether") ? 124 : 255;
+        Location copy = origin.clone();
 
-        Location safe = findSafe(origin, bottom, top);
+        copy.setX(origin.getBlockX() + .5);
+        copy.setZ(origin.getBlockZ() + .5);
+        final int bottom = 1, top = copy.getWorld().getName().equals("world_nether") ? 124 : 255;
+
+        Location safe = findSafe(copy, bottom, top);
         if (safe != null)
             return safe;
 
-        origin.setY(62);
+        copy.setY(62);
         while (safe == null) {
-            if (origin.getBlock().isLiquid())
-                origin.add(16 * dx, 0, 16 * dz);
+            if (copy.getBlock().isLiquid())
+                copy.add(16 * dx, 0, 16 * dz);
             else
-                safe = findSafe(origin.add(dx, 0, dz), bottom, top);
+                safe = findSafe(copy.add(dx, 0, dz), bottom, top);
         }
         return safe;
     }
