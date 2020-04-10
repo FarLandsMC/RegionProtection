@@ -680,15 +680,27 @@ public class PlayerEventHandler implements Listener {
     }
 
     /**
-     * Handles player damage for Invincible flag.
+     * Handles player damage for invincible flag and fall-damage flag.
      *
      * @param event the event.
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerDamage(EntityDamageEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-        event.setCancelled(event.getEntity() instanceof Player && flags != null &&
-                flags.isAllowed(RegionFlag.INVINCIBLE));
+        if (event.getEntity() instanceof Player) {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+            if (flags == null)
+                return;
+
+            // Generic invincibility
+            if (flags.isAllowed(RegionFlag.INVINCIBLE)) {
+                event.setCancelled(true);
+                return;
+            }
+
+            // Specifically fall damage
+            if (event.getCause() == EntityDamageEvent.DamageCause.FALL)
+                event.setCancelled(!flags.isAllowed(RegionFlag.FALL_DAMAGE));
+        }
     }
 
     /**
