@@ -482,6 +482,8 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         }
 
         SubCommand subCommand = Utils.valueOfFormattedName(args[0], SubCommand.class);
+        if (subCommand == null)
+            return Collections.emptyList();
 
         // Suggest region names (if applicable)
         if (args.length == 2) {
