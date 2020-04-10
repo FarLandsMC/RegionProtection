@@ -14,7 +14,6 @@ public class PlayerSession {
     private double claimBlocks;
     private boolean isInAdminRegionMode;
     private boolean isIgnoringTrust;
-    private long lastMessageSent;
     // All of the following can be null
     private RegionHighlighter currentHighlighter;
     private PlayerRegionAction action;

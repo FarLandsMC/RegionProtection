@@ -644,7 +644,8 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             // Suggest interactable blocks
             case DENY_BLOCK_USE:
                 return filterFormat(args[4], Stream.of(Material.values()).filter(mat ->
-                        mat.isInteractable() && mat.isBlock()), Utils::formattedName);
+                        (mat.isInteractable() || Materials.isPressureSensitive(mat)) && mat.isBlock()),
+                        Utils::formattedName);
 
             // Suggest items
             case DENY_ITEM_USE:

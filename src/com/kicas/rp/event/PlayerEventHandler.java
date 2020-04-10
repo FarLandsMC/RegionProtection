@@ -230,28 +230,6 @@ public class PlayerEventHandler implements Listener {
                 }
 
                 break;
-
-            // Handle players stepping on things such as turtle eggs, tripwires, farmland, and pressure plates
-            case PHYSICAL:
-                blockType = Materials.blockType(event.getPlayer().getLocation().subtract(0, 0.5, 0).getBlock());
-
-                if (Materials.isPressureSensitive(blockType)) {
-                    // Handle trampling
-                    if ((blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) &&
-                            (blockFlags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType) ||
-                            !blockFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, blockFlags))) {
-                        event.setCancelled(true);
-                        return true;
-                    }
-
-                    // Pressure plates and tripwires require access trust
-                    if (!blockFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, blockFlags)) {
-                        event.setCancelled(true);
-                        return true;
-                    }
-                }
-
-                break;
         }
 
         return false;
@@ -264,9 +242,8 @@ public class PlayerEventHandler implements Listener {
      * @param faceFlags the flags at the face of the clicked block.
      * @param block the block adjacent to the clicked face.
      * @param heldItem the item the player is holding.
-     * @return whether or not the event is cancelled.
      */
-    private boolean handleBlockFaceInteraction(PlayerInteractEvent event, FlagContainer faceFlags, Block block, Material heldItem) {
+    private void handleBlockFaceInteraction(PlayerInteractEvent event, FlagContainer faceFlags, Block block, Material heldItem) {
         // disable fire extinguishing
         if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
             if (Materials.blockType(block) == Material.FIRE &&
@@ -275,17 +252,42 @@ public class PlayerEventHandler implements Listener {
                 // for the player, therefore we resend the block so it stays visible for the player.
                 Bukkit.getScheduler().runTaskLater(RegionProtection.getInstance(),
                         () -> event.getPlayer().sendBlockChange(block.getLocation(), block.getBlockData().clone()), 1L);
-
-                return true;
             }
         } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             // Handle the placing of entities and other items as well as other changes that happen when the player's
             // held item is used on the clicked block.
-            return Materials.isPlaceable(heldItem) &&
-                    testPlaceInteraction(event, event.getPlayer(), event.getHand(), faceFlags, heldItem);
+            if (Materials.isPlaceable(heldItem))
+                testPlaceInteraction(event, event.getPlayer(), event.getHand(), faceFlags, heldItem);
         }
+    }
 
-        return false;
+    /**
+     * Handles trampling, pressure plates, tutle egg stomping, etc.
+     *
+     * @param event the event.
+     * @param flags the flags at the player's location.
+     */
+    private void handlePhysicalInteraction(PlayerInteractEvent event, FlagContainer flags) {
+        Material blockType = Materials.blockType(event.getClickedBlock());
+
+        if (Materials.isPressureSensitive(blockType)) {
+            // Handle trampling
+            if ((blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) &&
+                    flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType) ||
+                    !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+                event.setCancelled(true);
+                return;
+            }
+
+            if (flags.isEffectiveOwner(event.getPlayer()))
+                return;
+
+            // Pressure plates and tripwires require access trust
+            if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BLOCK_USE).isBlocked(blockType) ||
+                    !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.ACCESS, flags)) {
+                event.setCancelled(true);
+            }
+        }
     }
 
     /**
@@ -344,10 +346,17 @@ public class PlayerEventHandler implements Listener {
 
         // Handle interactions concerning the actual block clicked
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getClickedBlock().getLocation());
-        if (flags != null && !flags.isEffectiveOwner(event.getPlayer())) {
+        if (flags != null) {
+            if (event.getAction() == Action.PHYSICAL) {
+                handlePhysicalInteraction(event, flags);
+                return;
+            }
+
+            if (flags.isEffectiveOwner(event.getPlayer()))
+                return;
+
             // Generic item-use denial, perhaps make this more robust in the future
-            if (event.getAction() != Action.PHYSICAL && !heldItem.isBlock() &&
-                    flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(heldItem)) {
+            if (!heldItem.isBlock() && flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(heldItem)) {
                 if (event.getHand() == EquipmentSlot.HAND)
                     event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
                 event.setCancelled(true);
