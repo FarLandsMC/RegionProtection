@@ -270,8 +270,8 @@ public class PlayerEventHandler implements Listener {
         if (Materials.isPressureSensitive(blockType)) {
             // Handle trampling
             if ((blockType == Material.TURTLE_EGG || blockType == Material.FARMLAND) &&
-                    flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType) ||
-                    !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+                    (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(blockType) ||
+                    !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags))) {
                 event.setCancelled(true);
                 return;
             }
