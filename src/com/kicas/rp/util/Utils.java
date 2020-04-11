@@ -1,7 +1,10 @@
 package com.kicas.rp.util;
 
+import com.kicas.rp.RegionProtection;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 
 import java.io.IOException;
@@ -275,8 +278,9 @@ public final class Utils {
      * @return if a player can safely stand inside this block
      */
     private static boolean doesDamage(Block block) {
-        return block.getType().isSolid() || block.isLiquid() || block.getType() == Material.FIRE ||
-                block.getType() == Material.CACTUS;
+        return block.getType().isSolid() || block.isLiquid() ||
+               block.getType() == Material.FIRE ||
+               block.getType() == Material.CACTUS;
     }
 
     /**
@@ -289,7 +293,9 @@ public final class Utils {
      */
     private static boolean canStand(Block block) {
         return !(
-                block.isPassable() || block.getType() == Material.MAGMA_BLOCK || block.getType() == Material.CACTUS
+                block.isPassable() ||
+                block.getType() == Material.MAGMA_BLOCK ||
+                block.getType() == Material.CACTUS
         ) || block.getType() == Material.WATER;
     }
 
@@ -304,22 +310,8 @@ public final class Utils {
     private static boolean isSafe(Location location) {
         return !(
                 doesDamage(location.clone().add(0, 1, 0).getBlock()) ||
-                        doesDamage(location.clone().add(0, 2, 0).getBlock())
+                doesDamage(location.clone().add(0, 2, 0).getBlock())
         );
-    }
-
-    /**
-     * Search for a safe location for a player to stand when teleporting to another player
-     * Set the location to be in the center of the block ready for teleportation
-     * Calculate reasonable bottom and top values to throw into the private method that completes the implementation
-     *
-     * @param origin location to check for safety
-     * @return a safe location if found, else null
-     */
-    public static Location findSafe(Location origin) {
-        origin.setX(origin.getBlockX() + .5);
-        origin.setZ(origin.getBlockZ() + .5);
-        return findSafe(origin, Math.max(1, origin.getBlockY() - 8), Math.min(origin.getBlockY() + 7, 255));
     }
 
     /**
@@ -331,26 +323,82 @@ public final class Utils {
      * 1 block the player can stand on below (non passable and non damaging)
      * Because bottom and top specify search range for Y they should satisfy these ranges:
      * 0 < bottom < top < 256   for the overworld
-     * 0 < bottom < top < 124   for the nether (124 instead of 128 because the bedrock roof guarantees unsafe tp)
+     * 0 < bottom < top < 124   for the nether (if nether roof is not enabled)
      *
-     * @param origin the location to check for safety
-     * @param bottom where to set the bottom of the "binary search", 0 < bottom < top
-     * @param top    where to set the top    of the "binary search", bottom < top < 256
+     * @param safe   the location to check for safety
+     * @param bottom where to set the bottom of the "binary search", must comply with       0 < bottom < top
+     * @param top    where to set the top    of the "binary search", must comply with  bottom < top    < 256
      * @return a safe location if found, else null
      */
-    public static Location findSafe(Location origin, int bottom, int top) {
-        Location safe = origin.clone();
+    private static Location findSafe(Location safe, int bottom, int top) {
+        World world = safe.getWorld();
+        if (world == null)
+            world = Bukkit.getWorlds().get(0);
 
-        if (canStand(safe.getBlock()) && isSafe(safe.clone()))
-            return safe.add(0, .5, 0);
+        final int border = (int)world.getWorldBorder().getSize() - 1 >> 1;
+        safe.setX(constrain(safe.getBlockX() - world.getWorldBorder().getCenter().getBlockX(), -border, border) +
+                world.getWorldBorder().getCenter().getBlockX());
+        safe.setZ(constrain(safe.getBlockZ() - world.getWorldBorder().getCenter().getBlockZ(), -border, border) +
+                world.getWorldBorder().getCenter().getBlockZ());
 
-        for (int i = 0;i < top - bottom;++ i) {
-            safe.setY((origin.getY() - bottom + i) % (top - bottom) + bottom);
+
+        for (int i = safe.getBlockY(), c = 0; ; i += (c = (c & 1) == 0 ? c + 1 : ~c)) {
+            safe.setY(i);
             if (canStand(safe.getBlock()) && isSafe(safe.clone()))
-                return safe.add(0, 1, 0);
-        }
+                return safe.add(0.5, 1, 0.5);
 
-        return origin;
+            if (bottom > i) {
+                for (i += c + 1; i <= top; ++i) {
+                    safe.setY(i);
+                    if (canStand(safe.getBlock()) && isSafe(safe.clone()))
+                        return safe.add(0.5, 1, 0.5);
+                }
+                return null;
+            }
+
+            if (i > top) {
+                for (i += ~c; bottom <= i; --i) {
+                    safe.setY(i);
+                    if (canStand(safe.getBlock()) && isSafe(safe.clone()))
+                        return safe.add(0.5, 1, 0.5);
+                }
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Search the nearby area
+     *  for a location a player can safely stand before teleporting them
+     * Set the location to be in the center of the block ready for teleportation
+     * Calculate reasonable bottom and top values
+     *
+     * @param origin location to check for safety
+     * @return a safe location near the origin
+     */
+    public static Location findSafeNear(Location origin, int bottom, int top) {
+        Location safe;
+
+        if ((safe = findSafe(origin.clone(), bottom, top)) != null)
+            return safe;
+
+        for (int i = 1, j; ; ++i) {
+            for (j = i; j >= 1; --j)
+                if ((safe = findSafe(origin.clone().add(   -j, 0, i - j), bottom, top)) != null)
+                    return safe;
+
+            for (j = i; j >= 1; --j)
+                if ((safe = findSafe(origin.clone().add(    j, 0, j - i), bottom, top)) != null)
+                    return safe;
+
+            for (j = i; j >= 1; --j)
+                if ((safe = findSafe(origin.clone().add(j - i, 0,    -j), bottom, top)) != null)
+                    return safe;
+
+            for (j = i; j >= 1; --j)
+                if ((safe = findSafe(origin.clone().add(i - j, 0,     j), bottom, top)) != null)
+                    return safe;
+        }
     }
 
     /**
@@ -366,21 +414,26 @@ public final class Utils {
     public static Location walk(Location origin, int dx, int dz) {
         Location copy = origin.clone();
 
-        copy.setX(origin.getBlockX() + .5);
-        copy.setZ(origin.getBlockZ() + .5);
-        final int bottom = 1, top = copy.getWorld().getName().equals("world_nether") ? 124 : 255;
+        World world = copy.getWorld();
+        if (world == null)
+            world = Bukkit.getWorlds().get(0);
 
-        Location safe = findSafe(copy, bottom, top);
-        if (safe != null)
-            return safe;
+        final int bottom = 1,
+                  top    = world.getName().equals("world_nether") ? 124 : 255,
+                  xMin   = world.getWorldBorder().getCenter().getBlockX() - ((int) world.getWorldBorder().getSize() >> 1),
+                  xMax   = world.getWorldBorder().getCenter().getBlockX() + ((int) world.getWorldBorder().getSize() >> 1),
+                  zMin   = world.getWorldBorder().getCenter().getBlockZ() - ((int) world.getWorldBorder().getSize() >> 1),
+                  zMax   = world.getWorldBorder().getCenter().getBlockZ() + ((int) world.getWorldBorder().getSize() >> 1);
 
-        copy.setY(62);
-        while (safe == null) {
-            if (copy.getBlock().isLiquid())
-                copy.add(16 * dx, 0, 16 * dz);
-            else
-                safe = findSafe(copy.add(dx, 0, dz), bottom, top);
+
+        for (Location safe = findSafe(copy, bottom, top); ; safe = findSafe(copy, bottom, top)) {
+            if (safe != null)
+                return safe;
+            copy.add(dx, 0, dz);
+            if (xMin >= copy.getX() || copy.getX() >= xMax)
+                dx = -dx;
+            if (zMin >= copy.getZ() || copy.getZ() >= zMax)
+                dx = -dx;
         }
-        return safe;
     }
 }
