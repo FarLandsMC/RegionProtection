@@ -1,6 +1,8 @@
 package com.kicas.rp.data;
 
 import com.kicas.rp.data.flagdata.*;
+import com.kicas.rp.data.flagdata.EnumFilter.EntityFilter;
+import com.kicas.rp.data.flagdata.EnumFilter.MaterialFilter;
 import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.ReflectionHelper;
 import org.bukkit.Bukkit;
@@ -18,9 +20,9 @@ import java.util.function.Function;
  */
 public enum RegionFlag {
     TRUST(TrustMeta.class),
-    DENY_SPAWN(EnumFilter.EntityFilter.class),
-    DENY_BREAK(EnumFilter.MaterialFilter.class),
-    DENY_PLACE(EnumFilter.MaterialFilter.class),
+    DENY_SPAWN(EntityFilter.class),
+    DENY_BREAK(MaterialFilter.class),
+    DENY_PLACE(MaterialFilter.class),
     ANIMAL_GRIEF_BLOCKS(true), // block damage caused by non-player, non-hostile mobs
     TNT(true),
     OVERLAP, // Regions containing the same locations
@@ -45,25 +47,26 @@ public enum RegionFlag {
     EXIT_COMMAND(CommandMeta.class),
     DENY_COMMAND(StringFilter.class),
     FOLLOW, // prevent pet tp
-    DENY_AGGRO(EnumFilter.EntityFilter.class), // prevent certain mobs from targeting the player
+    DENY_AGGRO(EntityFilter.class), // prevent certain mobs from targeting the player
     GROWTH, // vine growth grass spread etc
-    DENY_BLOCK_USE(EnumFilter.MaterialFilter.class),
+    DENY_BLOCK_USE(MaterialFilter.class),
     KEEP_INVENTORY,
     KEEP_XP,
     RESPAWN_LOCATION(LocationMeta.class),
-    DENY_ENTITY_USE(EnumFilter.EntityFilter.class),
-    DENY_ITEM_USE(EnumFilter.MaterialFilter.class),
-    DENY_WEAPON_USE(EnumFilter.MaterialFilter.class),
+    DENY_ENTITY_USE(EntityFilter.class),
+    DENY_ITEM_USE(MaterialFilter.class),
+    DENY_WEAPON_USE(MaterialFilter.class),
     FLIGHT,
     HOSTILE_GRIEF_BLOCKS(true), // block damage caused by hostile mobs
     HOSTILE_GRIEF_ENTITIES(true), // entity damage caused by hostile mobs
     LIGHTNING_STRIKES,
-    DENY_ITEM_CONSUMPTION(EnumFilter.MaterialFilter.class),
+    DENY_ITEM_CONSUMPTION(MaterialFilter.class),
     TNT_IGNITION,
     TNT_ENTITY_DAMAGE,
     TNT_BLOCK_DAMAGE,
     FALL_DAMAGE,
-    ELYTRA_FLIGHT;
+    ELYTRA_FLIGHT,
+    DENY_ENTITY_TELEPORT(EntityFilter.class);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();

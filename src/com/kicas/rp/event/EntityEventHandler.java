@@ -210,6 +210,11 @@ public class EntityEventHandler implements Listener {
         if (flags == null)
             return;
 
+        if (flags.<EnumFilter.EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_TELEPORT).isBlocked(event.getEntityType())) {
+            event.setCancelled(true);
+            return;
+        }
+
         event.setCancelled(event.getEntity() instanceof Tameable && ((Tameable) event.getEntity()).isTamed() &&
                 !flags.isAllowed(RegionFlag.FOLLOW));
     }
