@@ -442,7 +442,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
             // Check for the amount
             if (args.length == 3) {
-                TextUtils.sendFormatted(sender, "Usage: /region %0 %1 %2 <amount>", Utils.formattedName(operation),
+                TextUtils.sendFormatted(sender, "&(red)Usage: /region %0 %1 %2 <amount>", Utils.formattedName(operation),
                         args[1], args[2]);
                 return;
             }

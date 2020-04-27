@@ -254,7 +254,7 @@ public class Region extends FlagContainer {
     }
 
     /**
-     * @return the maximum (more negative) vertex of this region.
+     * @return the maximum (more positive) vertex of this region.
      */
     public Location getMax() {
         return max;

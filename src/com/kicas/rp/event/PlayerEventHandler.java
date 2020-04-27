@@ -504,7 +504,8 @@ public class PlayerEventHandler implements Listener {
             return;
 
         // Build trust
-        if (!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+        if (flags.<EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isBlocked(event.getEntity().getType()) ||
+                !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
             event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
         }
