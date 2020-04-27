@@ -16,9 +16,9 @@ import java.util.List;
  * Helps to categorize entities.
  */
 public final class Entities {
-    private static final List<EntityType> INVENTORY_HOLDERS = Arrays.asList(ARMOR_STAND, ITEM_FRAME,
-            HORSE, MULE, SKELETON_HORSE, DONKEY, ZOMBIE_HORSE, LLAMA, TRADER_LLAMA,
-            MINECART_CHEST, MINECART_FURNACE, MINECART_HOPPER);
+    private static final List<EntityType> CHEST_HOLDERS = Arrays.asList(MULE, DONKEY, LLAMA);
+    private static final List<EntityType> INVENTORY_HOLDERS = Arrays.asList(ARMOR_STAND, ITEM_FRAME, TRADER_LLAMA,
+            MINECART_CHEST, MINECART_FURNACE, MINECART_HOPPER, HORSE, SKELETON_HORSE, ZOMBIE_HORSE);
     private static final List<EntityType> INTERACTABLES = Arrays.asList(SHEEP, COW, MUSHROOM_COW, VILLAGER, BEE,
             WANDERING_TRADER, TRADER_LLAMA, TURTLE, CHICKEN, CAT, FOX, OCELOT, PANDA, PARROT, PIG, RABBIT, WOLF);
     private static final List<EntityType> HOSTILES = Arrays.asList(WITHER_SKELETON, WITHER, SILVERFISH, ENDERMAN,
@@ -36,6 +36,17 @@ public final class Entities {
     }
 
     /**
+     * Returns whether or not the specified entity type is a chest holder, meaning that a player can place a chest on it
+     * to hold items.
+     *
+     * @param entityType the entity type.
+     * @return true if the given entity type is a chest holder, false otherwise.
+     */
+    public static boolean isChestHolder(EntityType entityType) {
+        return CHEST_HOLDERS.contains(entityType);
+    }
+
+    /**
      * Returns whether or not the specified entity type is an inventory holder, meaning it can store items after its
      * inventory is closed.
      *
@@ -43,7 +54,7 @@ public final class Entities {
      * @return true if the given entity type is an inventory holder, false otherwise.
      */
     public static boolean isInventoryHolder(EntityType entityType) {
-        return INVENTORY_HOLDERS.contains(entityType);
+        return INVENTORY_HOLDERS.contains(entityType) || CHEST_HOLDERS.contains(entityType);
     }
 
     /**

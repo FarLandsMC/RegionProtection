@@ -398,6 +398,14 @@ public class PlayerEventHandler implements Listener {
         if (flags == null || flags.isEffectiveOwner(event.getPlayer()))
             return;
 
+        if (Entities.isChestHolder(event.getRightClicked().getType()) &&
+                Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand())) == Material.CHEST &&
+                !flags.isAllowed(RegionFlag.ANIMAL_CONTAINERS)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot add a chest to this entity here.");
+            event.setCancelled(true);
+            return;
+        }
+
         if (flags.<EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_USE).isBlocked(event.getRightClicked().getType())) {
             if (EquipmentSlot.HAND == event.getHand())
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");

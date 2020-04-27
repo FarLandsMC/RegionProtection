@@ -66,7 +66,8 @@ public enum RegionFlag {
     TNT_BLOCK_DAMAGE,
     FALL_DAMAGE,
     ELYTRA_FLIGHT,
-    DENY_ENTITY_TELEPORT(EntityFilter.class);
+    DENY_ENTITY_TELEPORT(EntityFilter.class),
+    ANIMAL_CONTAINERS;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
@@ -189,9 +190,9 @@ public enum RegionFlag {
      */
     public static void registerDefaults(FileConfiguration config) {
         registerDefault(TRUST, TrustMeta.FULL_TRUST);
-        registerDefault(DENY_SPAWN, EnumFilter.EntityFilter.EMPTY_FILTER);
-        registerDefault(DENY_BREAK, EnumFilter.MaterialFilter.EMPTY_FILTER);
-        registerDefault(DENY_PLACE, EnumFilter.MaterialFilter.EMPTY_FILTER);
+        registerDefault(DENY_SPAWN, EntityFilter.EMPTY_FILTER);
+        registerDefault(DENY_BREAK, MaterialFilter.EMPTY_FILTER);
+        registerDefault(DENY_PLACE, MaterialFilter.EMPTY_FILTER);
         registerDefault(ANIMAL_GRIEF_BLOCKS, config.getBoolean("entity.animal-grief-blocks"),
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(TNT, config.getBoolean("world.tnt-explosions"));
@@ -220,27 +221,29 @@ public enum RegionFlag {
         registerDefault(EXIT_COMMAND, CommandMeta.EMPTY_META);
         registerDefault(DENY_COMMAND, StringFilter.EMPTY_FILTER);
         registerDefault(FOLLOW, true);
-        registerDefault(DENY_AGGRO, EnumFilter.EntityFilter.EMPTY_FILTER);
+        registerDefault(DENY_AGGRO, EntityFilter.EMPTY_FILTER);
         registerDefault(GROWTH, true);
-        registerDefault(DENY_BLOCK_USE, EnumFilter.MaterialFilter.EMPTY_FILTER);
+        registerDefault(DENY_BLOCK_USE, MaterialFilter.EMPTY_FILTER);
         registerDefault(KEEP_INVENTORY, false, world -> world.getGameRuleValue(GameRule.KEEP_INVENTORY));
         registerDefault(KEEP_XP, false, world -> world.getGameRuleValue(GameRule.KEEP_INVENTORY));
         registerDefault(RESPAWN_LOCATION, null);
-        registerDefault(DENY_ENTITY_USE, EnumFilter.EntityFilter.EMPTY_FILTER);
-        registerDefault(DENY_ITEM_USE, EnumFilter.MaterialFilter.EMPTY_FILTER);
-        registerDefault(DENY_WEAPON_USE, EnumFilter.MaterialFilter.EMPTY_FILTER);
+        registerDefault(DENY_ENTITY_USE, EntityFilter.EMPTY_FILTER);
+        registerDefault(DENY_ITEM_USE, MaterialFilter.EMPTY_FILTER);
+        registerDefault(DENY_WEAPON_USE, MaterialFilter.EMPTY_FILTER);
         registerDefault(FLIGHT, false, world -> Bukkit.getServer().getAllowFlight());
         registerDefault(HOSTILE_GRIEF_BLOCKS, config.getBoolean("entity.hostile-grief-blocks"),
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(HOSTILE_GRIEF_ENTITIES, config.getBoolean("entity.hostile-grief-entities"),
                 world -> world.getGameRuleValue(GameRule.MOB_GRIEFING));
         registerDefault(LIGHTNING_STRIKES, true);
-        registerDefault(DENY_ITEM_CONSUMPTION, EnumFilter.MaterialFilter.EMPTY_FILTER);
+        registerDefault(DENY_ITEM_CONSUMPTION, MaterialFilter.EMPTY_FILTER);
         registerDefault(TNT_IGNITION, true);
         registerDefault(TNT_ENTITY_DAMAGE, true);
         registerDefault(TNT_BLOCK_DAMAGE, true);
         registerDefault(FALL_DAMAGE, true);
         registerDefault(ELYTRA_FLIGHT, true);
+        registerDefault(DENY_ENTITY_TELEPORT, EntityFilter.EMPTY_FILTER);
+        registerDefault(ANIMAL_CONTAINERS, true);
     }
 
     /**
