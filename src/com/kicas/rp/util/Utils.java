@@ -1,6 +1,5 @@
 package com.kicas.rp.util;
 
-import com.kicas.rp.RegionProtection;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -291,7 +290,7 @@ public final class Utils {
      * @param block the block to check
      * @return if the block can be stood on without the block damaging the player
      */
-    private static boolean canStand(Block block) {
+    public static boolean canStand(Block block) {
         return !(
                 block.isPassable() ||
                 block.getType() == Material.MAGMA_BLOCK ||
@@ -307,7 +306,7 @@ public final class Utils {
      * @param location the location to check
      * @return if a player would be damaged by any of the blocks at this location upon tp ignoring the block below
      */
-    private static boolean isSafe(Location location) {
+    public static boolean isSafe(Location location) {
         return !(
                 doesDamage(location.clone().add(0, 1, 0).getBlock()) ||
                 doesDamage(location.clone().add(0, 2, 0).getBlock())
@@ -330,7 +329,7 @@ public final class Utils {
      * @param top    where to set the top    of the "binary search", must comply with  bottom < top    < 256
      * @return a safe location if found, else null
      */
-    private static Location findSafe(Location safe, int bottom, int top) {
+    public static Location findSafe(Location safe, int bottom, int top) {
         World world = safe.getWorld();
         if (world == null)
             world = Bukkit.getWorlds().get(0);
