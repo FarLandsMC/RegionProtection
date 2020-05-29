@@ -44,7 +44,7 @@ public class EntityEventHandler implements Listener {
                 return;
             }
 
-            ProjectileSource shooter = ((Arrow) event.getEntity()).getShooter();
+            ProjectileSource shooter = ((Projectile) event.getEntity()).getShooter();
             // For players check trust
             if (shooter instanceof Player) {
                 event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter,

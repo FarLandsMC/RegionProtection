@@ -690,8 +690,8 @@ public class PlayerEventHandler implements Listener {
         }
 
         // Prevent arrows from breaking these entities
-        if (event.getRemover() != null && event.getRemover().getType() == EntityType.ARROW) {
-            ProjectileSource shooter = ((Arrow) event.getEntity()).getShooter();
+        if (event.getRemover() != null && Entities.isPlayerProjectile(event.getRemover().getType())) {
+            ProjectileSource shooter = ((Projectile) event.getRemover()).getShooter();
             // For players check trust
             if (shooter instanceof Player) {
                 event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter, TrustLevel.BUILD, flags));
@@ -942,15 +942,27 @@ public class PlayerEventHandler implements Listener {
 
     /**
      * Handles deny-item-use for fishing rods.
+     *         entity pulling with fishing rods.
      *
      * @param event the event.
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerUseFishingRod(PlayerFishEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+
         if (flags != null && !flags.isEffectiveOwner(event.getPlayer()) &&
                 flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_ITEM_USE).isBlocked(Material.FISHING_ROD)) {
             event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that here.");
+            event.setCancelled(true);
+            return;
+        }
+
+        if (event.getState() != PlayerFishEvent.State.CAUGHT_ENTITY || event.getCaught() == null)
+            return;
+
+        flags = RegionProtection.getDataManager().getFlagsAt(event.getCaught().getLocation());
+        if (flags != null && !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
+            event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
             event.setCancelled(true);
         }
     }

@@ -31,6 +31,8 @@ public final class Entities {
             WANDERING_TRADER, TRADER_LLAMA, VILLAGER);
     private static final List<CreatureSpawnEvent.SpawnReason> ARTIFICIAL_SPAWN_REASONS = Arrays.asList(SPAWNER,
             SPAWNER_EGG, BUILD_SNOWMAN, BUILD_IRONGOLEM, BUILD_WITHER, BREEDING, DISPENSE_EGG, CUSTOM, DEFAULT);
+    private static final List<EntityType> PLAYER_PROJECTILES = Arrays.asList(ARROW, SPECTRAL_ARROW, EntityType.EGG,
+            EntityType.ENDER_PEARL, SNOWBALL, TRIDENT);
 
     private Entities() {
     }
@@ -127,5 +129,15 @@ public final class Entities {
      */
     public static boolean isArtificialSpawn(CreatureSpawnEvent.SpawnReason reason) {
         return ARTIFICIAL_SPAWN_REASONS.contains(reason);
+    }
+
+    /**
+     * Returns whether or not the given entity is a form of projectile that a player can create or re-direct.
+     *
+     * @param entityType the entity type.
+     * @return true if the given entity is a projectile that the player can manipulate in some way, false otherwise.
+     */
+    public static boolean isPlayerProjectile(EntityType entityType) {
+        return PLAYER_PROJECTILES.contains(entityType) || entityType == FIREBALL;
     }
 }
