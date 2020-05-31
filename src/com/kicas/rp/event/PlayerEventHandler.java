@@ -10,6 +10,7 @@ import com.kicas.rp.util.Materials;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.v1_15_R1.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.*;
 import org.bukkit.event.block.Action;
@@ -27,6 +28,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.util.Vector;
 
 import java.util.Objects;
 
@@ -119,11 +121,15 @@ public class PlayerEventHandler implements Listener {
         // Allow for dynamic region expansion downwards
         if (flags == null || flags instanceof WorldData) {
             // Find the region
-            Region region = RegionProtection.getDataManager().getRegionsAtIgnoreY(event.getBlock().getLocation())
-                    .stream().filter(r -> r.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(),
-                            TrustLevel.BUILD, r) && !r.isAdminOwned() && !r.hasParent()).findAny().orElse(null);
+            Region region = RegionProtection.getDataManager()
+                    .getRegionsAtIgnoreY(event.getBlock().getLocation())
+                    .stream()
+                    .filter(r -> r.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, r) &&
+                            !r.isAdminOwned() && !r.hasParent())
+                    .findAny()
+                    .orElse(null);
 
-            // Adjust the y-value
+            // Adjust the y-value if the block placed is craftable
             if (region != null && Materials.hasRecipe(event.getBlock().getType()))
                 region.getMin().setY(event.getBlock().getY());
 
@@ -1032,6 +1038,38 @@ public class PlayerEventHandler implements Listener {
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(player.getLocation());
             event.setCancelled(flags != null && !flags.isEffectiveOwner(player) &&
                     !flags.isAllowed(RegionFlag.ELYTRA_FLIGHT) && event.isGliding());
+        }
+    }
+
+    /**
+     * Handles the item-damage flag.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPlayerItemDamage(PlayerItemDamageEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.ITEM_DAMAGE));
+    }
+
+    /**
+     * Handles the riptide flag.
+     *
+     * @param event the event.
+     */
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerRiptide(PlayerRiptideEvent event) {
+        final Player player = event.getPlayer();
+        final Location location = player.getLocation().clone();
+
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(location);
+        if (flags != null && !flags.isAllowed(RegionFlag.RIPTIDE)) {
+            // Since riptiding is handled client-side we have to cancel manually
+            Bukkit.getScheduler().runTask(RegionProtection.getInstance(), () -> {
+                player.teleport(location);
+                player.setVelocity(new Vector(0.0, 0.0, 0.0));
+                ((CraftPlayer) player).getHandle().stopRiding();
+            });
         }
     }
 }

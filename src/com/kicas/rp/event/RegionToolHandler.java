@@ -154,7 +154,7 @@ public class RegionToolHandler implements Listener {
                                 Region region = dm.tryCreateAdminRegion(ps.getLastClickedBlock(), clickedLocation);
                                 if (region != null) {
                                     player.sendMessage(ChatColor.GREEN + "Region bounds set. Use the command " +
-                                            "\"/region create\" to finish creating the region, or reset a region's" +
+                                            "\"/region create\" to finish creating the region, or reset a region's " +
                                             "bounds with /region redefine.");
                                     ps.endRegionAction();
                                     ps.setCurrentSelectedRegion(region);
