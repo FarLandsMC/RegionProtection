@@ -109,6 +109,32 @@ public class TextUtils {
     }
 
     /**
+     * Escape all function chars so they can be printed as their literal
+     *
+     * @param input the string to escape
+     * @return the escaped string
+     */
+    public static String escapeExpression(String input) {
+        // Escaped Expression
+        StringBuilder escapedExpression = new StringBuilder();
+        // Parsed expression
+        char[] chars = input.toCharArray();
+        char cur;
+
+        escapedExpression.append("{");
+        for (int i = 0; i < chars.length; ++i) {
+            cur = chars[i];
+            // Escape special characters
+            if (cur == '\\' || cur == COLOR_CHAR || cur == FUNCTION_CHAR ||
+                    cur == SECTION_START || cur == '}' || cur == '(' || cur == ')')
+                escapedExpression.append("\\");
+            escapedExpression.append(cur);
+        }
+        escapedExpression.append("}");
+        return escapedExpression.toString();
+    }
+
+    /**
      * Parses the given expression. The format variable is as follows: text color, additive format colors (such as bold,
      * italic, etc.). The values variable is the list of values potentially substituted into the text, and is used by
      * the inflecting function.
