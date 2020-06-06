@@ -115,6 +115,8 @@ public class TextUtils {
      * @return the escaped string
      */
     public static String escapeExpression(String input) {
+        if (input.isEmpty())
+            return input;
         // Escaped Expression
         StringBuilder escapedExpression = new StringBuilder();
         // Parsed expression
@@ -125,8 +127,7 @@ public class TextUtils {
         for (int i = 0; i < chars.length; ++i) {
             cur = chars[i];
             // Escape special characters
-            if (cur == '\\' || cur == COLOR_CHAR || cur == FUNCTION_CHAR ||
-                    cur == SECTION_START || cur == '}' || cur == '(' || cur == ')')
+            if (cur == '\\' || cur == COLOR_CHAR || cur == FUNCTION_CHAR || cur == SECTION_START)
                 escapedExpression.append("\\");
             escapedExpression.append(cur);
         }
