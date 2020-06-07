@@ -1154,20 +1154,23 @@ public class DataManager implements Listener {
         // Load data for each world
         try {
             File regionsFile = new File(rootDir.getAbsolutePath() + File.separator + "regions.dat");
+            final Map<UUID, WorldData> deserializedWorldData;
             if (!regionsFile.exists()) {
                 if (!regionsFile.createNewFile()) {
                     RegionProtection.error("Failed to create regions.dat upon loading data.");
                     return;
                 }
+
+                deserializedWorldData = new HashMap<>();
             } else {
                 Deserializer deserializer = new Deserializer(regionsFile, REGION_FORMAT_VERSION);
-                final Map<UUID, WorldData> deserializedWorldData = deserializer.readWorldData();
-
-                // Initialize tables
-                Bukkit.getWorlds().stream().map(World::getUID).forEach(uuid ->
-                        worlds.put(uuid, deserializedWorldData.getOrDefault(uuid, new WorldData(uuid)))
-                );
+                deserializedWorldData = deserializer.readWorldData();
             }
+
+            // Initialize tables
+            Bukkit.getWorlds().stream().map(World::getUID).forEach(uuid ->
+                    worlds.put(uuid, deserializedWorldData.getOrDefault(uuid, new WorldData(uuid)))
+            );
         } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file:\n" + ex.getClass().getName() + ": " + ex.getMessage());
             ex.printStackTrace();

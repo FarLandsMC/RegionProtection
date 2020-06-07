@@ -311,8 +311,17 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         regions.forEach(region -> {
             TextUtils.sendFormatted(
                     sender,
-                    "&(gold)Showing info for region {&(green)%0:}\nPriority: {&(aqua)%1}\nParent: {&(aqua)%2}%3%4",
+                    "&(gold)Showing info for region {&(green)%0:}" +
+                            "\nBounds: $(hovercmd,/toregion %0,{&(aqua)Click here to go to this region},{&(aqua)%1 %2 %3 | %4 %5 %6})" +
+                            "\nPriority: {&(aqua)%7}" +
+                            "\nParent: {&(aqua)%8}%9%a",
                     region.getDisplayName(),
+                    region.getMin().getBlockX(),
+                    region.getMin().getBlockY(),
+                    region.getMin().getBlockZ(),
+                    region.getMax().getBlockX(),
+                    region.getMax().getBlockY(),
+                    region.getMax().getBlockZ(),
                     region.getPriority(),
                     region.hasParent()
                             ? region.getParent().getDisplayName()
@@ -510,11 +519,27 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 if (args.length == 3)
                     return filterStartingWith(args[2], Stream.of(FlagOperation.VALUES).map(Utils::formattedName));
                 // Flag names
-                else if (args.length == 4)
-                    return filterStartingWith(args[3], Stream.of(RegionFlag.VALUES).map(Utils::formattedName));
+                else if (args.length == 4) {
+                    Region region = RegionProtection.getDataManager().getRegionByName(location.getWorld(), args[1]);
+
+                    // For certain flag operations, limit the suggestions to the flags explicitly set in the region
+                    Stream<RegionFlag> suggestedFlags = Arrays.stream(RegionFlag.VALUES);
+                    if (region != null) {
+                        FlagOperation flagOperation = Utils.valueOfFormattedName(args[2], FlagOperation.class);
+                        if (flagOperation == FlagOperation.APPEND || flagOperation == FlagOperation.NEGATE ||
+                                flagOperation == FlagOperation.DELETE) {
+                            suggestedFlags = suggestedFlags.filter(region::hasFlag);
+                        }
+                    }
+
+                    return filterStartingWith(args[3], suggestedFlags.map(Utils::formattedName));
+                }
                 // Flag values
-                else
-                    return suggestFlagValue(sender, args, Utils.valueOfFormattedName(args[3], RegionFlag.class), location);
+                else {
+                    FlagOperation flagOperation = Utils.valueOfFormattedName(args[2], FlagOperation.class);
+                    if (flagOperation != FlagOperation.GET && flagOperation != FlagOperation.DELETE)
+                        return suggestFlagValue(sender, args, Utils.valueOfFormattedName(args[3], RegionFlag.class), location);
+                }
 
             case CREATE: {
                 String arg = args[args.length - 1];
@@ -554,7 +579,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
             case RETRACT:
                 return args.length == 3 ? filterStartingWith(args[2], EXPANSION_DIRECTIONS.stream()
-                        .filter("vert"::equals)) : Collections.emptyList();
+                        .filter(direction -> !"vert".equals(direction))) : Collections.emptyList();
 
             case DELETE:
                 return args.length == 3 ? filterStartingWith(args[2], Stream.of("include-children")) : Collections.emptyList();

@@ -69,7 +69,8 @@ public enum RegionFlag {
     DENY_ENTITY_TELEPORT(EntityFilter.class),
     ANIMAL_CONTAINERS,
     ITEM_DAMAGE,
-    RIPTIDE;
+    RIPTIDE,
+    FARMLAND_MOISTURE_CHANGE;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
@@ -248,6 +249,7 @@ public enum RegionFlag {
         registerDefault(ANIMAL_CONTAINERS, true);
         registerDefault(ITEM_DAMAGE, true);
         registerDefault(RIPTIDE, true);
+        registerDefault(FARMLAND_MOISTURE_CHANGE, true);
     }
 
     /**

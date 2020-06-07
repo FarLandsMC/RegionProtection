@@ -19,6 +19,8 @@ import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 
+import java.util.Objects;
+
 /**
  * Handles events generally unrelated to entities that take place in the world.
  */
@@ -127,13 +129,23 @@ public class WorldEventHandler implements Listener {
         if (flags == null)
             return;
 
-        if (!flags.isAllowed(RegionFlag.ICE_CHANGE) &&
-                (event.getBlock().getType() == Material.ICE || event.getBlock().getType() == Material.FROSTED_ICE)) {
-            event.setCancelled(true);
-        } else if (!flags.isAllowed(RegionFlag.SNOW_CHANGE) && event.getBlock().getType() == Material.SNOW)
-            event.setCancelled(true);
-        else if (!flags.isAllowed(RegionFlag.CORAL_DEATH) && Materials.isCoral(event.getBlock().getType()))
-            event.setCancelled(true);
+        switch (event.getBlock().getType()) {
+            case ICE:
+            case FROSTED_ICE:
+                event.setCancelled(!flags.isAllowed(RegionFlag.ICE_CHANGE));
+                return;
+
+            case SNOW:
+                event.setCancelled(!flags.isAllowed(RegionFlag.SNOW_CHANGE));
+                return;
+
+            case FARMLAND:
+                event.setCancelled(!flags.isAllowed(RegionFlag.FARMLAND_MOISTURE_CHANGE));
+                return;
+        }
+
+        if (Materials.isCoral(event.getBlock().getType()))
+            event.setCancelled(!flags.isAllowed(RegionFlag.CORAL_DEATH));
     }
 
     /**
@@ -179,9 +191,22 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPortalCreated(PortalCreateEvent event) {
         if (event.getReason() == PortalCreateEvent.CreateReason.NETHER_PAIR) {
-            event.setCancelled(event.getBlocks().stream().map(state -> RegionProtection.getDataManager().getFlagsAt(
-                    state.getLocation())).anyMatch(flags -> flags != null &&
-                    !flags.isAllowed(RegionFlag.PORTAL_PAIR_FORMATION)));
+            event.setCancelled(event.getBlocks().stream()
+                    .map(state -> RegionProtection.getDataManager().getFlagsAt(state.getLocation()))
+                    .filter(Objects::nonNull)
+                    .anyMatch(flags -> !flags.isAllowed(RegionFlag.PORTAL_PAIR_FORMATION))
+            );
         }
+    }
+
+    /**
+     * Handle farmland-moisture-change flag.
+     *
+     * @param event the event.
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onMoistureChange(MoistureChangeEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.FARMLAND_MOISTURE_CHANGE));
     }
 }
