@@ -149,8 +149,8 @@ public class CommandClaimHeight extends TabCompleterBase implements CommandExecu
                 // Regular claims
                 else {
                     // Enforce a maximum bound on the bottom of the claim
-                    if (newY > 62) {
-                        sender.sendMessage(ChatColor.RED + "Your claim must extend down to at least y=62.");
+                    if (newY > 56) {
+                        sender.sendMessage(ChatColor.RED + "Your claim must extend down to at least y=56.");
                         return true;
                     }
 
