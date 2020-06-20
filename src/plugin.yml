@@ -6,19 +6,19 @@ author: [xCassyx, Kishiko73]
 version: 2.0-beta
 commands:
   abandonclaim:
-    description: Abandon the claim you are currently standing in.
-    usage: /abandonclaim
+    description: Abandon the claim you are currently standing in or abandon all your claims.
+    usage: /abandonclaim|/abandonallclaims
     aliases: [abandonallclaims]
   addcoowner:
-    description: Adds a co-owner to the region you are currently standing in.
-    usage: /addcoowner <player>
+    description: Add or remove a co-owner to the region you are currently standing in.
+    usage: /addcoowner|/removecoowner <player>
     aliases: [removecoowner]
   adminregion:
     description: Change into or out of admin region creation mode.
     usage: /adminregion
     permission: rp.command.adminregion
   claim:
-    description: Make a minimum-sized claim centered at where you are standing.
+    description: Make a minimum-sized claim centered where you are standing.
     usage: /claim
     permission: rp.claims.create
   claimblocks:
@@ -33,7 +33,7 @@ commands:
     usage: /claimlist [player]
     aliases: [claimslist]
   claimtoggle:
-    description: Toggle various flags on your claim
+    description: Toggle various flags on your claim.
     usage: /claimtoggle <toggle> [on|off]
     permission: rp.claims.manage
   expandclaim:
@@ -49,7 +49,7 @@ commands:
     usage: /ignoretrust
     permission: rp.command.ignoretrust
   region:
-    description: Modify a region.
+    description: Create, modify, query, or delete a region.
     usage: /region <info|flag|create|expand|retract|rename|set-priority|delete> [name] [args...]
     aliases: [rg]
     permission: rp.command.region
@@ -71,7 +71,7 @@ commands:
     aliases: [stuck]
   trust:
     description: Give players levels of access to your claim.
-    usage: /trust
+    usage: /trust|/accesstrust|/containertrust|/managementtrust [player]
     aliases: [accesstrust, at, containertrust, ct, managementtrust, mt, untrust]
     permission: rp.claims.manage
   trustlist:
