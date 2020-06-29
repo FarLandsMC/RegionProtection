@@ -271,7 +271,8 @@ public final class Utils {
     }
 
     /**
-     * If the block given block would damage the player when placed at their foot level or eye level
+     * If the given block would damage the player (immediately or otherwise)
+     * when placed at their foot level or eye level
      *
      * @param block the block to check
      * @return if a player can safely stand inside this block
@@ -279,23 +280,9 @@ public final class Utils {
     private static boolean doesDamage(Block block) {
         return block.getType().isSolid() || block.isLiquid() ||
                block.getType() == Material.FIRE ||
-               block.getType() == Material.CACTUS;
-    }
-
-    /**
-     * If a player would be teleported to the location of this block, confirm they cannot:
-     * fall through or take damage
-     * unless the block water
-     *
-     * @param block the block to check
-     * @return if the block can be stood on without the block damaging the player
-     */
-    public static boolean canStand(Block block) {
-        return !(
-                block.isPassable() ||
-                block.getType() == Material.MAGMA_BLOCK ||
-                block.getType() == Material.CACTUS
-        ) || block.getType() == Material.WATER;
+               block.getType() == Material.CACTUS ||
+               block.getType() == Material.SWEET_BERRY_BUSH ||
+               block.getType() == Material.WITHER_ROSE;
     }
 
     /**
@@ -311,6 +298,22 @@ public final class Utils {
                 doesDamage(location.clone().add(0, 1, 0).getBlock()) ||
                 doesDamage(location.clone().add(0, 2, 0).getBlock())
         );
+    }
+
+    /**
+     * If a player would be teleported to the location of this block, confirm they cannot:
+     * fall through or take damage
+     * unless the block is water
+     *
+     * @param block the block to check
+     * @return if the block can be stood on without the block damaging the player
+     */
+    public static boolean canStand(Block block) {
+        return !(
+                block.isPassable() ||
+                block.getType() == Material.MAGMA_BLOCK ||
+                block.getType() == Material.CACTUS
+        ) || block.getType() == Material.WATER;
     }
 
     /**
