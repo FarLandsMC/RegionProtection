@@ -70,7 +70,8 @@ public enum RegionFlag {
     ANIMAL_CONTAINERS,
     ITEM_DAMAGE,
     RIPTIDE,
-    FARMLAND_MOISTURE_CHANGE;
+    FARMLAND_MOISTURE_CHANGE,
+    ENTRANCE_RESTRICTION(BorderPolicy.class);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
@@ -250,6 +251,7 @@ public enum RegionFlag {
         registerDefault(ITEM_DAMAGE, true);
         registerDefault(RIPTIDE, true);
         registerDefault(FARMLAND_MOISTURE_CHANGE, true);
+        registerDefault(ENTRANCE_RESTRICTION, BorderPolicy.NONE);
     }
 
     /**

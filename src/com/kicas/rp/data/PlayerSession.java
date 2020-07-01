@@ -10,7 +10,7 @@ import java.util.UUID;
  * Stores transient data for a given player.
  */
 public class PlayerSession {
-    private UUID uuid;
+    private final UUID uuid;
     private double claimBlocks;
     private boolean isInAdminRegionMode;
     private boolean isIgnoringTrust;

@@ -405,7 +405,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 args[1], priority, parentName, force)) {
             TextUtils.sendFormatted(sender, "&(green)Created region {&(aqua)%0} with a priority of {&(aqua)%1} and %2.",
                     args[1], ps.getCurrentSelectedRegion().getPriority(),
-                    (parentName == null ? "no parent." : "parent " + parentName));
+                    (parentName == null ? "no parent" : "parent " + parentName));
         }
     }
 
@@ -695,6 +695,9 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
                 return filterFormat(args[4], knownCommands.keySet().stream().filter(s -> !s.contains(":")), null);
             }
+
+            case ENTRANCE_RESTRICTION:
+                return filterFormat(args[4], Arrays.stream(BorderPolicy.Policy.VALUES), Utils::formattedName);
         }
 
         return Collections.emptyList();

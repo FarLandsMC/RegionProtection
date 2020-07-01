@@ -124,6 +124,8 @@ public class Serializer implements AutoCloseable {
         encoder.writeUintCompressed(flag.ordinal());
         if (flag.isBoolean())
             encoder.writeBoolean((boolean) meta);
+        else if (meta instanceof BorderPolicy)
+            encoder.write(((BorderPolicy) meta).getPolicy().ordinal());
         else if (meta instanceof CommandMeta) {
             encoder.writeBoolean(((CommandMeta) meta).runFromConsole());
             encoder.writeUTF8Raw(((CommandMeta) meta).getCommand());

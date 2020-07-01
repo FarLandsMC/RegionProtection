@@ -20,7 +20,7 @@ public class Region extends FlagContainer {
     // Can be null, such as in claims
     private String name;
     private int priority;
-    private World world;
+    private final World world;
     private Location min, max;
     private Region parent;
     private final List<Region> children;
@@ -186,6 +186,24 @@ public class Region extends FlagContainer {
 
         children.forEach(child -> child.removeCoOwner(owner));
         return true;
+    }
+
+    /**
+     * This method should not be used and will throw an unsupported operation exception. Use moveVertex instead.
+     *
+     * @param location unused.
+     */
+    @Override
+    public void setCenter(Location location) {
+        throw new UnsupportedOperationException("Use moveVertex instead.");
+    }
+
+    /**
+     * @return the center of this region which is equidistant from the min and max of this region.
+     */
+    @Override
+    public Location getCenter() {
+        return new Location(world, (min.getX() + max.getX()) / 2, (min.getY() + max.getY()) / 2, (min.getZ() + max.getZ()) / 2);
     }
 
     /**

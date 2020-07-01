@@ -4,6 +4,7 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.*;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -16,17 +17,20 @@ public class FlagContainer {
     protected final Map<RegionFlag, Object> flags;
     protected UUID owner;
     protected final List<UUID> coOwners;
+    protected Location center;
 
     public FlagContainer(UUID owner, List<UUID> coOwners) {
         this.flags = new HashMap<>();
         this.owner = owner;
         this.coOwners = new ArrayList<>(coOwners);
+        this.center = null;
     }
 
     public FlagContainer(UUID owner) {
         this.flags = new HashMap<>();
         this.owner = owner;
         this.coOwners = new ArrayList<>();
+        this.center = null;
     }
 
     /**
@@ -118,6 +122,22 @@ public class FlagContainer {
      */
     public List<UUID> getCoOwners() {
         return Collections.unmodifiableList(coOwners);
+    }
+
+    /**
+     * Sets the central location of this container.
+     *
+     * @param center the center of this container.
+     */
+    public void setCenter(Location center) {
+        this.center = center;
+    }
+
+    /**
+     * @return the central location of this container, or null if no such center exists.
+     */
+    public Location getCenter() {
+        return center;
     }
 
     /**

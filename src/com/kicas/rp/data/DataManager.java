@@ -432,6 +432,9 @@ public class DataManager implements Listener {
             else
                 flags.addCoOwner(region.getOwner());
 
+            if (flags.getCenter() == null)
+                flags.setCenter(region.getCenter());
+
             region.getCoOwners().forEach(flags::addCoOwner);
         });
 
@@ -1080,7 +1083,7 @@ public class DataManager implements Listener {
         collisions.removeIf(r -> r.isAllowed(RegionFlag.OVERLAP) || r.isAssociated(region));
 
         if (!collisions.isEmpty()) {
-            notifyDelegate(delegate, "&(red)You cannot have a claim here since it overlaps other claims.");
+            notifyDelegate(delegate, "&(red)You cannot have a claim or region here since it overlaps other claims and/or regions.");
             getPlayerSession(delegate).setRegionHighlighter(new RegionHighlighter(delegate, collisions,
                     Material.GLOWSTONE, Material.NETHERRACK, false));
             return true;

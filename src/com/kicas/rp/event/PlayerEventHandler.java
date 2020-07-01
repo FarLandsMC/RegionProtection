@@ -559,13 +559,11 @@ public class PlayerEventHandler implements Listener {
                 } else if (Entities.isPassive((Player) event.getDamager(), event.getEntity())) {
                     // OP flag to deny damage to non-hostiles
                     if (flags.hasFlag(RegionFlag.ANIMAL_DAMAGE)) {
-                        if (flags.isAllowed(RegionFlag.ANIMAL_DAMAGE))
-                            return;
-                        else {
+                        if (!flags.isAllowed(RegionFlag.ANIMAL_DAMAGE)) {
                             event.getDamager().sendMessage(ChatColor.RED + "You cannot damage that here");
                             event.setCancelled(true);
-                            return;
                         }
+                        return;
                     }
 
                     // Build trust
@@ -808,19 +806,19 @@ public class PlayerEventHandler implements Listener {
     }
 
     /**
-     * @see PlayerEventHandler#onPlayerTranslocate(PlayerMoveEvent)
+     * @see PlayerEventHandler#onPlayerTranslocate(PlayerMoveEvent, boolean)
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerTeleport(PlayerTeleportEvent event) {
-        onPlayerTranslocate(event);
+        onPlayerTranslocate(event, true);
     }
 
     /**
-     * @see PlayerEventHandler#onPlayerTranslocate(PlayerMoveEvent)
+     * @see PlayerEventHandler#onPlayerTranslocate(PlayerMoveEvent, boolean)
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerMove(PlayerMoveEvent event) {
-        onPlayerTranslocate(event);
+        onPlayerTranslocate(event, false);
     }
 
     /**
@@ -828,43 +826,62 @@ public class PlayerEventHandler implements Listener {
      *
      * @param event the event.
      */
-    private void onPlayerTranslocate(PlayerMoveEvent event) {
+    private void onPlayerTranslocate(PlayerMoveEvent event, boolean isTeleport) {
         FlagContainer fromFlags = RegionProtection.getDataManager().getFlagsAt(event.getFrom());
         FlagContainer toFlags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
+        Player player = event.getPlayer();
+
+        if (!isTeleport) {
+            // Entrance restriction
+            if (toFlags != null && toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy() == BorderPolicy.Policy.SOFT) {
+                Location center = toFlags.getCenter();
+                // Push the player out of the region they're entering
+                if (center != null) {
+                    Vector delta = player.getLocation().toVector().subtract(center.toVector()).normalize();
+                    delta.setY(0);
+                    player.setVelocity(delta);
+                }
+            }
+        }
 
         if (!Objects.equals(fromFlags, toFlags)) {
             if (toFlags != null) {
-                toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).sendTo(event.getPlayer());
+                toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).sendTo(player);
 
                 if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND))
-                    toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(event.getPlayer());
+                    toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(player);
 
-                if (!toFlags.isEffectiveOwner(event.getPlayer()) && !toFlags.isAllowed(RegionFlag.ELYTRA_FLIGHT) &&
-                        event.getPlayer().isGliding()) {
-                    event.getPlayer().setGliding(false);
+                if (!toFlags.isEffectiveOwner(player) && !toFlags.isAllowed(RegionFlag.ELYTRA_FLIGHT) && player.isGliding()) {
+                    player.setGliding(false);
                 }
+
+                BorderPolicy.Policy entrancePolicy = toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy();
+                if (isTeleport)
+                    event.setCancelled(entrancePolicy != BorderPolicy.Policy.NONE);
+                else
+                    event.setCancelled(entrancePolicy == BorderPolicy.Policy.HARD);
             }
 
             // Flight only applies to players in survival or adventure mode, and only if one of the regions they are
             // crossing has a flight flag.
-            if ((event.getPlayer().getGameMode() == GameMode.SURVIVAL || event.getPlayer().getGameMode() ==
-                    GameMode.ADVENTURE) && (toFlags != null && toFlags.hasFlag(RegionFlag.FLIGHT) ||
+            if ((player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE) &&
+                    (toFlags != null && toFlags.hasFlag(RegionFlag.FLIGHT) ||
                     fromFlags != null && fromFlags.hasFlag(RegionFlag.FLIGHT))) {
-                boolean allowFlight = toFlags == null ? event.getPlayer().getServer().getAllowFlight()
+                boolean allowFlight = toFlags == null ? player.getServer().getAllowFlight()
                         : toFlags.isAllowed(RegionFlag.FLIGHT);
-                event.getPlayer().setAllowFlight(allowFlight);
+                player.setAllowFlight(allowFlight);
 
                 if (!allowFlight) {
-                    event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 200, 4,
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 200, 4,
                             false, false, false));
                 }
             }
 
             if (fromFlags != null) {
-                fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL).sendTo(event.getPlayer());
+                fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL).sendTo(player);
 
                 if (fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
-                    fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(event.getPlayer());
+                    fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(player);
             }
         }
     }
