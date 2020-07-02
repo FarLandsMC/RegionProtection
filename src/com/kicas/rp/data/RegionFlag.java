@@ -48,7 +48,7 @@ public enum RegionFlag {
     DENY_COMMAND(StringFilter.class),
     FOLLOW, // prevent pet tp
     DENY_AGGRO(EntityFilter.class), // prevent certain mobs from targeting the player
-    GROWTH, // vine growth grass spread etc
+    GROWTH(MaterialFilter.class), // vine growth grass spread etc
     DENY_BLOCK_USE(MaterialFilter.class),
     KEEP_INVENTORY,
     KEEP_XP,
@@ -226,7 +226,8 @@ public enum RegionFlag {
         registerDefault(DENY_COMMAND, StringFilter.EMPTY_FILTER);
         registerDefault(FOLLOW, true);
         registerDefault(DENY_AGGRO, EntityFilter.EMPTY_FILTER);
-        registerDefault(GROWTH, true);
+        registerDefault(GROWTH, MaterialFilter.EMPTY_FILTER,
+                world -> world.getGameRuleValue(GameRule.RANDOM_TICK_SPEED) > 0);
         registerDefault(DENY_BLOCK_USE, MaterialFilter.EMPTY_FILTER);
         registerDefault(KEEP_INVENTORY, false, world -> world.getGameRuleValue(GameRule.KEEP_INVENTORY));
         registerDefault(KEEP_XP, false, world -> world.getGameRuleValue(GameRule.KEEP_INVENTORY));

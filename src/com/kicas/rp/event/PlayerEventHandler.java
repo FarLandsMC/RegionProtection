@@ -833,7 +833,8 @@ public class PlayerEventHandler implements Listener {
 
         if (!isTeleport) {
             // Entrance restriction
-            if (toFlags != null && toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy() == BorderPolicy.Policy.SOFT) {
+            if (toFlags != null && !toFlags.isEffectiveOwner(player) &&
+                    toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy() == BorderPolicy.Policy.SOFT) {
                 Location center = toFlags.getCenter();
                 // Push the player out of the region they're entering
                 if (center != null) {
@@ -855,11 +856,13 @@ public class PlayerEventHandler implements Listener {
                     player.setGliding(false);
                 }
 
-                BorderPolicy.Policy entrancePolicy = toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy();
-                if (isTeleport)
-                    event.setCancelled(entrancePolicy != BorderPolicy.Policy.NONE);
-                else
-                    event.setCancelled(entrancePolicy == BorderPolicy.Policy.HARD);
+                if (!toFlags.isEffectiveOwner(player)) {
+                    BorderPolicy.Policy entrancePolicy = toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy();
+                    if (isTeleport)
+                        event.setCancelled(entrancePolicy != BorderPolicy.Policy.NONE);
+                    else
+                        event.setCancelled(entrancePolicy == BorderPolicy.Policy.HARD);
+                }
             }
 
             // Flight only applies to players in survival or adventure mode, and only if one of the regions they are

@@ -197,6 +197,13 @@ public class Deserializer implements AutoCloseable {
     private Pair<RegionFlag, Object> readFlag(int format) throws IOException {
         RegionFlag flag = readFlagEnum();
 
+        // The growth flag used to be a simple allow/deny but now specific blocks can be specified
+        if (flag == RegionFlag.GROWTH && format <= 3) {
+            EnumFilter.MaterialFilter filter = new EnumFilter.MaterialFilter();
+            filter.setNameFilter(true, new HashSet<>());
+            return new Pair<>(flag, filter);
+        }
+
         // Reads the flag meta value. Note: perhaps make these individual functions
         Object meta;
         try {

@@ -34,7 +34,7 @@ public class DataManager implements Listener {
     private final Map<String, UUID> ignUuidLookupCache;
 
     // These values are used to keep consistency in the serialized data
-    public static final byte REGION_FORMAT_VERSION = 3;
+    public static final byte REGION_FORMAT_VERSION = 4;
     public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
     public static final String GLOBAL_FLAG_NAME = "__global__";
 
