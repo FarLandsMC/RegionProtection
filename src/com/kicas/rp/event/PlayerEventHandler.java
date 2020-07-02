@@ -1,10 +1,10 @@
 package com.kicas.rp.event;
 
+import static com.kicas.rp.data.flagdata.EnumFilter.EntityFilter;
+import static com.kicas.rp.data.flagdata.EnumFilter.MaterialFilter;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.*;
-import static com.kicas.rp.data.flagdata.EnumFilter.EntityFilter;
-import static com.kicas.rp.data.flagdata.EnumFilter.MaterialFilter;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
@@ -1033,7 +1033,7 @@ public class PlayerEventHandler implements Listener {
 
                 // There's a bug where crossbow arrows are not replaced when the event is cancelled, so fix that
                 if (event.getBow().getType() == Material.CROSSBOW) {
-                    Arrow arrow = (Arrow) event.getProjectile();
+                    AbstractArrow arrow = (AbstractArrow) event.getProjectile();
                     if (arrow.getPickupStatus() == AbstractArrow.PickupStatus.ALLOWED) {
                         ItemStack replacement = ((CrossbowMeta)event.getBow().getItemMeta()).getChargedProjectiles().get(0).clone();
                         replacement.setAmount(1);
