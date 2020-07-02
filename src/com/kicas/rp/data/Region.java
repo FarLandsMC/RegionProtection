@@ -189,24 +189,6 @@ public class Region extends FlagContainer {
     }
 
     /**
-     * This method should not be used and will throw an unsupported operation exception. Use moveVertex instead.
-     *
-     * @param location unused.
-     */
-    @Override
-    public void setCenter(Location location) {
-        throw new UnsupportedOperationException("Use moveVertex instead.");
-    }
-
-    /**
-     * @return the center of this region which is equidistant from the min and max of this region.
-     */
-    @Override
-    public Location getCenter() {
-        return new Location(world, (min.getX() + max.getX()) / 2, (min.getY() + max.getY()) / 2, (min.getZ() + max.getZ()) / 2);
-    }
-
-    /**
      * Returns whether or not the given location is within this region in 3D space, including if the location is on the
      * edge of this region.
      *
@@ -284,6 +266,7 @@ public class Region extends FlagContainer {
      *
      * @return the bounds of this region.
      */
+    @Override
     public Pair<Location, Location> getBounds() {
         return new Pair<>(min.clone(), max.clone());
     }
@@ -335,6 +318,7 @@ public class Region extends FlagContainer {
      *
      * @param bounds the bounds of the region. Minimum and maximum vertex respectively.
      */
+    @Override
     public void setBounds(Pair<Location, Location> bounds) {
         min = bounds.getFirst().clone();
         max = bounds.getSecond().clone();

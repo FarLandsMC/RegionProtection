@@ -432,8 +432,8 @@ public class DataManager implements Listener {
             else
                 flags.addCoOwner(region.getOwner());
 
-            if (flags.getCenter() == null)
-                flags.setCenter(region.getCenter());
+            if (flags.getBounds() == null)
+                flags.setBounds(region.getBounds());
 
             region.getCoOwners().forEach(flags::addCoOwner);
         });
@@ -1203,6 +1203,9 @@ public class DataManager implements Listener {
             // Initialize world data objects
             Bukkit.getWorlds().stream().map(World::getUID).forEach(uuid ->
                     worlds.put(uuid, deserializedWorldData.getOrDefault(uuid, new WorldData(uuid)))
+            );
+            deserializedWorldData.entrySet().stream().filter(entry -> !worlds.containsKey(entry.getKey())).forEach(entry ->
+                    worlds.put(entry.getKey(), entry.getValue())
             );
         } catch (Throwable ex) {
             RegionProtection.error("Failed to load regions file:\n" + ex.getClass().getName() + ": " + ex.getMessage());

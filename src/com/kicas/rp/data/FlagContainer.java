@@ -17,20 +17,20 @@ public class FlagContainer {
     protected final Map<RegionFlag, Object> flags;
     protected UUID owner;
     protected final List<UUID> coOwners;
-    protected Location center;
+    protected Pair<Location, Location> bounds;
 
     public FlagContainer(UUID owner, List<UUID> coOwners) {
         this.flags = new HashMap<>();
         this.owner = owner;
         this.coOwners = new ArrayList<>(coOwners);
-        this.center = null;
+        this.bounds = null;
     }
 
     public FlagContainer(UUID owner) {
         this.flags = new HashMap<>();
         this.owner = owner;
         this.coOwners = new ArrayList<>();
-        this.center = null;
+        this.bounds = null;
     }
 
     /**
@@ -125,19 +125,19 @@ public class FlagContainer {
     }
 
     /**
-     * Sets the central location of this container.
+     * Sets bounds (minimum and maximum corners) of this container.
      *
-     * @param center the center of this container.
+     * @param bounds the bounds of this container.
      */
-    public void setCenter(Location center) {
-        this.center = center;
+    public void setBounds(Pair<Location, Location> bounds) {
+        this.bounds = bounds;
     }
 
     /**
-     * @return the central location of this container, or null if no such center exists.
+     * @return the bounds of this container, or null if no such center exists.
      */
-    public Location getCenter() {
-        return center;
+    public Pair<Location, Location> getBounds() {
+        return bounds;
     }
 
     /**

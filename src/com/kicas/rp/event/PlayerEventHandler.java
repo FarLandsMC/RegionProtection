@@ -8,6 +8,7 @@ import com.kicas.rp.data.flagdata.*;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
+import com.kicas.rp.util.Pair;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_16_R1.entity.CraftPlayer;
@@ -835,12 +836,50 @@ public class PlayerEventHandler implements Listener {
             // Entrance restriction
             if (toFlags != null && !toFlags.isEffectiveOwner(player) &&
                     toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy() == BorderPolicy.Policy.SOFT) {
-                Location center = toFlags.getCenter();
+                Pair<Location, Location> bounds = toFlags.getBounds();
                 // Push the player out of the region they're entering
-                if (center != null) {
-                    Vector delta = player.getLocation().toVector().subtract(center.toVector()).normalize();
-                    delta.setY(0);
-                    player.setVelocity(delta);
+                if (bounds != null) {
+                    // Determine which side of the region they player is penetrating and apply an appropriate push
+
+                    Vector min = bounds.getFirst().toVector(),
+                            max = bounds.getSecond().toVector();
+                    min.setY(0);
+                    max.setY(0);
+                    max.setX(max.getX() + 1);
+                    max.setZ(max.getZ() + 1);
+
+                    Vector playerLoc = player.getLocation().toVector();
+                    playerLoc.setY(0);
+                    Vector push = new Vector();
+                    double dot, dotMax = -1.0;
+
+                    // Lower x-axis
+                    dot = Math.abs(playerLoc.clone().subtract(min).normalize().getX());
+                    if (dot > dotMax) {
+                        dotMax = dot;
+                        push = new Vector(0, 0, -1);
+                    }
+
+                    // Lower z-axis
+                    dot = Math.abs(playerLoc.clone().subtract(min).normalize().getZ());
+                    if (dot > dotMax) {
+                        dotMax = dot;
+                        push = new Vector(-1, 0, 0);
+                    }
+
+                    // Upper x-axis
+                    dot = Math.abs(playerLoc.clone().subtract(max).normalize().getX());
+                    if (dot > dotMax) {
+                        dotMax = dot;
+                        push = new Vector(0, 0, 1);
+                    }
+
+                    // Upper z-axis
+                    dot = Math.abs(playerLoc.clone().subtract(max).normalize().getZ());
+                    if (dot > dotMax)
+                        push = new Vector(1, 0, 0);
+
+                    player.setVelocity(push);
                 }
             }
         }
