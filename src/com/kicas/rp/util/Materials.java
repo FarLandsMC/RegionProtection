@@ -19,9 +19,10 @@ import java.util.stream.Stream;
 public final class Materials {
     // Some useful collections of Materials
     private static final List<Material> INVENTORY_HOLDERS = new ArrayList<>();
-    private static final List<Material> PLACEABLES = new ArrayList<>();
-    private static final List<Material> CORALS = new ArrayList<>();
-    private static final List<Material> CONSUMABLES = new ArrayList<>();
+    private static final List<Material> PLACEABLES        = new ArrayList<>();
+    private static final List<Material> CORALS            = new ArrayList<>();
+    private static final List<Material> CONSUMABLES       = new ArrayList<>();
+    private static final List<Material> GROWABLES         = new ArrayList<>();
 
     // Initialize categories
     static {
@@ -43,6 +44,14 @@ public final class Materials {
 
         CONSUMABLES.addAll(Arrays.asList(
                 MILK_BUCKET, POTION, CAKE
+        ));
+
+        GROWABLES.addAll(Arrays.asList(
+                OAK_SAPLING, SPRUCE_SAPLING, BIRCH_SAPLING, JUNGLE_SAPLING, ACACIA_SAPLING, DARK_OAK_SAPLING,
+                BROWN_MUSHROOM, RED_MUSHROOM, CRIMSON_FUNGUS, WARPED_FUNGUS,
+                WHEAT, CARROTS, POTATOES, COCOA, NETHER_WART, BEETROOTS, SWEET_BERRY_BUSH,
+                CACTUS, SUGAR_CANE, KELP, BAMBOO, VINE, WEEPING_VINES, TWISTING_VINES,
+                GRASS_BLOCK, MYCELIUM, CRIMSON_NYLIUM, WARPED_NYLIUM
         ));
     }
 
@@ -122,6 +131,21 @@ public final class Materials {
     public static boolean isPressureSensitive(Material material) {
         return material == TURTLE_EGG || material == TRIPWIRE || material == FARMLAND ||
                 material.name().endsWith("PRESSURE_PLATE");
+    }
+
+    /**
+     * Returns whether or not the specified material is able to grow
+     *  meaning it can grow into a structure like trees,
+     *
+     *  advance in height by placing a block of the same type above itself,
+     *  advance a stage or
+     *  spread to other blocks
+     *
+     * @param material the material.
+     * @return true if the given material can grow, false otherwise.
+     */
+    public static boolean isGrowable(Material material) {
+        return GROWABLES.contains(material);
     }
 
     /**

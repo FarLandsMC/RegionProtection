@@ -7,11 +7,10 @@ import com.kicas.rp.data.RegionFlag;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
+import org.bukkit.event.*;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -86,14 +85,27 @@ public class WorldEventHandler implements Listener {
     }
 
     /**
+     * Handles growth flag event. This includes block spreading, vines or other plants growing a new block,
+     *  seed based plants advancing a stage, trees and similar structures growing.
+     *
+     * @param event    the event.
+     * @param location the location of the event.
+     * @param material the material of the block being grown.
+     */
+    public void handleGrowth(Cancellable event, Location location, Material material) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(location);
+        event.setCancelled(flags != null &&
+                flags.<EnumFilter.MaterialFilter>getFlagMeta(RegionFlag.DENY_GROWTH).isBlocked(material));
+    }
+
+    /**
      * Handles block spreading and vine growth.
      *
      * @param event the event.
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockSpread(BlockSpreadEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
+        handleGrowth(event, event.getBlock().getLocation(), event.getBlock().getType());
     }
 
     /**
@@ -103,8 +115,7 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onStructureGrow(StructureGrowEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
-        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
+        handleGrowth(event, event.getLocation(), event.getLocation().getBlock().getType());
     }
 
     /**
@@ -114,8 +125,7 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockGrow(BlockGrowEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
-        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.GROWTH));
+        handleGrowth(event, event.getBlock().getLocation(), event.getBlock().getType());
     }
 
     /**

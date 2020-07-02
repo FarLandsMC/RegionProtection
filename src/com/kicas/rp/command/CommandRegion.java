@@ -696,6 +696,11 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 return filterFormat(args[4], knownCommands.keySet().stream().filter(s -> !s.contains(":")), null);
             }
 
+            // Suggest blocks that are able to grow
+            case DENY_GROWTH:
+                return filterFormat(args[4], Stream.of(Material.values()).filter(Materials::isGrowable),
+                        Utils::formattedName);
+
             case ENTRANCE_RESTRICTION:
                 return filterFormat(args[4], Arrays.stream(BorderPolicy.Policy.VALUES), Utils::formattedName);
         }

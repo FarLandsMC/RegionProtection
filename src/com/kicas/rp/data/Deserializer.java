@@ -198,7 +198,7 @@ public class Deserializer implements AutoCloseable {
         RegionFlag flag = readFlagEnum();
 
         // The growth flag used to be a simple allow/deny but now specific blocks can be specified
-        if (flag == RegionFlag.GROWTH && format <= 3) {
+        if (flag == RegionFlag.DENY_GROWTH && format <= 3) {
             EnumFilter.MaterialFilter filter = new EnumFilter.MaterialFilter();
             filter.setNameFilter(true, new HashSet<>());
             return new Pair<>(flag, filter);
