@@ -93,6 +93,9 @@ public class WorldEventHandler implements Listener {
      * @param material the material of the block being grown.
      */
     public void handleGrowth(Cancellable event, Location location, Material material) {
+        if (material == Material.AIR)
+            return;
+
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(location);
         event.setCancelled(flags != null &&
                 flags.<EnumFilter.MaterialFilter>getFlagMeta(RegionFlag.DENY_GROWTH).isBlocked(material));
@@ -105,6 +108,7 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockSpread(BlockSpreadEvent event) {
+        handleGrowth(event, event.getSource().getLocation(), event.getSource().getType());
         handleGrowth(event, event.getBlock().getLocation(), event.getBlock().getType());
     }
 
@@ -126,6 +130,7 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockGrow(BlockGrowEvent event) {
         handleGrowth(event, event.getBlock().getLocation(), event.getBlock().getType());
+        handleGrowth(event, event.getNewState().getLocation(), event.getNewState().getType());
     }
 
     /**
