@@ -886,7 +886,8 @@ public class PlayerEventHandler implements Listener {
 
         if (!Objects.equals(fromFlags, toFlags)) {
             if (toFlags != null) {
-                toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).sendTo(player);
+                if (!toFlags.getFlagMeta(RegionFlag.GREETING).equals(fromFlags == null ? null : fromFlags.getFlagMeta(RegionFlag.GREETING)))
+                    toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).sendTo(player);
 
                 if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND))
                     toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(player);
@@ -920,7 +921,8 @@ public class PlayerEventHandler implements Listener {
             }
 
             if (fromFlags != null) {
-                fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL).sendTo(player);
+                if (!fromFlags.getFlagMeta(RegionFlag.FAREWELL).equals(toFlags == null ? null : toFlags.getFlagMeta(RegionFlag.FAREWELL)))
+                    fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL).sendTo(player);
 
                 if (fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
                     fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(player);

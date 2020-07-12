@@ -482,11 +482,18 @@ public class DataManager implements Listener {
      */
     public synchronized Region tryCreateClaim(Player creator, Location vertex1, Location vertex2) {
         // Convert the given vertices into a minimum and maximum vertex
-        Location min = new Location(vertex1.getWorld(), Math.min(vertex1.getX(), vertex2.getX()),
-                "world".equals(vertex1.getWorld().getName()) ? 56 : 0,
-                Math.min(vertex1.getZ(), vertex2.getZ()));
-        Location max = new Location(vertex1.getWorld(), Math.max(vertex1.getX(), vertex2.getX()),
-                vertex1.getWorld().getMaxHeight(), Math.max(vertex1.getZ(), vertex2.getZ()));
+        Location min = new Location(
+                vertex1.getWorld(),
+                Math.min(vertex1.getX(), vertex2.getX()),
+                vertex1.getWorld().getEnvironment() == World.Environment.NORMAL ? 56 : 0,
+                Math.min(vertex1.getZ(), vertex2.getZ())
+        );
+        Location max = new Location(
+                vertex1.getWorld(),
+                Math.max(vertex1.getX(), vertex2.getX()),
+                vertex1.getWorld().getEnvironment() == World.Environment.NETHER ? 128 : vertex1.getWorld().getMaxHeight(),
+                Math.max(vertex1.getZ(), vertex2.getZ())
+        );
 
         // Create the region
         Region region = new Region(null, 0, creator.getUniqueId(), min, max, null, new ArrayList<>());
