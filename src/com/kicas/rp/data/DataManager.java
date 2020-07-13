@@ -33,6 +33,8 @@ public class DataManager implements Listener {
     // Cache data received from the Mojang API
     private final Map<String, UUID> ignUuidLookupCache;
 
+    public static int DEFAULT_CLAIM_BOTTOM_Y = 56;
+
     // These values are used to keep consistency in the serialized data
     public static final byte REGION_FORMAT_VERSION = 4;
     public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
@@ -485,7 +487,9 @@ public class DataManager implements Listener {
         Location min = new Location(
                 vertex1.getWorld(),
                 Math.min(vertex1.getX(), vertex2.getX()),
-                vertex1.getWorld().getEnvironment() == World.Environment.NORMAL ? 56 : 0,
+                vertex1.getWorld().getEnvironment() == World.Environment.NORMAL
+                        ? Math.min(DEFAULT_CLAIM_BOTTOM_Y, Math.min(vertex1.getBlockY(), vertex2.getBlockY()))
+                        : 0,
                 Math.min(vertex1.getZ(), vertex2.getZ())
         );
         Location max = new Location(

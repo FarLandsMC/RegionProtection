@@ -9,6 +9,7 @@ import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
 import com.kicas.rp.util.Pair;
+import com.kicas.rp.util.TextUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_16_R1.entity.CraftPlayer;
@@ -137,7 +138,22 @@ public class PlayerEventHandler implements Listener {
             return;
         }
 
-        testPlaceInteraction(event, event.getPlayer(), event.getHand(), flags, event.getBlock().getType());
+        if (testPlaceInteraction(event, event.getPlayer(), event.getHand(), flags, event.getBlock().getType()))
+            return;
+
+        // Prompt the player to make a claim if they place a chest and have no claim
+        Player player = event.getPlayer();
+        if (event.getBlockPlaced().getType() == Material.CHEST && player.hasPermission("rp.claims.create") &&
+                RegionProtection.getClaimableWorlds().contains(player.getWorld().getUID())) {
+            long claimCount = RegionProtection.getDataManager().getRegionsInWorld(player.getWorld()).stream()
+                    .filter(region -> !region.isAdminOwned() && region.isOwner(player.getUniqueId()))
+                    .count();
+
+            if (claimCount == 0) {
+                TextUtils.sendFormatted(player, "&(gold)You have not made a claim yet! Create one with a claim tool " +
+                        "or {&(aqua)/claim} to protect your builds and items.");
+            }
+        }
     }
 
     /**

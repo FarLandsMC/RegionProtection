@@ -160,7 +160,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         // Calculate the distance from the center using the minimum area, and calculate the corners
         double width = Math.sqrt(RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) / 2;
         Location center = ((Player) sender).getLocation();
-        Location min = center.clone().subtract(width, 0, width), max = center.clone().add(width, 0, width);
+        Location min = center.clone().subtract(width, DataManager.DEFAULT_CLAIM_BOTTOM_Y, width),
+                max = center.clone().add(width, 0, width);
 
         // Attempt to create the region
         Region region = RegionProtection.getDataManager().tryCreateClaim((Player) sender, min, max);
