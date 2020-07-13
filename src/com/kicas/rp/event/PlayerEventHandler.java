@@ -133,7 +133,7 @@ public class PlayerEventHandler implements Listener {
 
             // Adjust the y-value if the block placed is craftable
             if (region != null && Materials.hasRecipe(event.getBlock().getType()))
-                region.getMin().setY(event.getBlock().getY());
+                region.getMin().setY(Math.max(0, event.getBlock().getY() - 5));
 
             return;
         }
