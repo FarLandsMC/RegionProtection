@@ -74,9 +74,8 @@ public class CommandClaimHeight extends TabCompleterBase implements CommandExecu
                 return true;
             }
 
-            // Managers can modify subdivisions, but only owners can modify the actual claim
-            if (!(region.hasParent() ? region.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player,
-                    TrustLevel.MANAGEMENT, region) : region.isEffectiveOwner(player))) {
+            // Allow managers to modify the claim height
+            if (!region.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player, TrustLevel.MANAGEMENT, region)) {
                 sender.sendMessage(ChatColor.RED + "You do not have permission to use this command here.");
                 return true;
             }
