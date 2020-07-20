@@ -4,6 +4,8 @@ import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.EnumFilter;
 import com.kicas.rp.data.FlagContainer;
 import com.kicas.rp.data.RegionFlag;
+import com.kicas.rp.data.flagdata.TrustLevel;
+import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
 
@@ -14,6 +16,7 @@ import org.bukkit.event.*;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
@@ -223,5 +226,20 @@ public class WorldEventHandler implements Listener {
     public void onMoistureChange(MoistureChangeEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
         event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.FARMLAND_MOISTURE_CHANGE));
+    }
+
+    /**
+     * Handle non-trusted players triggering raids in claims.
+     *
+     * @param event the event.
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onRaidTriggered(RaidTriggerEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
+        event.setCancelled(flags != null && !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(
+                event.getPlayer(),
+                TrustLevel.BUILD,
+                flags
+        ));
     }
 }

@@ -55,7 +55,7 @@ public class Serializer implements AutoCloseable {
         encoder.writeUintCompressed(playerData.size());
         for (PersistentPlayerData ppd : playerData) {
             encoder.writeUuid(ppd.getUuid());
-            encoder.writeUintCompressed(ppd.getClaimBlocks());
+            encoder.writeIntCompressed(ppd.getClaimBlocks());
         }
     }
 

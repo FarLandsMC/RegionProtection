@@ -106,7 +106,10 @@ public class Deserializer implements AutoCloseable {
                 failEOF();
 
             UUID uuid = decoder.readUuid();
-            playerData.put(uuid, new PersistentPlayerData(uuid, decoder.readCompressedUint()));
+            playerData.put(uuid, new PersistentPlayerData(
+                    uuid,
+                    format == 0 ? decoder.readCompressedUint() : decoder.readCompressedInt()
+            ));
             --len;
         }
 

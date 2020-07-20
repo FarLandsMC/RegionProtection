@@ -37,7 +37,7 @@ public class DataManager implements Listener {
 
     // These values are used to keep consistency in the serialized data
     public static final byte REGION_FORMAT_VERSION = 4;
-    public static final byte PLAYER_DATA_FORMAT_VERSION = 0;
+    public static final byte PLAYER_DATA_FORMAT_VERSION = 1;
     public static final String GLOBAL_FLAG_NAME = "__global__";
 
     private static final String MOJANG_API_BASE = "https://api.mojang.com";
@@ -855,7 +855,7 @@ public class DataManager implements Listener {
         }
 
         // Check claim blocks
-        if (region.area() > getClaimBlocks(newOwner)) {
+        if (region.area() > getClaimBlocks(newOwner) && !(delegate != null && delegate.isOp())) {
             notifyDelegate(delegate, "&(red)This player does not have enough claim blocks to take ownership of " +
                     "this claim.");
             return false;
@@ -1022,10 +1022,15 @@ public class DataManager implements Listener {
         if (region.isAdminOwned())
             return false;
 
+        // If the delegate is a co-owner, use their claim blocks
+        UUID claimBlockDelegate = delegate == null
+                ? region.getOwner()
+                : (region.isEffectiveOwner(delegate) ? delegate.getUniqueId() : region.getOwner());
+
         // Regular claims
         if (!region.hasParent()) {
             // Check claim blocks
-            int claimBlocks = getClaimBlocks(region.getOwner());
+            int claimBlocks = getClaimBlocks(claimBlockDelegate);
             long areaDiff = region.area() - ((long) bounds.getSecond().getBlockX() - bounds.getFirst().getBlockX()) *
                     ((long) bounds.getSecond().getBlockZ() - bounds.getFirst().getBlockZ());
             if (areaDiff > claimBlocks) {
@@ -1056,7 +1061,7 @@ public class DataManager implements Listener {
             }
 
             // Modify claim blocks
-            modifyClaimBlocks(region.getOwner(), -(int) areaDiff);
+            modifyClaimBlocks(claimBlockDelegate, -(int) areaDiff);
         }
         // Subdivisions
         else {
