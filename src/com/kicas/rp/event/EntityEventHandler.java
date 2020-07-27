@@ -13,8 +13,10 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.*;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 
@@ -32,12 +34,13 @@ public class EntityEventHandler implements Listener {
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntityType() == EntityType.FALLING_BLOCK)
             return;
+
         DataManager dm = RegionProtection.getDataManager();
         FlagContainer flags = dm.getFlagsAt(event.getBlock().getLocation());
         if (flags == null)
             return;
 
-        if ((event.getEntityType() == EntityType.ARROW || event.getEntityType() == EntityType.SMALL_FIREBALL)) {
+        if (event.getEntityType() == EntityType.ARROW || event.getEntityType() == EntityType.SMALL_FIREBALL) {
             if (event.getBlock().getType() == Material.TNT && (!flags.isAllowed(RegionFlag.TNT) ||
                     !flags.isAllowed(RegionFlag.TNT_IGNITION))) {
                 event.setCancelled(true);
@@ -49,17 +52,23 @@ public class EntityEventHandler implements Listener {
             if (shooter instanceof Player) {
                 event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust((Player) shooter,
                         TrustLevel.BUILD, flags));
+                return;
             }
             // Check for region crosses if fired by a dispenser
             else if (shooter instanceof BlockProjectileSource) {
                 event.setCancelled(dm.crossesRegions(((BlockProjectileSource) shooter).getBlock().getLocation(),
                         event.getBlock().getLocation()));
+                return;
             }
-            return;
         }
 
-        event.setCancelled(!flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS) && Entities.isPassive(event.getEntityType()) ||
-                !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS) && Entities.isMonster(event.getEntityType()));
+        event.setCancelled(
+                !flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS) && Entities.isPassive(event.getEntityType()) ||
+                !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS) && (
+                        Entities.isMonster(event.getEntityType()) ||
+                        !event.getEntityType().isAlive()
+                )
+        );
     }
 
     /**
@@ -70,9 +79,11 @@ public class EntityEventHandler implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        // event.getEntityType() returns the damagee
         if (flags == null || event.getDamager() instanceof Player || event.getEntity() instanceof Player ||
-                flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES) || Entities.isMonster(event.getEntityType()))
+                flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES) || Entities.isMonster(event.getEntityType())) {
             return;
+        }
 
         if (event.getDamager() instanceof Projectile) {
             ProjectileSource shooter = ((Projectile) event.getDamager()).getShooter();
@@ -87,12 +98,16 @@ public class EntityEventHandler implements Listener {
      *
      * @param event the event.
      */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
-        if (event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) {
-            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
-            if (flags != null && !flags.isAllowed(RegionFlag.TNT_ENTITY_DAMAGE))
-                event.setCancelled(true);
-        }
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+        if (flags == null)
+            return;
+
+        if (event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION)
+            event.setCancelled(!flags.isAllowed(RegionFlag.TNT_ENTITY_DAMAGE));
+        else if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION)
+            event.setCancelled(!flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES));
     }
 
     /**
@@ -166,6 +181,20 @@ public class EntityEventHandler implements Listener {
     }
 
     /**
+     * Handles hostile entity explosions damaging hanging entities.
+     *
+     * @param event the event.
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onHangingEntityBroken(HangingBreakEvent event) {
+        if (event.getCause() == HangingBreakEvent.RemoveCause.EXPLOSION) {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+            if (flags != null && !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES))
+                event.setCancelled(true);
+        }
+    }
+
+    /**
      * Prevent splash potions from splashing. Note: effects from outside a border may slip in.
      *
      * @param event the event.
@@ -232,5 +261,19 @@ public class EntityEventHandler implements Listener {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTarget().getLocation());
         event.setCancelled(flags != null &&
                 flags.<EnumFilter.EntityFilter>getFlagMeta(RegionFlag.DENY_AGGRO).isBlocked(event.getEntity().getType()));
+    }
+
+    /**
+     * Handle hostile entities igniting fireballs in claims.
+     *
+     * @param event the event;
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onBlockIgnited(BlockIgniteEvent event) {
+        if (event.getCause() == BlockIgniteEvent.IgniteCause.FIREBALL) {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+            if (flags != null && !flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES))
+                event.setCancelled(true);
+        }
     }
 }
