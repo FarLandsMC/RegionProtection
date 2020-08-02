@@ -5,6 +5,7 @@ import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Materials;
+import com.kicas.rp.util.Pair;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -271,7 +272,14 @@ public class RegionToolHandler implements Listener {
             // highlighter themselves.
             RegionProtection.getDataManager().getPlayerSession(recipient).setRegionHighlighter(null);
         } else {
-            recipient.sendMessage(ChatColor.GOLD + "This belongs to " + claim.getOwnerName());
+            String message = ChatColor.GOLD + "This belongs to " + claim.getOwnerName();
+            if (claim.isEffectiveOwner(recipient)) {
+                Pair<Location, Location> bounds = claim.getBounds();
+                message += ". This " + (claim.isAdminOwned() ? "region" : "claim") + " is " +
+                        ((int)(bounds.getSecond().getX() - bounds.getFirst().getX())) + " by " +
+                        ((int)(bounds.getSecond().getZ() - bounds.getFirst().getZ())) + " blocks.";
+            }
+            recipient.sendMessage(message);
             RegionProtection.getDataManager().getPlayerSession(recipient)
                     .setRegionHighlighter(new RegionHighlighter(recipient, claim, true));
         }
