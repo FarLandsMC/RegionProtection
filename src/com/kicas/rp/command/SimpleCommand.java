@@ -37,8 +37,15 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         DataManager dm = RegionProtection.getDataManager();
         PlayerSession ps = dm.getPlayerSession(player);
 
-        // Abandon the single claim the player is currently standing in
-        if ("abandonclaim".equals(alias)) {
+
+        // Check if player wants to delete all of their claims
+        if (args.length == 1 && args[0].equals("all")) {
+            dm.tryDeleteRegions(player, player.getWorld(), region -> region.isOwner(player.getUniqueId()) &&
+                    !region.isAdminOwned(), true);
+
+            sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in this world. You now have " +
+                    ps.getClaimBlocks() + " claim blocks.");
+        } else {
             // Prioritize sub-claims
             Region claim = dm.getHighestPriorityRegionAt(player.getLocation());
 
@@ -64,17 +71,9 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             // Failed deletion due to sub-claims present, show those claims
             else ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), null, null, false));
         }
-        // Abandon all claims including their subdivisions
-        else {
-            dm.tryDeleteRegions(player, player.getWorld(), region -> region.isOwner(player.getUniqueId()) &&
-                    !region.isAdminOwned(), true);
-
-            sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in this world. You now have " +
-                    ps.getClaimBlocks() + " claim blocks.");
-        }
 
         return true;
-    });
+    }, (sender, command, alias, args) -> args.length == 1 ? Collections.singletonList("all") : Collections.emptyList());
 
     /**
      * Allows for players to add an remove co-owners of regions.

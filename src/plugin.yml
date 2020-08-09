@@ -7,8 +7,7 @@ version: 2.0-beta
 commands:
   abandonclaim:
     description: Abandon the claim you are currently standing in or abandon all your claims.
-    usage: /abandonclaim|/abandonallclaims
-    aliases: [abandonallclaims]
+    usage: /abandonclaim [all]
   addcoowner:
     description: Add or remove a co-owner to the region you are currently standing in.
     usage: /addcoowner|/removecoowner <player>
