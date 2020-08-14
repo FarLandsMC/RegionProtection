@@ -495,7 +495,7 @@ public class DataManager implements Listener {
         Location max = new Location(
                 vertex1.getWorld(),
                 Math.max(vertex1.getX(), vertex2.getX()),
-                vertex1.getWorld().getEnvironment() == World.Environment.NETHER ? 128 : vertex1.getWorld().getMaxHeight(),
+                vertex1.getWorld().getEnvironment() == World.Environment.NETHER ? 127 : vertex1.getWorld().getMaxHeight(),
                 Math.max(vertex1.getZ(), vertex2.getZ())
         );
 
