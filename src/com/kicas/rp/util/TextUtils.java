@@ -5,7 +5,8 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -21,6 +22,10 @@ public class TextUtils {
     private static final char COLOR_CHAR = '&';
     private static final char SECTION_START = '{';
     private static final char FUNCTION_CHAR = '$';
+
+    private static final List<String> formats = Arrays.asList(
+            "obfuscated", "bold", "strikethrough", "underline", "italic"
+    );
 
     /**
      * Parses the given input text and substitutes in the given values and sends the result to the given command sender.
@@ -156,12 +161,26 @@ public class TextUtils {
 
         for (int i = 0; i < chars.length; ++i) {
             cur = chars[i];
-            next = i < chars.length - 1 ? chars[i + 1] : '\0';
+            next = i + 1 < chars.length ? chars[i + 1] : '\0';
 
             // Escape special characters
             if (cur == '\\' && (next == COLOR_CHAR || next == FUNCTION_CHAR || next == SECTION_START)) {
                 component.append(next);
                 ++i;
+                continue;
+            }
+
+            // ChatColor fix
+            if (
+                    i + 13 < chars.length && cur == '§' && next == 'x' &&
+                    chars[i +  2] == '§' && chars[i +  4] == '§' && chars[i +  6] == '§' &&
+                    chars[i +  8] == '§' && chars[i + 10] == '§' && chars[i + 12] == '§'
+            ) {
+                format.setFirst(ChatColor.of("#" +
+                        chars[i +  3] + chars[i +  5] + chars[i +  7] +
+                        chars[i +  9] + chars[i + 11] + chars[i + 13]
+                ));
+                i += 13;
                 continue;
             }
 
@@ -186,13 +205,13 @@ public class TextUtils {
                     for (String colorText : args.getFirst().split(",")) {
                         // This removes formats
                         boolean negated = colorText.startsWith("!");
-                        ChatColor color = Utils.safeValueOf(ChatColor::valueOf, (negated ? colorText.substring(1)
+                        ChatColor color = Utils.safeValueOf(ChatColor::of, (negated ? colorText.substring(1)
                                 : colorText).toUpperCase());
 
                         if (color == null)
                             throw new SyntaxException("Invalid color code: " + colorText);
 
-                        if (color.isFormat()) {
+                        if (formats.contains(color.getName())) {
                             if (negated)
                                 format.getSecond().remove(color);
                             else if (!format.getSecond().contains(color))
@@ -454,7 +473,7 @@ public class TextUtils {
         TextComponent tc = new TextComponent(text);
 
         // Color
-        tc.setColor(format.getFirst().asBungee());
+        tc.setColor(format.getFirst());
 
         // Formats
         tc.setBold(format.getSecond().contains(ChatColor.BOLD));

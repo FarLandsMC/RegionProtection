@@ -76,6 +76,9 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
+        if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.MOUNT)
+            return; // Prevents mobs disappearing in regions when a player logs out riding a vehicle
+
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
         if (flags != null) {
             if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.LIGHTNING && !flags.isAllowed(RegionFlag.LIGHTNING_MOB_DAMAGE)) {
@@ -112,7 +115,7 @@ public class WorldEventHandler implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockSpread(BlockSpreadEvent event) {
         handleGrowth(event, event.getSource().getLocation(), event.getSource().getType());
-        handleGrowth(event, event.getBlock().getLocation(), event.getBlock().getType());
+        handleGrowth(event, event.getBlock() .getLocation(), event.getBlock() .getType());
     }
 
     /**
@@ -132,7 +135,7 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockGrow(BlockGrowEvent event) {
-        handleGrowth(event, event.getBlock().getLocation(), event.getBlock().getType());
+        handleGrowth(event, event.getBlock()   .getLocation(), event.getBlock()   .getType());
         handleGrowth(event, event.getNewState().getLocation(), event.getNewState().getType());
     }
 
