@@ -10,7 +10,7 @@ import java.util.UUID;
  * Contains the data for a specific world, including the parent regions list, global flags, and transient lookup table.
  */
 public class WorldData extends FlagContainer {
-    private UUID worldUid;
+    private final UUID worldUid;
     private final List<Region> regions;
     private RegionLookupTable lookupTable;
 

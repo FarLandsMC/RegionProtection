@@ -71,7 +71,8 @@ public enum RegionFlag {
     ITEM_DAMAGE,
     RIPTIDE,
     FARMLAND_MOISTURE_CHANGE,
-    ENTRANCE_RESTRICTION(BorderPolicy.class);
+    ENTRANCE_RESTRICTION(BorderPolicy.class),
+    FIRE_TICK(true);
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
@@ -253,6 +254,8 @@ public enum RegionFlag {
         registerDefault(RIPTIDE, true);
         registerDefault(FARMLAND_MOISTURE_CHANGE, true);
         registerDefault(ENTRANCE_RESTRICTION, BorderPolicy.NONE);
+        registerDefault(FIRE_TICK, config.getBoolean("world.fire-tick"),
+                world -> world.getGameRuleValue(GameRule.DO_FIRE_TICK));
     }
 
     /**

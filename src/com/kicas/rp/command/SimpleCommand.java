@@ -208,6 +208,10 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
                 "blocks", used, remaining, used + remaining);
 
         return true;
+    }, (sender, command, alias, args) -> {
+        if (!(args.length == 1 && sender.hasPermission("rp.command.externalclaimlist")))
+            return Collections.emptyList();
+        return getOnlinePlayers(args[0]);
     });
 
     /**

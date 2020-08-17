@@ -159,6 +159,7 @@ public class RegionProtection extends JavaPlugin {
         config.addDefault("world.leaf-decay", true);
         config.addDefault("world.lightning-mob-damage", false);
         config.addDefault("world.portal-pair-formation", false);
+        config.addDefault("world.fire-tick", true);
 
         config.options().copyDefaults(true);
         saveConfig();

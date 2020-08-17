@@ -245,4 +245,28 @@ public class WorldEventHandler implements Listener {
                 flags
         ));
     }
+
+    /**
+     * Handle fire-tick flag.
+     *
+     * @param event the event;
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onBlockIgnited(BlockIgniteEvent event) {
+        if (event.getCause() == BlockIgniteEvent.IgniteCause.SPREAD || event.getCause() == BlockIgniteEvent.IgniteCause.LAVA) {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+            event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.FIRE_TICK));
+        }
+    }
+
+    /**
+     * Handle fire-tick flag by preventing blocks from fully burning.
+     *
+     * @param event the event.
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onBlockBurn(BlockBurnEvent event) {
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getBlock().getLocation());
+        event.setCancelled(flags != null && !flags.isAllowed(RegionFlag.FIRE_TICK));
+    }
 }

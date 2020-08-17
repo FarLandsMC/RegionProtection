@@ -176,6 +176,12 @@ public class TextUtils {
                     chars[i +  2] == '§' && chars[i +  4] == '§' && chars[i +  6] == '§' &&
                     chars[i +  8] == '§' && chars[i + 10] == '§' && chars[i + 12] == '§'
             ) {
+                // Finish off the current component if it was started
+                if (component.length() > 0) {
+                    expr.add(makeComponent(format, component.toString()));
+                    component.setLength(0);
+                }
+
                 format.setFirst(ChatColor.of("#" +
                         chars[i +  3] + chars[i +  5] + chars[i +  7] +
                         chars[i +  9] + chars[i + 11] + chars[i + 13]

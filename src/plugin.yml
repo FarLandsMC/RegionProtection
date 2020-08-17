@@ -22,7 +22,7 @@ commands:
     permission: rp.claims.create
   claimblocks:
     description: Add to, remove from, or view someone's claim blocks.
-    usage: /claimblocks <add|remove|view> <name> [amount]
+    usage: /claimblocks <name> <add|remove|view> [amount]
     permission: rp.command.claimblocks
   claimheight:
     description: Change the hight of a claim.
