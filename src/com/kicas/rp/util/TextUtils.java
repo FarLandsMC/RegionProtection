@@ -132,7 +132,7 @@ public class TextUtils {
         for (int i = 0; i < chars.length; ++i) {
             cur = chars[i];
             // Escape special characters
-            if (cur == '\\' || cur == COLOR_CHAR || cur == FUNCTION_CHAR || cur == SECTION_START)
+            if (cur == '\\' || cur == COLOR_CHAR || cur == FUNCTION_CHAR || cur == SECTION_START || cur == VALUE_MARKER)
                 escapedExpression.append("\\");
             escapedExpression.append(cur);
         }
@@ -164,7 +164,7 @@ public class TextUtils {
             next = i + 1 < chars.length ? chars[i + 1] : '\0';
 
             // Escape special characters
-            if (cur == '\\' && (next == COLOR_CHAR || next == FUNCTION_CHAR || next == SECTION_START)) {
+            if (cur == '\\' && (next == '\\' || next == COLOR_CHAR || next == FUNCTION_CHAR || next == SECTION_START || next == VALUE_MARKER)) {
                 component.append(next);
                 ++i;
                 continue;
