@@ -104,10 +104,18 @@ public class EntityEventHandler implements Listener {
         if (flags == null)
             return;
 
-        if (event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION)
-            event.setCancelled(!flags.isAllowed(RegionFlag.TNT_ENTITY_DAMAGE));
-        else if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION)
-            event.setCancelled(!flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES));
+        if (event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) {
+            if (!flags.isAllowed(RegionFlag.TNT_ENTITY_DAMAGE)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+        if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION) {
+            if (!(flags.isAllowed(RegionFlag.HOSTILE_GRIEF_ENTITIES) ||
+                    Entities.isMonster(event.getEntityType()) || EntityType.PLAYER == event.getEntityType())) {
+                event.setCancelled(true);
+            }
+        }
     }
 
     /**
