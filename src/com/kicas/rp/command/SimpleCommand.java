@@ -163,7 +163,7 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
                 max = center.clone().add(width, 0, width);
 
         // Attempt to create the region
-        Region region = RegionProtection.getDataManager().tryCreateClaim((Player) sender, min, max);
+        Region region = RegionProtection.getDataManager().tryCreateClaim((Player) sender, min, max, true);
         if (region != null) {
             sender.sendMessage(ChatColor.GREEN + "Created a claim at your location.");
             // Highlight the region

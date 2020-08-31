@@ -3,6 +3,7 @@ package com.kicas.rp.data;
 import com.google.gson.*;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.TrustMeta;
+import com.kicas.rp.event.ClaimCreationEvent;
 import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.*;
@@ -477,12 +478,13 @@ public class DataManager implements Listener {
      * returned. Upon successful creation of the claim, the player will have the area of the claim subtracted from their
      * claim blocks and the created region will be registered and returned.
      *
-     * @param creator the player creating the claim.
-     * @param vertex1 the first claim vertex.
-     * @param vertex2 the second claim vertex.
+     * @param creator   the player creating the claim.
+     * @param vertex1   the first claim vertex.
+     * @param vertex2   the second claim vertex.
+     * @param sendEvent whether or not to dispatch a claim creation event.
      * @return the claim, or null if the claim could not be created.
      */
-    public synchronized Region tryCreateClaim(Player creator, Location vertex1, Location vertex2) {
+    public synchronized Region tryCreateClaim(Player creator, Location vertex1, Location vertex2, boolean sendEvent) {
         // Convert the given vertices into a minimum and maximum vertex
         Location min = new Location(
                 vertex1.getWorld(),
@@ -501,6 +503,10 @@ public class DataManager implements Listener {
 
         // Create the region
         Region region = new Region(null, 0, creator.getUniqueId(), min, max, null, new ArrayList<>());
+        // The default is full-trust, so make sure no one has trust
+        region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST.copy());
+        // Make sure overlap is not allowed
+        region.setFlag(RegionFlag.OVERLAP, false);
 
         // checkCollisions sends an error message to the creator
         if (failsCollisionCheck(creator, region))
@@ -526,12 +532,15 @@ public class DataManager implements Listener {
             return null;
         }
 
+        if (sendEvent) {
+            ClaimCreationEvent event = new ClaimCreationEvent(creator, region);
+            RegionProtection.getInstance().getServer().getPluginManager().callEvent(event);
+            if (event.isCancelled())
+                return null;
+        }
+
         // Modify claim blocks
         ps.subtractClaimBlocks((int) area);
-        // The default is full-trust, so make sure no one has trust
-        region.setFlag(RegionFlag.TRUST, TrustMeta.NO_TRUST.copy());
-        // Make sure overlap is not allowed
-        region.setFlag(RegionFlag.OVERLAP, false);
         // Register the claim
         getWorldData(creator.getWorld()).addRegion(region);
 

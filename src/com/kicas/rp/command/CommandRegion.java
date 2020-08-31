@@ -10,7 +10,7 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.*;
-import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R2.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 

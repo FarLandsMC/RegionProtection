@@ -165,7 +165,7 @@ public class RegionToolHandler implements Listener {
                             }
                             // Make a claim
                             else {
-                                Region claim = dm.tryCreateClaim(player, ps.getLastClickedBlock(), clickedLocation);
+                                Region claim = dm.tryCreateClaim(player, ps.getLastClickedBlock(), clickedLocation, true);
                                 if (claim != null) {
                                     player.sendMessage(ChatColor.GREEN + "Claim created. You have " +
                                             ps.getClaimBlocks() + " claim blocks remaining.");
