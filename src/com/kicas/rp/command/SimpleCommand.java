@@ -48,6 +48,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         } else {
             // Prioritize sub-claims
             Region claim = dm.getHighestPriorityRegionAt(player.getLocation());
+            if (claim == null) // Try again on all Y values if no claim is found
+                claim = dm.getHighestPriorityRegionAtIgnoreY(player.getLocation());
 
             // Check to ensure there's a claim at the player's location. Admin claims should be remove through /region
             // delete.
