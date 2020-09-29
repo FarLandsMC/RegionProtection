@@ -16,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.RayTraceResult;
 
 import java.util.Collections;
@@ -37,6 +38,11 @@ public class RegionToolHandler implements Listener {
         DataManager dm = RegionProtection.getDataManager();
         Player player = event.getPlayer();
         PlayerSession ps = dm.getPlayerSession(player);
+
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            event.setCancelled(true); return;
+        }
+
         Location clickedLocation = event.getAction() == Action.RIGHT_CLICK_BLOCK ||
                 event.getAction() == Action.LEFT_CLICK_BLOCK ? event.getClickedBlock().getLocation() : null;
 
