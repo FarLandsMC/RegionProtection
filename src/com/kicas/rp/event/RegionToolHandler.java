@@ -39,7 +39,7 @@ public class RegionToolHandler implements Listener {
         Player player = event.getPlayer();
         PlayerSession ps = dm.getPlayerSession(player);
 
-        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+        if (event.getMaterial().equals(RegionProtection.getClaimCreationTool()) && event.getHand() == EquipmentSlot.OFF_HAND) {
             event.setCancelled(true); return;
         }
 
