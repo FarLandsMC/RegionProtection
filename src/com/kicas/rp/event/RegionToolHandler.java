@@ -39,9 +39,8 @@ public class RegionToolHandler implements Listener {
         Player player = event.getPlayer();
         PlayerSession ps = dm.getPlayerSession(player);
 
-        if (event.getMaterial().equals(RegionProtection.getClaimCreationTool()) && event.getHand() == EquipmentSlot.OFF_HAND) {
-            event.setCancelled(true); return;
-        }
+        if (event.getHand() == EquipmentSlot.OFF_HAND)
+            return;
 
         Location clickedLocation = event.getAction() == Action.RIGHT_CLICK_BLOCK ||
                 event.getAction() == Action.LEFT_CLICK_BLOCK ? event.getClickedBlock().getLocation() : null;
