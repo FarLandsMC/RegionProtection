@@ -93,12 +93,12 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         // Get and check the region
         Region region = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
         if (region == null) {
-            sender.sendMessage(ChatColor.RED + "Please stand in the region which you wish to amend co owners.");
+            sender.sendMessage(ChatColor.RED + "Please stand in the region which you wish to modify co-owners.");
             return true;
         }
 
-        if (!region.getOwner().equals(((Player) sender).getUniqueId())) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission to add co owners to this claim.");
+        if (!region.isEffectiveOwner((Player)sender)) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to modify co-owners in this claim.");
             return true;
         }
 
