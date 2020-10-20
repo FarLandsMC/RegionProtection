@@ -47,10 +47,7 @@ public class TextUtils {
      * @param values the values to substitute in.
      */
     public static void sendFormatted(CommandSender sender, boolean perm, String input, Object... values) {
-        if (!perm)
-            sender.spigot().sendMessage(format(input, false, values));
-        else
-            sender.spigot().sendMessage(format(input, values));
+        sender.spigot().sendMessage(format(input, perm, values));
     }
 
     /**
