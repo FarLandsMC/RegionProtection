@@ -39,6 +39,21 @@ public class TextUtils {
     }
 
     /**
+     * Parses the given input text and substitutes in the given values and sends the result to the given command sender.
+     *
+     * @param sender the recipient of the formatted message.
+     * @param perm   the permission of the sender (whether or not they can use all of parseExpression)
+     * @param input  the input text.
+     * @param values the values to substitute in.
+     */
+    public static void sendFormatted(CommandSender sender, boolean perm, String input, Object... values) {
+        if (!perm)
+            sender.spigot().sendMessage(format(input, false, values));
+        else
+            sender.spigot().sendMessage(format(input, values));
+    }
+
+    /**
      * Parses the given input text and substitutes in the given values and sends the result to the given player as the
      * given message type.
      *
@@ -60,7 +75,11 @@ public class TextUtils {
      * @return the parsed input text as an array of base components.
      */
     public static BaseComponent[] format(String input, Object... values) {
-        return parseExpression(new Pair<>(ChatColor.WHITE, new ArrayList<>()), insertValues(input, values), values);
+        return parseExpression(new Pair<>(ChatColor.WHITE, new ArrayList<>()), true, insertValues(input, values), values);
+    }
+
+    public static BaseComponent[] format(String input, boolean perm, Object... values) {
+        return parseExpression(new Pair<>(ChatColor.WHITE, new ArrayList<>()), perm, insertValues(input, values), values);
     }
 
     /**
@@ -70,7 +89,7 @@ public class TextUtils {
      * @return the parsed input text as an array of base components.
      */
     public static BaseComponent[] format(String input) {
-        return parseExpression(new Pair<>(ChatColor.WHITE, new ArrayList<>()), input);
+        return parseExpression(new Pair<>(ChatColor.WHITE, new ArrayList<>()), true, input);
     }
 
     /**
@@ -150,7 +169,7 @@ public class TextUtils {
      * @param values the object insertions (used by the inflect function).
      * @return a base component array resulting from the given expression.
      */
-    private static BaseComponent[] parseExpression(Pair<ChatColor, List<ChatColor>> format, String input,
+    private static BaseComponent[] parseExpression(Pair<ChatColor, List<ChatColor>> format, boolean perm, String input,
                                                    Object... values) {
         // Current component text
         StringBuilder component = new StringBuilder();
@@ -247,7 +266,7 @@ public class TextUtils {
 
                     // Transfer the current formatting the the next expression in a scope-like manner
                     BaseComponent[] expression = parseExpression(
-                            new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                            new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                             section.getFirst(),
                             values
                     );
@@ -311,13 +330,13 @@ public class TextUtils {
                     }
 
                     // Args: link, text
-                    if ("link".equalsIgnoreCase(args.get(0))) {
+                    if ("link".equalsIgnoreCase(args.get(0)) && perm) {
                         if (args.size() < 3)
                             throw new SyntaxException("Link function usage: $(link,url,text)");
 
                         // Parse the text
                         BaseComponent[] text = parseExpression(
-                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                                 args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst()
                                         : args.get(2), values
                         );
@@ -335,12 +354,12 @@ public class TextUtils {
 
                         // Parse both texts
                         BaseComponent[] hover = parseExpression(
-                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                                 args.get(1).startsWith("{") ? getEnclosed(0, args.get(1)).getFirst()
                                         : args.get(1), values
                         );
                         BaseComponent[] text = parseExpression(
-                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                                 args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst()
                                         : args.get(2), values
                         );
@@ -351,8 +370,30 @@ public class TextUtils {
 
                         expr.addAll(Arrays.asList(text));
                     }
+                    // Args: json item, base text
+                    else if ("item".equalsIgnoreCase(args.get(0))) {
+                        if (args.size() < 3)
+                            throw new SyntaxException("Item function usage: $(item,jsonItem,text)");
+
+                        // Parse the base test
+                        BaseComponent[] text = parseExpression(
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
+                                args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst()
+                                        : args.get(2), values
+                        );
+                        // Parse the item json
+                        BaseComponent[] hoverEventComponents = new BaseComponent[]{
+                                new TextComponent(args.get(1)) // The only element of the hover events basecomponents is the item json
+                        };
+
+                        // Apply the item tool tip
+                        for (BaseComponent bc : text)
+                            bc.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, hoverEventComponents));
+
+                        expr.addAll(Arrays.asList(text));
+                    }
                     // Args: value index, word
-                    else if ("inflect".equalsIgnoreCase(args.get(0))) {
+                    else if ("inflect".equalsIgnoreCase(args.get(0)) && perm) {
                         if (args.size() < 4)
                             throw new SyntaxException("Conjugate function usage: $(inflect,noun|verb,argIndex,word)");
 
@@ -380,14 +421,14 @@ public class TextUtils {
                             component.append('s');
                     }
                     // Args: command, text
-                    else if ("command".equalsIgnoreCase(args.get(0))) {
+                    else if ("command".equalsIgnoreCase(args.get(0)) && perm) {
                         if (args.size() < 3)
                             throw new SyntaxException("Command function usage: $(command,command,text)");
 
                         // Parse the text
                         BaseComponent[] text = parseExpression(
                                 new Pair<>(format.getFirst(),
-                                        new ArrayList<>(format.getSecond())),
+                                        new ArrayList<>(format.getSecond())), perm,
                                 args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst()
                                         : args.get(2), values
                         );
@@ -399,19 +440,19 @@ public class TextUtils {
                         expr.addAll(Arrays.asList(text));
                     }
                     // Args: command, hover text, base text
-                    else if ("hovercmd".equalsIgnoreCase(args.get(0))) {
+                    else if ("hovercmd".equalsIgnoreCase(args.get(0)) && perm) {
                         if (args.size() < 4)
                             throw new SyntaxException("Hover-command function usage: " +
                                     "$(hovercmd,command,hoverText,text)");
 
                         // Parse both texts
                         BaseComponent[] hover = parseExpression(
-                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                                 args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst()
                                         : args.get(2), values
                         );
                         BaseComponent[] text = parseExpression(
-                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                                 args.get(3).startsWith("{") ? getEnclosed(0, args.get(3)).getFirst()
                                         : args.get(3), values
                         );
@@ -425,18 +466,18 @@ public class TextUtils {
                         expr.addAll(Arrays.asList(text));
                     }
                     // Args: link, hover text, base text
-                    else if ("hoverlink".equalsIgnoreCase(args.get(0))) {
+                    else if ("hoverlink".equalsIgnoreCase(args.get(0)) && perm) {
                         if (args.size() < 4)
                             throw new SyntaxException("Hover-link function usage: $(hoverlink,url,hoverText,text)");
 
                         // Parse both texts
                         BaseComponent[] hover = parseExpression(
-                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                                 args.get(2).startsWith("{") ? getEnclosed(0, args.get(2)).getFirst()
                                         : args.get(2), values
                         );
                         BaseComponent[] text = parseExpression(
-                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())),
+                                new Pair<>(format.getFirst(), new ArrayList<>(format.getSecond())), perm,
                                 args.get(3).startsWith("{") ? getEnclosed(0, args.get(3)).getFirst()
                                         : args.get(3), values
                         );
@@ -448,9 +489,14 @@ public class TextUtils {
                         }
 
                         expr.addAll(Arrays.asList(text));
-                    } else
-                        throw new SyntaxException("Invalid function: " + args.get(0));
-
+                    } else {
+                        if (perm)
+                            throw new SyntaxException("Invalid function: " + args.get(0));
+                        else {
+                            expr.add(makeComponent(format, "$("+rawArgs.getFirst()+")"));
+                            return expr.toArray(new BaseComponent[0]);
+                        }
+                    }
                     continue;
                 }
 
