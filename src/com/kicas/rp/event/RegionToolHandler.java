@@ -39,9 +39,8 @@ public class RegionToolHandler implements Listener {
         Player player = event.getPlayer();
         PlayerSession ps = dm.getPlayerSession(player);
 
-        if (event.getMaterial().equals(RegionProtection.getClaimCreationTool()) && event.getHand() == EquipmentSlot.OFF_HAND) {
-            event.setCancelled(true); return;
-        }
+        if (event.getHand() == EquipmentSlot.OFF_HAND)
+            return;
 
         Location clickedLocation = event.getAction() == Action.RIGHT_CLICK_BLOCK ||
                 event.getAction() == Action.LEFT_CLICK_BLOCK ? event.getClickedBlock().getLocation() : null;
@@ -184,7 +183,7 @@ public class RegionToolHandler implements Listener {
 
                         case RESIZE_REGION: {
                             Region claim = ps.getCurrentSelectedRegion();
-                            if (dm.tryResizeClaim(player, claim, ps.getLastClickedBlock(), clickedLocation)) {
+                            if (dm.tryResizeClaim(player, claim, ps.getLastClickedBlock(), clickedLocation, true)) {
                                 // Don't tell them how many claim blocks they have if they were resizing a subdivision
                                 player.sendMessage(ChatColor.GREEN + "Claim resized." + (claim.hasParent() ? ""
                                         : " You have " + ps.getClaimBlocks() + " claim blocks remaining."));

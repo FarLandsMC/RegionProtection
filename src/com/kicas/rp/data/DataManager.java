@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.event.ClaimCreationEvent;
+import com.kicas.rp.event.ClaimResizeEvent;
 import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.TextUtils;
 import org.bukkit.*;
@@ -671,10 +672,11 @@ public class DataManager implements Listener {
      * @param claim          the claim to resize.
      * @param originalVertex the original vertex of the claim.
      * @param newVertex      the new location of the vertex.
+     * @param sendEvent      whether or not to send an event to confirm the resizing.
      * @return true if the resizing was successful, false otherwise.
      */
     public synchronized boolean tryResizeClaim(Player delegate, Region claim, Location originalVertex,
-                                               Location newVertex) {
+                                               Location newVertex, boolean sendEvent) {
         // Copy the old values for reversion upon failure
         Pair<Location, Location> bounds = claim.getBounds();
 
@@ -684,6 +686,16 @@ public class DataManager implements Listener {
         // Manage collisions, sides, claim blocks, and subdivisions becoming exclaves
         if (failsResizeChecks(delegate, claim, bounds))
             return false;
+
+        // Send an event if necessary
+        if (sendEvent) {
+            ClaimResizeEvent event = new ClaimResizeEvent(delegate, claim, bounds);
+            RegionProtection.getInstance().getServer().getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                claim.setBounds(bounds);
+                return false;
+            }
+        }
 
         getWorldData(claim.getWorld()).getLookupTable().reAdd(claim, bounds);
 
