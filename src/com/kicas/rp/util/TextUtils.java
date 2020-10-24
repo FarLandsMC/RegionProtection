@@ -42,7 +42,7 @@ public class TextUtils {
      * Parses the given input text and substitutes in the given values and sends the result to the given command sender.
      *
      * @param sender the recipient of the formatted message.
-     * @param perm   the permission of the sender (whether or not they can use all of parseExpression)
+     * @param perm   the permission of the sender (whether or not they can use all of parseExpression) rank.isStaff
      * @param input  the input text.
      * @param values the values to substitute in.
      */
