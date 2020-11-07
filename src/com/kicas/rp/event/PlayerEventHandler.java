@@ -771,6 +771,10 @@ public class PlayerEventHandler implements Listener {
                 event.setKeepLevel(true);
                 event.setDroppedExp(0);
             }
+
+            if(!flags.isEffectiveOwner(event.getEntity()) && flags.hasFlag(RegionFlag.EXIT_GAMEMODE)) {
+                event.getEntity().setGameMode(flags.<GameModeMeta>getFlagMeta(RegionFlag.EXIT_GAMEMODE).toGameMode());
+            }
         }
     }
 
@@ -787,19 +791,20 @@ public class PlayerEventHandler implements Listener {
         if (flags != null){
             if(flags.hasFlag(RegionFlag.RESPAWN_LOCATION)) {
                 event.setRespawnLocation(flags.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation()); // RESPAWN_LOCATION flag
+
+                FlagContainer respawnFlags = RegionProtection.getDataManager().getFlagsAt(
+                        flags.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation()); // Flags for region of respawn
+                if(respawnFlags != null && respawnFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) { // Respawns inside a region, set gamemode to ENTRY_GAMEMODE flag
+                    if (!respawnFlags.equals(flags) && !respawnFlags.isEffectiveOwner(event.getPlayer()) && respawnFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) { // ENTRY_GAMEMODE flag
+                        event.getPlayer().setGameMode(respawnFlags.<GameModeMeta>getFlagMeta(RegionFlag.ENTRY_GAMEMODE).toGameMode());
+                    }
+                }else{ // Respawns outside a region, set gamemode to EXIT_GAMEMODE flag
+                    if (flags.hasFlag(RegionFlag.EXIT_GAMEMODE)) {
+                        event.getPlayer().setGameMode(flags.<GameModeMeta>getFlagMeta(RegionFlag.EXIT_GAMEMODE).toGameMode());
+                    }
+                }
             }
 
-            FlagContainer respawnFlags = RegionProtection.getDataManager().getFlagsAt(
-                    flags.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation()); // Flags for region of respawn
-            if(respawnFlags != null) { // Respawns inside a region, set gamemode to ENTRY_GAMEMODE flag
-                if (!respawnFlags.equals(flags) && !respawnFlags.isEffectiveOwner(event.getPlayer()) && respawnFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) { // ENTRY_GAMEMODE flag
-                    event.getPlayer().setGameMode(respawnFlags.<GameModeMeta>getFlagMeta(RegionFlag.ENTRY_GAMEMODE).toGameMode());
-                }
-            }else{ // Respawns outside a region, set gamemode to EXIT_GAMEMODE flag
-                if (flags.hasFlag(RegionFlag.EXIT_GAMEMODE)) {
-                    event.getPlayer().setGameMode(flags.<GameModeMeta>getFlagMeta(RegionFlag.EXIT_GAMEMODE).toGameMode());
-                }
-            }
         }
 
     }
