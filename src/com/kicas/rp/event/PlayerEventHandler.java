@@ -771,11 +771,16 @@ public class PlayerEventHandler implements Listener {
                 event.setKeepLevel(true);
                 event.setDroppedExp(0);
             }
+
+            if(!flags.isEffectiveOwner(event.getEntity()) && flags.hasFlag(RegionFlag.EXIT_GAMEMODE)) {
+                event.getEntity().setGameMode(flags.<GameModeMeta>getFlagMeta(RegionFlag.EXIT_GAMEMODE).toGameMode());
+            }
         }
     }
 
     /**
      * Handles artificial respawn location.
+     * Handles gamemode changes when respawning.
      *
      * @param event the event.
      */
@@ -783,8 +788,25 @@ public class PlayerEventHandler implements Listener {
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
 
-        if (flags != null && flags.hasFlag(RegionFlag.RESPAWN_LOCATION))
-            event.setRespawnLocation(flags.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation());
+        if (flags != null){
+            if(flags.hasFlag(RegionFlag.RESPAWN_LOCATION)) {
+                event.setRespawnLocation(flags.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation()); // RESPAWN_LOCATION flag
+
+                FlagContainer respawnFlags = RegionProtection.getDataManager().getFlagsAt(
+                        flags.<LocationMeta>getFlagMeta(RegionFlag.RESPAWN_LOCATION).getLocation()); // Flags for region of respawn
+                if(respawnFlags != null && respawnFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) { // Respawns inside a region, set gamemode to ENTRY_GAMEMODE flag
+                    if (!respawnFlags.equals(flags) && !respawnFlags.isEffectiveOwner(event.getPlayer()) && respawnFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) { // ENTRY_GAMEMODE flag
+                        event.getPlayer().setGameMode(respawnFlags.<GameModeMeta>getFlagMeta(RegionFlag.ENTRY_GAMEMODE).toGameMode());
+                    }
+                }else{ // Respawns outside a region, set gamemode to EXIT_GAMEMODE flag
+                    if (flags.hasFlag(RegionFlag.EXIT_GAMEMODE)) {
+                        event.getPlayer().setGameMode(flags.<GameModeMeta>getFlagMeta(RegionFlag.EXIT_GAMEMODE).toGameMode());
+                    }
+                }
+            }
+
+        }
+
     }
 
     /**
@@ -905,11 +927,18 @@ public class PlayerEventHandler implements Listener {
 
         if (!Objects.equals(fromFlags, toFlags)) {
             if (toFlags != null) {
-                if (!toFlags.getFlagMeta(RegionFlag.GREETING).equals(fromFlags == null ? null : fromFlags.getFlagMeta(RegionFlag.GREETING)))
+                if (!toFlags.getFlagMeta(RegionFlag.GREETING).equals(fromFlags == null ? null : fromFlags.getFlagMeta(RegionFlag.GREETING))) {
                     toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).sendTo(player);
+                }
 
-                if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND))
+                if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND)) {
                     toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(player);
+                }
+
+                if(!toFlags.isEffectiveOwner(player) && toFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) {
+                    player.setGameMode(toFlags.<GameModeMeta>getFlagMeta(RegionFlag.ENTRY_GAMEMODE).toGameMode());
+
+                }
 
                 if (!toFlags.isEffectiveOwner(player) && !toFlags.isAllowed(RegionFlag.ELYTRA_FLIGHT) && player.isGliding()) {
                     player.setGliding(false);
@@ -940,17 +969,23 @@ public class PlayerEventHandler implements Listener {
             }
 
             if (fromFlags != null) {
-                if (!fromFlags.getFlagMeta(RegionFlag.FAREWELL).equals(toFlags == null ? null : toFlags.getFlagMeta(RegionFlag.FAREWELL)))
+                if (!fromFlags.getFlagMeta(RegionFlag.FAREWELL).equals(toFlags == null ? null : toFlags.getFlagMeta(RegionFlag.FAREWELL))) {
                     fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL).sendTo(player);
+                }
 
                 if (fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
                     fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(player);
+
+                if(!fromFlags.isEffectiveOwner(player) && fromFlags.hasFlag(RegionFlag.EXIT_GAMEMODE)) {
+                    player.setGameMode(fromFlags.<GameModeMeta>getFlagMeta(RegionFlag.EXIT_GAMEMODE).toGameMode());
+                }
             }
         }
     }
 
     /**
      * Grants the player permission to fly if they log into a region where the flight flag is set to true.
+     * Changes the player's gamemode if they log into a region with the entry-gamemode flag
      *
      * @param event the event.
      */
@@ -958,9 +993,15 @@ public class PlayerEventHandler implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         if (!event.getPlayer().isOp()) {
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
-            if (flags != null)
+            if (flags != null) {
                 event.getPlayer().setAllowFlight(flags.isAllowed(RegionFlag.FLIGHT));
+
+                if (!flags.isEffectiveOwner(event.getPlayer()) && flags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) {
+                    event.getPlayer().setGameMode(flags.<GameModeMeta>getFlagMeta(RegionFlag.ENTRY_GAMEMODE).toGameMode());
+                }
+            }
         }
+
     }
 
     /**

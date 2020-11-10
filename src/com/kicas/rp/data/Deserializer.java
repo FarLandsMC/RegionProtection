@@ -214,6 +214,8 @@ public class Deserializer implements AutoCloseable {
                 meta = decoder.readBoolean();
             else if (BorderPolicy.class.equals(flag.getMetaClass()))
                 meta = new BorderPolicy(BorderPolicy.Policy.VALUES[decoder.read()]);
+            else if (GameModeMeta.class.equals(flag.getMetaClass()))
+                meta = new GameModeMeta(GameModeMeta.Mode.VALUES[decoder.read()]);
             else if (CommandMeta.class.equals(flag.getMetaClass()))
                 meta = new CommandMeta(decoder.readBoolean(), decoder.readUTF8Raw());
             else if (EnumFilter.class.isAssignableFrom(flag.getMetaClass())) {

@@ -703,6 +703,11 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
 
             case ENTRANCE_RESTRICTION:
                 return filterFormat(args[4], Arrays.stream(BorderPolicy.Policy.VALUES), Utils::formattedName);
+
+            // Suggest gamemodes
+            case ENTRY_GAMEMODE:
+            case EXIT_GAMEMODE:
+                return filterFormat(args[4], Arrays.stream(GameModeMeta.Mode.VALUES), Utils::formattedName);
         }
 
         return Collections.emptyList();
