@@ -1134,8 +1134,12 @@ public class PlayerEventHandler implements Listener {
 
                 // There's a bug where crossbow arrows are not replaced when the event is cancelled, so fix that
                 if (event.getBow().getType() == Material.CROSSBOW) {
-                    AbstractArrow arrow = (AbstractArrow) event.getProjectile();
-                    if (arrow.getPickupStatus() == AbstractArrow.PickupStatus.ALLOWED) {
+                    if (!(event.getProjectile() instanceof AbstractArrow))
+                        return;
+
+                    Entity projectile = event.getProjectile();
+                    if (!(projectile instanceof AbstractArrow) ||
+                            ((AbstractArrow) projectile).getPickupStatus() == AbstractArrow.PickupStatus.ALLOWED) {
                         ItemStack replacement = ((CrossbowMeta)event.getBow().getItemMeta()).getChargedProjectiles().get(0).clone();
                         replacement.setAmount(1);
                         player.getInventory().addItem(replacement);
