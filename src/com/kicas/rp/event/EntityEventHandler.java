@@ -7,6 +7,7 @@ import com.kicas.rp.data.flagdata.EnumFilter;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Entities;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
@@ -238,22 +239,30 @@ public class EntityEventHandler implements Listener {
 
     /**
      * Prevent pets teleporting to a region.
+     * Prevents Armor Stand from teleporting to new region
      *
      * @param event the event.
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityTeleport(EntityTeleportEvent event) {
-        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
-        if (flags == null)
+        FlagContainer toFlags = RegionProtection.getDataManager().getFlagsAt(event.getTo());
+        FlagContainer fromFlags = RegionProtection.getDataManager().getFlagsAt(event.getFrom());
+        if (toFlags == null)
             return;
 
-        if (flags.<EnumFilter.EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_TELEPORT).isBlocked(event.getEntityType())) {
+        if (toFlags.<EnumFilter.EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_TELEPORT).isBlocked(event.getEntityType())) {
+            event.setCancelled(true);
+            return;
+        }
+        // Stop all armor stands teleporting into another region when the armor statues datapack is installed
+        if(event.getEntity().getType().equals(EntityType.ARMOR_STAND) && toFlags != fromFlags &&
+                Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("as_trigger") != null) {
             event.setCancelled(true);
             return;
         }
 
         event.setCancelled(event.getEntity() instanceof Tameable && ((Tameable) event.getEntity()).isTamed() &&
-                !flags.isAllowed(RegionFlag.FOLLOW));
+                !toFlags.isAllowed(RegionFlag.FOLLOW));
     }
 
     /**

@@ -32,6 +32,7 @@ import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -1006,30 +1007,83 @@ public class PlayerEventHandler implements Listener {
 
     /**
      * Handle the deny-command flag.
+     * Cancels `/trigger as_trigger...` command when targeting an armour stand
      *
      * @param event the event.
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        String message = event.getMessage().trim().replaceAll("^(/+)?", "");
+        // Remove beginning /'s
+
+        // Go past the namespace if they do something like /minecraft:tp, and also find the end of the command
+        int start = message.indexOf(':') + 1, end = message.indexOf(' ');
+
+        // No spaces means that the end of the command is the end of the line
+        if (end < 0)
+            end = message.length();
+
+        // If start >= end it means we picked up a colon in the arguments, so ignore it and set the start to 0
+        if (start >= end)
+            start = 0;
+
         FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getPlayer().getLocation());
         if (flags != null && !flags.isEffectiveOwner(event.getPlayer())) {
-            // Remove beginning /'s
-            String message = event.getMessage().trim().replaceAll("^(/+)?", "");
-
-            // Go past the namespace if they do something like /minecraft:tp, and also find the end of the command
-            int start = message.indexOf(':') + 1, end = message.indexOf(' ');
-
-            // No spaces means that the end of the command is the end of the line
-            if (end < 0)
-                end = message.length();
-
-            // If start >= end it means we picked up a colon in the arguments, so ignore it and set the start to 0
-            if (start >= end)
-                start = 0;
 
             if (flags.<StringFilter>getFlagMeta(RegionFlag.DENY_COMMAND).isBlocked(message.substring(start, end))) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot use that command here.");
+            }
+
+        }
+
+        // If command is /trigger and Armor Statues datapack is installed
+        if(message.substring(start, end).equalsIgnoreCase("trigger") &&
+                message.split(" ").length > 1 &&
+                Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("as_trigger") != null){
+
+            // If objective is as_trigger
+            if(message.split(" ")[1].equalsIgnoreCase("as_trigger")){
+                // Generate a list of all entities within 3 blocks of the player
+                List<Entity> nearbyEntities = event.getPlayer().getNearbyEntities(3, 3, 3);
+                if(nearbyEntities.size() > 0) {
+                    // Sort (ascending) by distance to the player
+                    nearbyEntities.sort((u1, u2) -> {
+                        double u1Dist = u1.getLocation().distance(event.getPlayer().getLocation());
+                        double u2Dist = u2.getLocation().distance(event.getPlayer().getLocation());
+                        return Double.compare(u1Dist, u2Dist);
+                    });
+                    Entity armorStand = null;
+                    // Set armorStand to the entity that matches the selector that Armor Statues uses:
+                    // @e[type=armor_stand,distance=..3,tag=!as_locked,sort=nearest,limit=1,nbt=!{Marker:1b},nbt=!{Invulnerable:1b}]
+                    for (Entity nearbyEntity : nearbyEntities) {
+                        if(nearbyEntity.getType().equals(EntityType.ARMOR_STAND) &&
+                                !nearbyEntity.getScoreboardTags().contains("as_locked") &&
+                                !((ArmorStand) nearbyEntity).isMarker() &&
+                                !nearbyEntity.isInvulnerable()){
+                            armorStand = nearbyEntity;
+                            break;
+                        }
+                    }
+
+                    // If there's an armor stand that matches the selector
+                    if(armorStand != null){
+                        FlagContainer armorStandFlags = RegionProtection.getDataManager().getFlagsAt(armorStand.getLocation());
+                        if(armorStandFlags != null){
+                            // If the player doesn't have build trust
+                            if(!armorStandFlags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, armorStandFlags)) {
+                                event.setCancelled(true);
+                                event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + armorStandFlags.getOwnerName() + ".");
+                            }
+                            // If it's an admin claim and the player isn't an owner
+                            if(armorStandFlags.isAdminOwned() && !armorStandFlags.isEffectiveOwner(event.getPlayer())){
+                                event.setCancelled(true);
+                                event.getPlayer().sendMessage(ChatColor.RED + "You cannot modify that here.");
+                            }
+                        }
+                    }
+                }
+
             }
         }
     }
