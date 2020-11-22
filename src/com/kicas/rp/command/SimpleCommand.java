@@ -37,7 +37,6 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         DataManager dm = RegionProtection.getDataManager();
         PlayerSession ps = dm.getPlayerSession(player);
 
-
         // Check if player wants to delete all of their claims
         if (args.length == 1 && args[0].equals("all")) {
             dm.tryDeleteRegions(player, player.getWorld(), region -> region.isOwner(player.getUniqueId()) &&
@@ -192,33 +191,76 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        // Get the owner in question
-        UUID uuid = args.length > 0 && sender.hasPermission("rp.command.externalclaimlist")
-                ? RegionProtection.getDataManager().uuidForUsername(args[0]) : ((Player) sender).getUniqueId();
+        UUID uuid = args.length > 0 && !"co-owner".equals(args[0]) && sender.hasPermission("rp.command.externalclaimlist")
+                ? RegionProtection.getDataManager().uuidForUsername(args[0])
+                : ((Player) sender).getUniqueId();
+        boolean coOwner = args.length > 0 && "co-owner".equals(args[args.length - 1]);
 
         // Build the list
-        List<Region> claimlist = RegionProtection.getDataManager().getRegionsInWorld(((Player) sender).getWorld())
-                .stream().filter(region -> !region.isAdminOwned() && region.isOwner(uuid)).collect(Collectors.toList());
+        List<Region> claimlist = RegionProtection.getDataManager()
+                .getRegionsInWorld(((Player) sender).getWorld())
+                .stream()
+                .filter(region -> !region.isAdminOwned() && (coOwner ? region.isCoOwner(uuid) : region.isOwner(uuid)))
+                .collect(Collectors.toList());
 
         // Format the list and send it to the player
-        TextUtils.sendFormatted(sender, "&(gold)%0 {&(aqua)%1} $(inflect,noun,1,claim) in this world:",
-                uuid.equals(((Player) sender).getUniqueId()) ? "You have" : args[0] + " has", claimlist.size());
-        claimlist.forEach(region -> TextUtils.sendFormatted(sender, "&(gold)%0x, %1z: {&(aqua)%2} claim blocks",
-                (int) (0.5 * (region.getMin().getX() + region.getMax().getX())),
-                (int) (0.5 * (region.getMin().getZ() + region.getMax().getZ())),
-                region.area()));
+        if (coOwner) {
+            TextUtils.sendFormatted(
+                    sender,
+                    "&(gold)%0 a co-owner of {&(aqua)%1} $(inflect,noun,1,claim) in this world:",
+                    uuid.equals(((Player) sender).getUniqueId())
+                            ? "You are"
+                            : args[0] + " is",
+                    claimlist.size()
+            );
+        } else {
+            TextUtils.sendFormatted(
+                    sender,
+                    "&(gold)%0 {&(aqua)%1} $(inflect,noun,1,claim) in this world:",
+                    uuid.equals(((Player) sender).getUniqueId())
+                            ? "You have"
+                            : args[0] + " has",
+                    claimlist.size()
+            );
+        }
 
-        // Finally notify the sender of how their claim blocks are being used
-        int remaining = RegionProtection.getDataManager().getClaimBlocks(uuid),
-                used = claimlist.stream().map(r -> (int) r.area()).reduce(0, Integer::sum);
-        TextUtils.sendFormatted(sender, "&(gold){&(aqua)%0} used + {&(aqua)%1} available = {&(aqua)%2} total claim " +
-                "blocks", used, remaining, used + remaining);
+        claimlist.forEach(region -> {
+            TextUtils.sendFormatted(
+                    sender,
+                    "&(gold)%0x, %1z: {&(aqua)%2} claim blocks",
+                    (int) (0.5 * (region.getMin().getX() + region.getMax().getX())),
+                    (int) (0.5 * (region.getMin().getZ() + region.getMax().getZ())),
+                    region.area()
+            );
+        });
+
+        if (!coOwner) {
+            // Finally notify the sender of how their claim blocks are being used
+            int remaining = RegionProtection.getDataManager().getClaimBlocks(uuid),
+                    used = claimlist.stream().map(r -> (int) r.area()).reduce(0, Integer::sum);
+            TextUtils.sendFormatted(sender, "&(gold){&(aqua)%0} used + {&(aqua)%1} available = {&(aqua)%2} total " +
+                    "claim blocks", used, remaining, used + remaining);
+        }
 
         return true;
     }, (sender, command, alias, args) -> {
-        if (!(args.length == 1 && sender.hasPermission("rp.command.externalclaimlist")))
-            return Collections.emptyList();
-        return getOnlinePlayers(args[0]);
+        switch (args.length) {
+            case 1:
+                if (sender.hasPermission("rp.command.externalclaimlist")) {
+                    List<String> suggestions = new ArrayList<>(getOnlinePlayers(args[0]));
+                    suggestions.add("co-owner");
+                    return suggestions;
+                } else
+                    return Collections.singletonList("co-owner");
+
+            case 2:
+                return sender.hasPermission("rp.command.externalclaimlist")
+                        ? Collections.singletonList("co-owner")
+                        : Collections.emptyList();
+
+            default:
+                return Collections.emptyList();
+        }
     });
 
     /**
@@ -405,6 +447,32 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         sender.sendMessage(ChatColor.GOLD + (ps.isIgnoringTrust() ? "You are now ignoring trust."
                 : "You are no longer ignoring trust."));
 
+        return true;
+    });
+
+    /**
+     * Allows players to name their claims.
+     */
+    public static final SimpleCommand NAME_CLAIM = new SimpleCommand((sender, command, alias, args) -> {
+        // Online sender required
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
+            return true;
+        }
+
+        if (args.length == 0) {
+            sender.sendMessage(ChatColor.RED + "Please specify the name you wish to give your claim.");
+            return true;
+        }
+
+        Region region = RegionProtection.getDataManager().getLowestPriorityRegionAtIgnoreY(((Player) sender).getLocation());
+        if (region == null) {
+            sender.sendMessage(ChatColor.RED + "Please stand in the claim you wish to name.");
+            return true;
+        }
+
+        region.setName(args[0]);
+        sender.sendMessage(ChatColor.GREEN + "This claim is now named \"" + args[0] + "\"");
         return true;
     });
 

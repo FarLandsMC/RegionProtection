@@ -371,8 +371,6 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Returns the highest priority region at the given location.
-     *
      * @param location the location.
      * @return the highest priority region at the given location.
      */
@@ -381,8 +379,14 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Returns the highest priority region at the given location.
-     *
+     * @param location the location.
+     * @return the lowest priority region at the given location.
+     */
+    public synchronized Region getLowestPriorityRegionAtIgnoreY(Location location) {
+        return getWorldData(location).getLookupTable().getLowestPriorityRegionAtIgnoreY(location);
+    }
+
+    /**
      * @param location the location.
      * @return the highest priority region at the given location.
      */
@@ -391,8 +395,6 @@ public class DataManager implements Listener {
     }
 
     /**
-     * Returns a list of the regions at the given location which do not have a parent.
-     *
      * @param location the location.
      * @return a list of the regions at the given location which do not have a parent.
      */

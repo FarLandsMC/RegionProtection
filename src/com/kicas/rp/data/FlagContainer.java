@@ -125,6 +125,13 @@ public class FlagContainer {
     }
 
     /**
+     * @return whether or not the given UUID is a co-owner of this flag container.
+     */
+    public boolean isCoOwner(UUID coOwner) {
+        return coOwners.contains(coOwner);
+    }
+
+    /**
      * Sets bounds (minimum and maximum corners) of this container.
      *
      * @param bounds the bounds of this container.

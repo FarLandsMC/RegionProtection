@@ -29,7 +29,7 @@ commands:
     usage: /claimheight <get|set> <top|bottom> [amount]
   claimlist:
     description: Show the list of claims that you own.
-    usage: /claimlist [player]
+    usage: /claimlist [player] [co-owner]
     aliases: [claimslist]
   claimtoggle:
     description: Toggle various flags on your claim.
@@ -47,6 +47,10 @@ commands:
     description: Allows the user to ignore the trust flag in all regions.
     usage: /ignoretrust
     permission: rp.command.ignoretrust
+  nameclaim:
+    description: Give your claim a name
+    usage: /nameclaim <name>
+    permission: rp.claims.manage
   region:
     description: Create, modify, query, or delete a region.
     usage: /region <info|flag|create|expand|retract|rename|set-priority|delete> [name] [args...]

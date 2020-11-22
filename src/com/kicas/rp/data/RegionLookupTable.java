@@ -209,6 +209,32 @@ public class RegionLookupTable {
     }
 
     /**
+     * Returns the region with the lowest priority at the given location. The returned region is guaranteed to not have
+     * a parent.
+     *
+     * @param loc the location.
+     * @return the region with the lowest priority at the given location, or null if there are no regions at the given
+     * location without a parent.
+     */
+    public Region getLowestPriorityRegionAtIgnoreY(Location loc) {
+        // Get the root node containing candidate regions
+        Node node = table[hash(loc)];
+        if (node == null)
+            return null;
+
+        // Find the highest priority region
+        Region region = null;
+        do {
+            if (node.region.containsIgnoreY(loc) && !node.region.hasParent() &&
+                    (region == null || node.region.getPriority() < region.getPriority())) {
+                region = node.region;
+            }
+        } while ((node = node.link) != null);
+
+        return region;
+    }
+
+    /**
      * Returns the region with the highest priority at the given location's x and z values. If two regions have the same
      * priority, then the region with a parent will be considered as having a higher priority.If there are no regions at
      * the given location, then null is returned.

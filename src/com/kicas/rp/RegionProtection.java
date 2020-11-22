@@ -221,6 +221,7 @@ public class RegionProtection extends JavaPlugin {
         registerCommand("expandclaim", SimpleCommand.EXPAND_CLAIM);
         registerCommand("expel", SimpleCommand.EXPEL);
         registerCommand("ignoretrust", SimpleCommand.IGNORE_TRUST);
+        registerCommand("nameclaim", SimpleCommand.NAME_CLAIM);
         registerCommand("region", new CommandRegion());
         registerCommand("steal", SimpleCommand.STEAL);
         registerCommand("toregion", SimpleCommand.TO_REGION);

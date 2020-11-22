@@ -928,22 +928,20 @@ public class PlayerEventHandler implements Listener {
 
         if (!Objects.equals(fromFlags, toFlags)) {
             if (toFlags != null) {
-                if (!toFlags.getFlagMeta(RegionFlag.GREETING).equals(fromFlags == null ? null : fromFlags.getFlagMeta(RegionFlag.GREETING))) {
+                if (!toFlags.getFlagMeta(RegionFlag.GREETING).equals(fromFlags == null ? null : fromFlags.getFlagMeta(RegionFlag.GREETING)))
                     toFlags.<TextMeta>getFlagMeta(RegionFlag.GREETING).sendTo(player);
-                }
 
-                if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND)) {
+                if (toFlags.hasFlag(RegionFlag.ENTER_COMMAND))
                     toFlags.<CommandMeta>getFlagMeta(RegionFlag.ENTER_COMMAND).execute(player);
-                }
 
-                if(!toFlags.isEffectiveOwner(player) && toFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE)) {
+                if(!toFlags.isEffectiveOwner(player) && toFlags.hasFlag(RegionFlag.ENTRY_GAMEMODE))
                     player.setGameMode(toFlags.<GameModeMeta>getFlagMeta(RegionFlag.ENTRY_GAMEMODE).toGameMode());
 
-                }
-
-                if (!toFlags.isEffectiveOwner(player) && !toFlags.isAllowed(RegionFlag.ELYTRA_FLIGHT) && player.isGliding()) {
+                if (!toFlags.isEffectiveOwner(player) && !toFlags.isAllowed(RegionFlag.ELYTRA_FLIGHT) && player.isGliding())
                     player.setGliding(false);
-                }
+
+                if (!toFlags.isAllowed(RegionFlag.PLAYER_COLLISIONS))
+                    player.setCollidable(false);
 
                 if (!toFlags.isEffectiveOwner(player)) {
                     BorderPolicy.Policy entrancePolicy = toFlags.<BorderPolicy>getFlagMeta(RegionFlag.ENTRANCE_RESTRICTION).getPolicy();
@@ -970,16 +968,17 @@ public class PlayerEventHandler implements Listener {
             }
 
             if (fromFlags != null) {
-                if (!fromFlags.getFlagMeta(RegionFlag.FAREWELL).equals(toFlags == null ? null : toFlags.getFlagMeta(RegionFlag.FAREWELL))) {
+                if (!fromFlags.getFlagMeta(RegionFlag.FAREWELL).equals(toFlags == null ? null : toFlags.getFlagMeta(RegionFlag.FAREWELL)))
                     fromFlags.<TextMeta>getFlagMeta(RegionFlag.FAREWELL).sendTo(player);
-                }
 
                 if (fromFlags.hasFlag(RegionFlag.EXIT_COMMAND))
                     fromFlags.<CommandMeta>getFlagMeta(RegionFlag.EXIT_COMMAND).execute(player);
 
-                if(!fromFlags.isEffectiveOwner(player) && fromFlags.hasFlag(RegionFlag.EXIT_GAMEMODE)) {
+                if (fromFlags.isAllowed(RegionFlag.PLAYER_COLLISIONS))
+                    player.setCollidable(true);
+
+                if(!fromFlags.isEffectiveOwner(player) && fromFlags.hasFlag(RegionFlag.EXIT_GAMEMODE))
                     player.setGameMode(fromFlags.<GameModeMeta>getFlagMeta(RegionFlag.EXIT_GAMEMODE).toGameMode());
-                }
             }
         }
     }
