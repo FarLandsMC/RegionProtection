@@ -227,7 +227,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         claimlist.forEach(region -> {
             TextUtils.sendFormatted(
                     sender,
-                    "&(gold)%0x, %1z: {&(aqua)%2} claim blocks",
+                    "{&(green)%0}&(gold)%1x, %2z: {&(aqua)%3} claim blocks",
+                    region.getRawName() != null && !region.getRawName().isEmpty() ? region.getRawName() + ": " : "",
                     (int) (0.5 * (region.getMin().getX() + region.getMax().getX())),
                     (int) (0.5 * (region.getMin().getZ() + region.getMax().getZ())),
                     region.area()
