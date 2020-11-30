@@ -471,6 +471,11 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
+        if (!region.isEffectiveOwner((Player) sender)) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to rename this claim.");
+            return true;
+        }
+
         region.setName(args[0]);
         sender.sendMessage(ChatColor.GREEN + "This claim is now named \"" + args[0] + "\"");
         return true;

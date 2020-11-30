@@ -319,6 +319,33 @@ public class DataManager implements Listener {
     }
 
     /**
+     * Returns a list of admin region names including the names of child regions while excluding player regions and
+     * regions with names which are null or empty strings. If this method is called with include global name set to
+     * trust, then the resulting list will include the name denoting the global flags for a world.
+     *
+     * @param world             the world.
+     * @param includeGlobalName whether or not the include the name for the global flags of a world.
+     * @return a list of region names including the names of child regions while excluding names which are null or empty
+     * strings.
+     */
+    public List<String> getAdminRegionNames(World world, boolean includeGlobalName) {
+        List<String> names = new ArrayList<>();
+
+        if (includeGlobalName)
+            names.add(GLOBAL_FLAG_NAME);
+
+        // Add the filtered names
+        getRegionsInWorld(world).stream().filter(region -> region.getRawName() != null &&
+                !region.getRawName().isEmpty() && region.isAdminOwned()).forEach(region -> {
+            names.add(region.getRawName());
+            // Add the children's names
+            region.getChildren().stream().map(Region::getRawName).forEach(names::add);
+        });
+
+        return names;
+    }
+
+    /**
      * Gets a region by the given name and returns it.
      *
      * @param world the world that contains the region.

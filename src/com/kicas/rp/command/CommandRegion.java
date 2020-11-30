@@ -503,13 +503,13 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 case FLAG:
                 case INFO:
                     // Global flags allowed
-                    return filterStartingWith(args[1], RegionProtection.getDataManager()
-                            .getRegionNames(((Player) sender).getWorld(), true));
+                    return filterStartingWith(args[1], RegionProtection.getDataManager().getAdminRegionNames(((Player) sender)
+                            .getWorld(), true));
 
                 default:
                     // Global flags aren't allowed
-                    return filterStartingWith(args[1], RegionProtection.getDataManager()
-                            .getRegionNames(((Player) sender).getWorld(), false));
+                    return filterStartingWith(args[1], RegionProtection.getDataManager().getAdminRegionNames(((Player) sender)
+                            .getWorld(), false));
             }
         }
 
