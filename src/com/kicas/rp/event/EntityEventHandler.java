@@ -190,6 +190,22 @@ public class EntityEventHandler implements Listener {
     }
 
     /**
+     * Prevent entities teleporting to another dimension via portal.
+     *
+     * @param event the event
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onPortalEvent(EntityPortalEvent event){
+        FlagContainer flagsAt = RegionProtection.getDataManager().getFlagsAt(event.getTo());
+        if (flagsAt == null)
+            return;
+        if (flagsAt.<EnumFilter.EntityFilter>getFlagMeta(RegionFlag.DENY_ENTITY_TELEPORT)
+                .isBlocked(event.getEntityType())) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
      * Handles hostile entity explosions damaging hanging entities.
      *
      * @param event the event.

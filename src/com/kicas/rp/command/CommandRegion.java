@@ -659,6 +659,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             case DENY_SPAWN:
             case DENY_AGGRO:
             case DENY_ENTITY_USE:
+            case DENY_ENTITY_TELEPORT:
                 return filterFormat(args[4], Stream.of(EntityType.values()), Utils::formattedName);
 
             // Suggest placeable and breakable materials
