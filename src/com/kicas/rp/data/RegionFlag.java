@@ -75,7 +75,8 @@ public enum RegionFlag {
     FIRE_TICK(true),
     ENTRY_GAMEMODE(GameModeMeta.class),
     EXIT_GAMEMODE(GameModeMeta.class),
-    PLAYER_COLLISIONS;
+    PLAYER_COLLISIONS,
+    MODIFY_ARMOR_STANDS;
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();
@@ -262,6 +263,7 @@ public enum RegionFlag {
         registerDefault(ENTRY_GAMEMODE, null);
         registerDefault(EXIT_GAMEMODE, null);
         registerDefault(PLAYER_COLLISIONS, true);
+        registerDefault(MODIFY_ARMOR_STANDS, false);
     }
 
     /**

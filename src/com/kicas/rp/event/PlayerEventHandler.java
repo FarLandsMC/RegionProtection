@@ -1012,8 +1012,8 @@ public class PlayerEventHandler implements Listener {
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
-        String message = event.getMessage().trim().replaceAll("^(/+)?", "");
         // Remove beginning /'s
+        String message = event.getMessage().trim().replaceAll("^(/+)?", "");
 
         // Go past the namespace if they do something like /minecraft:tp, and also find the end of the command
         int start = message.indexOf(':') + 1, end = message.indexOf(' ');
@@ -1075,7 +1075,9 @@ public class PlayerEventHandler implements Listener {
                                 event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + armorStandFlags.getOwnerName() + ".");
                             }
                             // If it's an admin claim and the player isn't an owner
-                            if(armorStandFlags.isAdminOwned() && !armorStandFlags.isEffectiveOwner(event.getPlayer())){
+                            if(armorStandFlags.isAdminOwned() &&
+                                    !armorStandFlags.isEffectiveOwner(event.getPlayer()) &&
+                                    !armorStandFlags.isAllowed(RegionFlag.MODIFY_ARMOR_STANDS)){
                                 event.setCancelled(true);
                                 event.getPlayer().sendMessage(ChatColor.RED + "You cannot modify that here.");
                             }

@@ -21,6 +21,8 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 
+import java.util.Objects;
+
 /**
  * Handles events caused or related to non-player entities.
  */
@@ -271,7 +273,8 @@ public class EntityEventHandler implements Listener {
             return;
         }
         // Stop all armor stands teleporting into another region when the armor statues datapack is installed
-        if(event.getEntity().getType().equals(EntityType.ARMOR_STAND) && toFlags != fromFlags &&
+        if(event.getEntity().getType().equals(EntityType.ARMOR_STAND) &&
+                !Objects.equals(toFlags, fromFlags) &&
                 Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("as_trigger") != null) {
             event.setCancelled(true);
             return;
