@@ -22,7 +22,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
     private static final String CONTAINER_HELP = ChatColor.GOLD + "Grant someone access to containers, or any block " +
             "or entity which stores items.";
     private static final String BUILD_HELP = ChatColor.GOLD + "Grant someone full access to your claim in every way." +
-            " The only thing they will not be able to do is edit the claim\'s size or trust permissions.";
+            " The only thing they will not be able to do is edit the claim's size or trust permissions.";
     private static final String MANAGEMENT_HELP = ChatColor.GOLD + "Grant someone the ability to edit the trust " +
             "permissions on your claim. They will not be able to resize, subdivide, or delete your claim.";
     private static final String UNTRUST_HELP = ChatColor.GOLD + "Revoke all trust from someone.";
@@ -45,19 +45,27 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
             sender.sendMessage(HELP_MESSAGES.get(alias.toLowerCase()));
             return true;
         }
-
         // Online sender required
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
             return true;
         }
 
-        // Make sure the sender is actually standing in a claim
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player) sender).getLocation());
-        if (claim == null) {
-            sender.sendMessage(ChatColor.RED + "Please stand in the claim where you wish to trust this person.");
+        List<String> playerNamedRegions = RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld());
+
+        // Make sure the sender is actually standing in a claim or has one specified
+        Region locationClaim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player) sender).getLocation());
+
+        Region specifiedClaim = args.length == 2 ? RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[1]) : null;
+
+        if(locationClaim == null && specifiedClaim == null) {
+            sender.sendMessage(ChatColor.RED + "Please " +
+                    (playerNamedRegions.isEmpty() ? "" : "specify or ") +
+                    "stand in the claim where you wish to trust this person.");
             return true;
         }
+
+        Region claim = specifiedClaim == null ? locationClaim : specifiedClaim;
 
         // Make sure the sender has permission to modify trust levels
         TrustMeta trustMeta = claim.getAndCreateFlagMeta(RegionFlag.TRUST);
@@ -134,6 +142,17 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
         // Online players
-        return args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList();
+        List<String> values;
+        switch(args.length){
+            case 1:
+                values = getOnlinePlayers(args[0]);
+                break;
+            case 2:
+                values = filterStartingWith(args[1], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld()));
+                break;
+            default:
+                values = Collections.emptyList();
+        }
+        return values;
     }
 }

@@ -19,6 +19,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -343,6 +344,55 @@ public class DataManager implements Listener {
         });
 
         return names;
+    }
+
+    /** //TODO: FIX THIS DESCRIPTION
+     * Returns a list of admin region names including the names of child regions while excluding player regions and
+     * regions with names which are null or empty strings. If this method is called with include global name set to
+     * trust, then the resulting list will include the name denoting the global flags for a world.
+     *
+     * @param player            The Player
+     * @param world             the world.
+     * @return a list of region names including the names of child regions while excluding names which are null or empty
+     * strings.
+     */
+    public List<String> getPlayerNamedRegions(Player player, World world) {
+        List<String> names = new ArrayList<>();
+
+        // Add the filtered names
+        getRegionsInWorld(world).stream().filter(region -> region.getRawName() != null &&
+                !region.getRawName().isEmpty() && region.owner.equals(player.getUniqueId())).forEach(region -> {
+            names.add(region.getRawName());
+        });
+
+        return names;
+    }
+
+    /** //TODO: FIX THIS DESCRIPTION
+     * Returns a list of admin region names including the names of child regions while excluding player regions and
+     * regions with names which are null or empty strings. If this method is called with include global name set to
+     * trust, then the resulting list will include the name denoting the global flags for a world.
+     *
+     * @param player            The Player
+     * @param world             the world.
+     * @return a list of regions owned by the player
+     * strings.
+     */
+    public List<Region> getPlayerRegions(Player player, World world) {
+        List<Region> names = new ArrayList<>();
+        getRegionsInWorld(world).stream().filter(region -> region.owner.equals(player.getUniqueId())).forEach(names::add);
+        return names;
+
+    }
+
+    public Region getPlayerRegionByName(Player player, World world, String name){
+        for (Region region : getPlayerRegions(player, world)) {
+            if(Objects.equals(region.getRawName(), name)){
+                return region;
+            }
+        }
+        return null;
+
     }
 
     /**

@@ -37,6 +37,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         DataManager dm = RegionProtection.getDataManager();
         PlayerSession ps = dm.getPlayerSession(player);
 
+        Region specifiedRegion = args.length == 1 ? RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[0]) : null;
+
         // Check if player wants to delete all of their claims
         if (args.length == 1 && args[0].equals("all")) {
             dm.tryDeleteRegions(player, player.getWorld(), region -> region.isOwner(player.getUniqueId()) &&
@@ -44,6 +46,9 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
 
             sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in this world. You now have " +
                     ps.getClaimBlocks() + " claim blocks.");
+        }else if(specifiedRegion != null) {
+            dm.tryDeleteRegion(player, specifiedRegion, true);
+            sender.sendMessage(ChatColor.GREEN + "Removed your claim with the name \"" + args[0] + "\"");
         } else {
             // Prioritize sub-claims
             Region claim = dm.getHighestPriorityRegionAt(player.getLocation());
@@ -53,7 +58,7 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             // Check to ensure there's a claim at the player's location. Admin claims should be remove through /region
             // delete.
             if (claim == null || claim.isAdminOwned()) {
-                sender.sendMessage(ChatColor.RED + "Please stand in the claim which you wish to abandon.");
+                sender.sendMessage(ChatColor.RED + "Please specify or stand in the claim which you wish to abandon.");
                 return true;
             }
 
@@ -74,7 +79,14 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         return true;
-    }, (sender, command, alias, args) -> args.length == 1 ? Collections.singletonList("all") : Collections.emptyList());
+    }, (sender, command, alias, args) -> {
+        if (args.length == 1) {
+            List<String> regions = RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld());
+            regions.add("all");
+            return filterStartingWith(args[0], regions);
+        }
+        return Collections.emptyList();
+    });
 
     /**
      * Allows for players to add an remove co-owners of regions.
@@ -90,7 +102,10 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         // Get and check the region
-        Region region = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+        Region region = args.length == 2 ?
+                RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[1]) :
+                RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+
         if (region == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the region which you wish to modify co-owners.");
             return true;
@@ -126,7 +141,16 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         return true;
-    }, (sender, command, alias, args) -> args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList());
+    }, (sender, command, alias, args) -> {
+        switch(args.length){
+            case 1:
+                return getOnlinePlayers(args[0]);
+            case 2:
+                return filterStartingWith(args[1], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld()));
+            default:
+                return Collections.emptyList();
+        }
+    });
 
     /**
      * Allows administrators to toggle between claim creation and admin region creation.
@@ -311,7 +335,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
                 " in your claim.");
 
         return true;
-    }, (sender, command, alias, args) -> {
+    },
+            (sender, command, alias, args) -> {
         switch (args.length) {
             case 1: // Toggle suggestions
                 return filterStartingWith(args[0], Arrays.stream(RegionFlag.VALUES)
@@ -337,10 +362,13 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         // Prioritize sub-claims
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+        Region claim = args.length == 2 ?
+                RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[1]) :
+                RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+
         // Admin claims should be modified in size through /region expand|retract
         if (claim == null || claim.isAdminOwned()) {
-            sender.sendMessage(ChatColor.RED + "Please stand in the claim that you wish to expand.");
+            sender.sendMessage(ChatColor.RED + "Please specify or stand in the claim that you wish to expand.");
             return true;
         }
 
@@ -369,7 +397,10 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         return true;
-    });
+    }, (sender,command, alias, args) ->
+            args.length == 2 ? filterStartingWith(args[1], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld())) :
+                    Collections.emptyList()
+    );
 
     /**
      * Allows players to kick* certain players from their claim.
@@ -382,8 +413,11 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        // Make sure the sender is actually standing in a claim
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player) sender).getLocation());
+        // Check that they are standing in or have specified a claim
+        Region claim = args.length == 2 ?
+                RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[1]) :
+                RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+
         if (claim == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the claim where you wish to expel players.");
             return true;
@@ -430,7 +464,16 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         sender.sendMessage(ChatColor.GREEN + "Expelled player " + player.getName() + " from your claim");
 
         return true;
-    }, (sender, command, alias, args) -> args.length == 1 ? getOnlinePlayers(args[0]) : Collections.emptyList());
+    }, (sender, command, alias, args) -> {
+        switch(args.length){
+            case 1:
+                return getOnlinePlayers(args[0]);
+            case 2:
+                return filterStartingWith(args[1], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld()));
+            default:
+                return Collections.emptyList();
+        }
+    });
 
     /**
      * Allow administrators to ignore the trust flag.
@@ -651,10 +694,13 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        // Make sure the sender is actually standing in a claim
-        Region claim = RegionProtection.getDataManager().getHighestPriorityRegionAtIgnoreY(((Player) sender).getLocation());
+        // Make sure that the sender has a claim specified
+        Region claim = args.length == 1 ?
+                RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[0]) :
+                RegionProtection.getDataManager().getHighestPriorityRegionAt(((Player) sender).getLocation());
+
         if (claim == null) {
-            sender.sendMessage(ChatColor.RED + "Please stand in the claim whose trust list you wish to view.");
+            sender.sendMessage(ChatColor.RED + "Please specify or stand in the claim whose trust list you wish to view.");
             return true;
         }
 
@@ -681,7 +727,10 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         );
 
         return true;
-    });
+    }, (sender, command, alias, args) ->
+        args.length == 1 ? filterStartingWith(args[0], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld())) :
+            Collections.emptyList()
+        );
 
     private final CommandExecutor executor;
     private final TabCompleter tabCompleter;
