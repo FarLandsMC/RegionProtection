@@ -346,15 +346,12 @@ public class DataManager implements Listener {
         return names;
     }
 
-    /** //TODO: FIX THIS DESCRIPTION
-     * Returns a list of admin region names including the names of child regions while excluding player regions and
-     * regions with names which are null or empty strings. If this method is called with include global name set to
-     * trust, then the resulting list will include the name denoting the global flags for a world.
+    /**
+     * Returns a list of player region names in specified world, excluding null or empty strings.
      *
      * @param player            The Player
      * @param world             the world.
-     * @return a list of region names including the names of child regions while excluding names which are null or empty
-     * strings.
+     * @return a list of region names, excluding names which are null or empty strings.
      */
     public List<String> getPlayerNamedRegions(Player player, World world) {
         List<String> names = new ArrayList<>();
@@ -368,15 +365,12 @@ public class DataManager implements Listener {
         return names;
     }
 
-    /** //TODO: FIX THIS DESCRIPTION
-     * Returns a list of admin region names including the names of child regions while excluding player regions and
-     * regions with names which are null or empty strings. If this method is called with include global name set to
-     * trust, then the resulting list will include the name denoting the global flags for a world.
+    /**
+     * Return a list of all regions owned by the specified player in specified world.
      *
      * @param player            The Player
      * @param world             the world.
      * @return a list of regions owned by the player
-     * strings.
      */
     public List<Region> getPlayerRegions(Player player, World world) {
         List<Region> names = new ArrayList<>();

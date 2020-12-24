@@ -5,6 +5,7 @@ import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.LocationMeta;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
+import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.TextUtils;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
@@ -18,6 +19,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -25,6 +27,7 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
     /**
      * Allows players to delete one, or all of their claims in their current world.
      */
+    private static final HashMap<UUID, Pair<List<Region>, Integer>> ranAbandonCommandOnce = new HashMap<>();
     public static final SimpleCommand ABANDON_CLAIM = new SimpleCommand((sender, command, alias, args) -> {
         // Online sender required
         if (!(sender instanceof Player)) {
@@ -37,24 +40,39 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         DataManager dm = RegionProtection.getDataManager();
         PlayerSession ps = dm.getPlayerSession(player);
 
-        Region specifiedRegion = args.length == 1 ? RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[0]) : null;
+        if(args.length == 1 && args[0].equals("confirm")){
+            if(ranAbandonCommandOnce.containsKey(player.getUniqueId())) {
+                List<Region> regions = ranAbandonCommandOnce.get(player.getUniqueId()).getFirst();
+//            dm.tryDeleteRegions(player, player.getWorld(), regions, true);
+                regions = regions.stream().filter(region -> region.isOwner(player.getUniqueId()) && !region.isAdminOwned()).collect(Collectors.toList()); // Double check that it's okay to delete
+//            String rgNames = regions.stream().map(Region::getRawName).filter(Objects::nonNull).collect(Collectors.joining(", "));
+                regions.forEach(region -> {
+                    dm.tryDeleteRegion(player, region, true);
+                });
+                TextUtils.sendFormatted(sender, "&(green)Successfully deleted %0 $(inflect,noun,0,claim).  You now have %1 claim $(inflect,noun,1,block).", regions.size(), ps.getClaimBlocks());
+                ps.setRegionHighlighter(null);
+                return true;
+            }
+            TextUtils.sendFormatted(sender, "&(red)You need to specify a claim before confirming.");
+            return true;
+        }
+
+        Region claim = args.length == 1 ?
+                RegionProtection.getDataManager().getPlayerRegionByName(player, player.getWorld(), args[0]) : // Specified claim with /abandonclaim <claim>
+                null;
+
+        if(claim == null) // Claim isn't found with name or no specified claim(/abandonclaim <claim>)
+            dm.getHighestPriorityRegionAt(player.getLocation()); // Claim based on location
+        if (claim == null) // Try again on all Y values if no claim is found at location or specified
+            claim = dm.getHighestPriorityRegionAtIgnoreY(player.getLocation());
+
+        List<Region> confirmDeleteRegions;
 
         // Check if player wants to delete all of their claims
-        if (args.length == 1 && args[0].equals("all")) {
-            dm.tryDeleteRegions(player, player.getWorld(), region -> region.isOwner(player.getUniqueId()) &&
-                    !region.isAdminOwned(), true);
-
-            sender.sendMessage(ChatColor.GREEN + "Deleted all your claims in this world. You now have " +
-                    ps.getClaimBlocks() + " claim blocks.");
-        }else if(specifiedRegion != null) {
-            dm.tryDeleteRegion(player, specifiedRegion, true);
-            sender.sendMessage(ChatColor.GREEN + "Removed your claim with the name \"" + args[0] + "\"");
+        if (args.length >= 1 && args[0].equals("all")) {
+            confirmDeleteRegions = dm.getPlayerRegions(player, player.getWorld()).stream().filter(region -> region.isOwner(player.getUniqueId()) && !region.isAdminOwned()).collect(Collectors.toList()); // Double check that it's only their regions
+            TextUtils.sendFormatted(sender, "&(red)Are you sure that you want to delete all of your claims? Type {&(dark_red)/abandonclaim confirm} to confirm.");
         } else {
-            // Prioritize sub-claims
-            Region claim = dm.getHighestPriorityRegionAt(player.getLocation());
-            if (claim == null) // Try again on all Y values if no claim is found
-                claim = dm.getHighestPriorityRegionAtIgnoreY(player.getLocation());
-
             // Check to ensure there's a claim at the player's location. Admin claims should be remove through /region
             // delete.
             if (claim == null || claim.isAdminOwned()) {
@@ -69,16 +87,21 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             }
 
             // Successful deletion: add claim blocks and send a confirmation message
-            if (dm.tryDeleteRegion(player, claim, false)) {
-                sender.sendMessage(ChatColor.GREEN + "Successfully deleted this claim." + (claim.hasParent() ? ""
-                        : " You now have " + ps.getClaimBlocks() + " claim blocks."));
-                ps.setRegionHighlighter(null);
+            if (claim.getChildren().isEmpty()) {
+                confirmDeleteRegions = Collections.singletonList(claim);
+                TextUtils.sendFormatted(sender, "&(red)Are you sure that you want to remove this claim? Type {&(dark_red)/abandonclaim confirm} to confirm.");
             }
             // Failed deletion due to sub-claims present, show those claims
-            else ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), null, null, false));
+            else {
+                TextUtils.sendFormatted(sender, "&(red)There are subclaims which must be removed first.");
+                ps.setRegionHighlighter(new RegionHighlighter(player, claim.getChildren(), null, null, false));
+                return true;
+            }
         }
-
+        ranAbandonCommandOnce.put(player.getUniqueId(), new Pair<>(confirmDeleteRegions, Bukkit.getScheduler()
+                .scheduleSyncDelayedTask(RegionProtection.getInstance(), () -> ranAbandonCommandOnce.remove(player.getUniqueId()), 30L * 20L)));
         return true;
+
     }, (sender, command, alias, args) -> {
         if (args.length == 1) {
             List<String> regions = RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld());
@@ -506,6 +529,12 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
 
         if (args.length == 0) {
             sender.sendMessage(ChatColor.RED + "Please specify the name you wish to give your claim.");
+            return true;
+        }
+
+        List<String> invalidNames = Arrays.asList("confirm", "all"); // All names that are blocked(for code reasons)
+        if(invalidNames.contains(args[0])){
+            sender.sendMessage(ChatColor.RED + "You cannot name your claim this.");
             return true;
         }
 
