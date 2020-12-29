@@ -167,9 +167,25 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
     }, (sender, command, alias, args) -> {
         switch(args.length){
             case 1:
+                if(alias.equalsIgnoreCase("removecoowner")){
+                    List<String> values = new ArrayList<>();
+                    RegionProtection.getDataManager().getPlayerRegions(((Player) sender), ((Player) sender).getWorld()).forEach(x -> {
+                        values.addAll(x.getCoOwners().stream().map(RegionProtection.getDataManager()::currentUsernameForUuid).collect(Collectors.toList()));
+                    });
+                    return filterStartingWith(args[0], values);
+                }
                 return getOnlinePlayers(args[0]);
             case 2:
-                return filterStartingWith(args[1], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld()));
+                if(!alias.equalsIgnoreCase("removecoowner"))
+                    return filterStartingWith(args[1], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld()));
+
+                return filterStartingWith(args[1],
+                        RegionProtection.getDataManager().getPlayerRegions((Player) sender, ((Player) sender).getWorld())
+                        .stream().filter(region ->
+                                        region.isCoOwner(RegionProtection.getDataManager().uuidForUsername(args[0])) &&
+                                        !region.getRawName().isEmpty() &&
+                                        region.getRawName() != null)
+                        .map(Region::getRawName).collect(Collectors.toList()));
             default:
                 return Collections.emptyList();
         }
@@ -527,13 +543,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-        if (args.length == 0) {
-            sender.sendMessage(ChatColor.RED + "Please specify the name you wish to give your claim.");
-            return true;
-        }
-
         List<String> invalidNames = Arrays.asList("confirm", "all"); // All names that are blocked(for code reasons)
-        if(invalidNames.contains(args[0])){
+        if(args.length > 0 && invalidNames.contains(args[0])){
             sender.sendMessage(ChatColor.RED + "You cannot name your claim this.");
             return true;
         }
@@ -544,8 +555,15 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
+
         if (!region.isEffectiveOwner((Player) sender)) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to rename this claim.");
+            return true;
+        }
+
+        if(args.length == 0){
+            region.setName(null);
+            sender.sendMessage(ChatColor.GREEN + "Your claim's name has been reset.");
             return true;
         }
 
@@ -760,6 +778,79 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         args.length == 1 ? filterStartingWith(args[0], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld())) :
             Collections.emptyList()
         );
+
+    /**
+     * Shows the sender the claims that they have trusted the given player in
+     */
+    public static final SimpleCommand TRUSTED = new SimpleCommand((sender, command, alias, args) -> {
+        if(!(sender instanceof Player)){
+            sender.sendMessage(ChatColor.RED + "You must be in-game to run this command.");
+            return true;
+        }
+
+
+        if(args.length < 1){
+            sender.sendMessage(ChatColor.RED + "Please specify a playername.");
+            return true;
+        }
+
+        DataManager dm = RegionProtection.getDataManager();
+        UUID senderUUID = ((Player) sender).getUniqueId();
+        String senderName = sender.getName();
+        if(args.length >= 2 && sender.isOp()){
+            senderUUID = dm.uuidForUsername(args[1]);
+            if(senderUUID == null){
+                sender.sendMessage(ChatColor.RED + "Player " + args[1] + " not found.");
+                return true;
+            }
+            senderName = dm.currentUsernameForUuid(senderUUID);
+        }
+
+        List<Region> regions = dm.getPlayerRegions(senderUUID, ((Player) sender).getWorld()).stream().filter(region -> ((TrustMeta) region.getAndCreateFlagMeta(RegionFlag.TRUST)).getAllTrustedPlayerNames().contains(args[0])).collect(Collectors.toList());
+        StringBuilder formattedRegions = new StringBuilder();
+        regions.stream().sorted(Comparator.comparing(Region::getRawName)).forEach(region -> {
+            TrustMeta tm = region.getAndCreateFlagMeta(RegionFlag.TRUST);
+            Map<TrustLevel, String> trustList = tm.getFormattedTrustList();
+            String trustListInfo = ("&(gold){&(aqua)Access:} " +
+                    trustList.get(TrustLevel.ACCESS) +
+                    "\n{&(green)Container:} " +
+                    trustList.get(TrustLevel.CONTAINER) +
+                    "\n{&(yellow)Build:} " +
+                    trustList.get(TrustLevel.BUILD) +
+                    "\n{&(blue)Management:} " +
+                    trustList.get(TrustLevel.MANAGEMENT) +
+                    "\n{&(light_purple)Co-Owners:} " + region.getCoOwners().stream()
+                    .map(RegionProtection.getDataManager()::currentUsernameForUuid)
+                    .collect(Collectors.joining(", "))).replaceAll(",", "");
+
+            TrustLevel tl = tm.getTrustLevelByName(args[0]);
+            String tlName = tl != null ? tl.name().toLowerCase().replaceAll("_", " ") : null;
+            formattedRegions.append("\n{&(green)")
+                    .append(region.getRawName() != null && !region.getRawName().isEmpty() ? region.getRawName() : "") // Region Name
+                    .append("}&(gold)(").append((int) (0.5 * (region.getMin().getX() + region.getMax().getX()))).append("x, ") // X coords
+                    .append((int) (0.5 * (region.getMin().getZ() + region.getMax().getZ()))).append("z) ") // Y coords
+                    .append("{&(aqua)").append(tlName != null && !tlName.isEmpty() ? tlName.substring(0, 1).toUpperCase() + tlName.substring(1) + " Trust" : "").append("} ") // Trust Level
+                    .append("${hover,").append(trustListInfo).append(",&(gray)[Trustlist]} "); // Hover Trustlist
+
+        });
+        TextUtils.sendFormatted(sender, "&(gold)%0 trusted {&(green)%1} in {&(aqua)%2} ${inflect,noun,2,claim}:%3",
+                args.length < 2 && sender.isOp() ? "You have" : senderName + " has",
+                args[0],
+                regions.size(),
+                formattedRegions.toString()
+                );
+
+        return true;
+    }, (sender, command, alias, args) -> {
+        switch(args.length){
+            case 1:
+                return getOnlinePlayers(args[0]);
+            case 2:
+                return sender.isOp() ? getOnlinePlayers(args[1]) : Collections.emptyList();
+            default:
+                return Collections.emptyList();
+        }
+    });
 
     private final CommandExecutor executor;
     private final TabCompleter tabCompleter;

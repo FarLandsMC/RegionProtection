@@ -2,6 +2,7 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.data.flagdata.FlagMeta;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import org.bukkit.ChatColor;
@@ -11,6 +12,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Allows players to grant or deny certain permissions for other players in their claim.
@@ -143,16 +145,41 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
             throws IllegalArgumentException {
         // Online players
         List<String> values;
+        DataManager dm = RegionProtection.getDataManager(); // Just a bit easier
         switch(args.length){
             case 1:
-                values = getOnlinePlayers(args[0]);
+                if(!alias.toLowerCase().startsWith("un")){
+                    values = getOnlinePlayers(args[0]);
+                    break;
+                }
+                if(dm.getHighestPriorityRegionAt(((Player) sender).getLocation()) != null){
+                    values = ((TrustMeta) dm.getHighestPriorityRegionAt(((Player) sender).getLocation()).getAndCreateFlagMeta(RegionFlag.TRUST)).getAllTrustedPlayerNames();
+                    break;
+                }
+                List<String> finalValues = new ArrayList<>();
+                dm.getPlayerRegions((Player) sender, ((Player) sender).getWorld()).forEach(region -> {
+                    finalValues.addAll(((TrustMeta) region.getAndCreateFlagMeta(RegionFlag.TRUST)).getAllTrustedPlayerNames());
+                });
+                values = finalValues;
                 break;
             case 2:
-                values = filterStartingWith(args[1], RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld()));
+                if(!alias.toLowerCase().startsWith("un") || dm.getHighestPriorityRegionAt(((Player) sender).getLocation()) != null) {
+                    values = RegionProtection.getDataManager().getPlayerNamedRegions((Player) sender, ((Player) sender).getWorld());
+                    break;
+                }
+
+                values = dm.getPlayerRegions((Player) sender, ((Player) sender).getWorld())
+                        .stream().filter(region ->
+                                ((TrustMeta) region.getAndCreateFlagMeta(RegionFlag.TRUST))
+                                        .getAllTrustedPlayerNames().contains(args[0]) &&
+                                        !region.getRawName().isEmpty() &&
+                                        region.getRawName() != null)
+                        .map(Region::getRawName).collect(Collectors.toList());
+
                 break;
             default:
                 values = Collections.emptyList();
         }
-        return values;
+        return filterStartingWith(args[args.length-1], values.stream().filter(x -> x != null && !x.isEmpty()).collect(Collectors.toList()));
     }
 }

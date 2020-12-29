@@ -7,6 +7,8 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * The metadata class for the trust region flag.
@@ -194,6 +196,43 @@ public class TrustMeta extends FlagMeta implements Augmentable<TrustMeta> {
         });
 
         return list;
+    }
+
+    /**
+     * Get the player's trustlevel from username.
+     * @param name The name of the player.
+     * @return The TrustLevel of the specified player, or null if not found.
+     */
+    public TrustLevel getTrustLevelByName(String name) {
+        List<Map.Entry<UUID, TrustLevel>> reversedSet = new ArrayList<>(trustData.entrySet());
+        for (Map.Entry<UUID, TrustLevel> entry : reversedSet) {
+            Pair<TrustLevel, String> pair = new Pair<>(entry.getValue(), RegionProtection.getDataManager()
+                    .currentUsernameForUuid(entry.getKey()));
+            if (pair.getSecond() != null && pair.getSecond().equalsIgnoreCase(name)) {
+                return pair.getFirst();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gives a list of all trusted player UUIDs
+     * @return A list of the uuids for players with any trust on a region
+     */
+    public List<UUID> getAllTrustedPlayers(){
+        return new ArrayList<>(trustData.keySet());
+    }
+
+
+    /**
+     * Gives a list of the names of all trusted player names
+     * @return A list of the names for players with any trust on a region
+     */
+    public List<String> getAllTrustedPlayerNames() {
+        List<String> players = new ArrayList<>(getAllTrustedPlayers().stream().map(RegionProtection.getDataManager()::currentUsernameForUuid).collect(Collectors.toList()));
+        if (publicTrustLevel != TrustLevel.NONE)
+            players.add("public");
+        return players;
     }
 
     /**

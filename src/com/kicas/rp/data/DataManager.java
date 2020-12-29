@@ -368,15 +368,26 @@ public class DataManager implements Listener {
     /**
      * Return a list of all regions owned by the specified player in specified world.
      *
-     * @param player            The Player
-     * @param world             the world.
+     * @param player The Player
+     * @param world  the world.
      * @return a list of regions owned by the player
      */
     public List<Region> getPlayerRegions(Player player, World world) {
         List<Region> names = new ArrayList<>();
         getRegionsInWorld(world).stream().filter(region -> region.owner.equals(player.getUniqueId())).forEach(names::add);
         return names;
-
+    }
+    /**
+     * Return a list of all regions owned by the specified player in specified world.
+     *
+     * @param uuid  The Player's UUID
+     * @param world the world.
+     * @return a list of regions owned by the player
+     */
+    public List<Region> getPlayerRegions(UUID uuid, World world) {
+        List<Region> names = new ArrayList<>();
+        getRegionsInWorld(world).stream().filter(region -> region.owner.equals(uuid)).forEach(names::add);
+        return names;
     }
 
     public Region getPlayerRegionByName(Player player, World world, String name){

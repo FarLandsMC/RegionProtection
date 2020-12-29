@@ -229,6 +229,7 @@ public class RegionProtection extends JavaPlugin {
         registerCommand("trapped", SimpleCommand.TRAPPED);
         registerCommand("trust", new CommandTrust());
         registerCommand("trustlist", SimpleCommand.TRUST_LIST);
+        registerCommand("trusted", SimpleCommand.TRUSTED);
     }
 
     /**

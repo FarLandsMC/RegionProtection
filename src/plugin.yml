@@ -49,7 +49,7 @@ commands:
     permission: rp.command.ignoretrust
   nameclaim:
     description: Give your claim a name
-    usage: /nameclaim <name>
+    usage: /nameclaim [name]
     permission: rp.claims.manage
   region:
     description: Create, modify, query, or delete a region.
@@ -80,6 +80,10 @@ commands:
   trustlist:
     description: Show who has trust in your claim.
     usage: /trustlist [claim]
+    permission: rp.claims.manage
+  trusted:
+    description: Show claims where you've trusted a player.
+    usage: /trusted <player>
     permission: rp.claims.manage
 permissions:
   rp.claims.create:
