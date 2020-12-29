@@ -788,7 +788,6 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
-
         if(args.length < 1){
             sender.sendMessage(ChatColor.RED + "Please specify a playername.");
             return true;
@@ -808,7 +807,7 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
 
         List<Region> regions = dm.getPlayerRegions(senderUUID, ((Player) sender).getWorld()).stream().filter(region -> ((TrustMeta) region.getAndCreateFlagMeta(RegionFlag.TRUST)).getAllTrustedPlayerNames().contains(args[0])).collect(Collectors.toList());
         StringBuilder formattedRegions = new StringBuilder();
-        regions.stream().sorted(Comparator.comparing(Region::getRawName)).forEach(region -> {
+        regions.stream().sorted(Comparator.comparing(x -> x.getRawName() == null ? "" : x.getRawName())).forEach(region -> {
             TrustMeta tm = region.getAndCreateFlagMeta(RegionFlag.TRUST);
             Map<TrustLevel, String> trustList = tm.getFormattedTrustList();
             String trustListInfo = ("&(gold){&(aqua)Access:} " +
