@@ -349,7 +349,7 @@ public final class Utils {
             if (canStand(safe.getBlock()) && isSafe(safe.clone()))
                 return safe.add(0.5, 1, 0.5);
 
-            if (bottom > i) {
+            if (bottom >= i) {
                 for (i += c + 1; i <= top; ++i) {
                     safe.setY(i);
                     if (canStand(safe.getBlock()) && isSafe(safe.clone()))
@@ -358,7 +358,7 @@ public final class Utils {
                 return null;
             }
 
-            if (i > top) {
+            if (i >= top) {
                 for (i += ~c; bottom <= i; --i) {
                     safe.setY(i);
                     if (canStand(safe.getBlock()) && isSafe(safe.clone()))
@@ -421,7 +421,7 @@ public final class Utils {
             world = Bukkit.getWorlds().get(0);
 
         final int bottom = 1,
-                  top    = world.getName().equals("world_nether") ? 124 : 255,
+                  top    = world.getName().equals("world_nether") ? 126 : 255,
                   xMin   = world.getWorldBorder().getCenter().getBlockX() - ((int) world.getWorldBorder().getSize() >> 1),
                   xMax   = world.getWorldBorder().getCenter().getBlockX() + ((int) world.getWorldBorder().getSize() >> 1),
                   zMin   = world.getWorldBorder().getCenter().getBlockZ() - ((int) world.getWorldBorder().getSize() >> 1),
