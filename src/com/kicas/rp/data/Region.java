@@ -17,12 +17,13 @@ import java.util.*;
  * they will adopt the flags of the parent region and are updated whenever the parent's flags change.
  */
 public class Region extends FlagContainer {
-    // Can be null, such as in claims
+    // Can be null, such as in default claims
     private String name;
     private int priority;
     private final World world;
     private Location min, max;
     private Region parent;
+    private boolean recentlyStolen;
     private final List<Region> children;
 
     // Copies the given location
@@ -34,6 +35,7 @@ public class Region extends FlagContainer {
         this.min = min.clone();
         this.max = max.clone();
         this.parent = parent;
+        this.recentlyStolen = false;
         this.children = new ArrayList<>();
     }
 
@@ -110,6 +112,22 @@ public class Region extends FlagContainer {
      */
     public World getWorld() {
         return world;
+    }
+
+    /**
+     * Set's the region's recently stolen status to a specific boolean
+     *
+     * @param recentlyStolen the value to set to
+     */
+    public void setRecentlyStolen(boolean recentlyStolen) {
+        this.recentlyStolen = recentlyStolen;
+    }
+
+    /**
+     * @return if the region has been stolen
+     */
+    public boolean isRecentlyStolen() {
+        return recentlyStolen;
     }
 
     /**

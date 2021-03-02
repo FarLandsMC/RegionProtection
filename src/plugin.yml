@@ -18,7 +18,7 @@ commands:
     permission: rp.command.adminregion
   claim:
     description: Make a minimum-sized claim centered where you are standing.
-    usage: /claim
+    usage: /claim [name]
     permission: rp.claims.create
   claimblocks:
     description: Add to, remove from, or view someone's claim blocks.

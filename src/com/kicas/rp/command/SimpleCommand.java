@@ -5,6 +5,9 @@ import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.LocationMeta;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
+import com.kicas.rp.event.ClaimAbandonEvent;
+import com.kicas.rp.event.ClaimCreationEvent;
+import com.kicas.rp.event.ClaimStealEvent;
 import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.TextUtils;
 import com.kicas.rp.util.Utils;
@@ -42,10 +45,20 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
 
         if(args.length == 1 && args[0].equals("confirm")){
             if(ranAbandonCommandOnce.containsKey(player.getUniqueId())) {
+
+
                 List<Region> regions = ranAbandonCommandOnce.get(player.getUniqueId()).getFirst();
-//            dm.tryDeleteRegions(player, player.getWorld(), regions, true);
                 regions = regions.stream().filter(region -> region.isOwner(player.getUniqueId()) && !region.isAdminOwned()).collect(Collectors.toList()); // Double check that it's okay to delete
-//            String rgNames = regions.stream().map(Region::getRawName).filter(Objects::nonNull).collect(Collectors.joining(", "));
+
+                boolean isAll = regions.size() == (int) dm.getPlayerRegions(player, player.getWorld()).stream().filter(region -> region.isOwner(player.getUniqueId()) && !region.isAdminOwned()).count();
+                ClaimAbandonEvent event = new ClaimAbandonEvent(((Player) sender), regions, isAll);
+
+                RegionProtection.getInstance().getServer().getPluginManager().callEvent(event);
+                if (event.isCancelled()) {
+                    sender.sendMessage(ChatColor.RED + "You cannot remove this claim.");
+                    return true;
+                }
+
                 regions.forEach(region -> {
                     dm.tryDeleteRegion(player, region, true);
                 });
@@ -234,7 +247,10 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         // Attempt to create the region
         Region region = RegionProtection.getDataManager().tryCreateClaim((Player) sender, min, max, true);
         if (region != null) {
-            sender.sendMessage(ChatColor.GREEN + "Created a claim at your location.");
+            if(args.length > 0){
+                region.setName(args[0]);
+            }
+            sender.sendMessage(ChatColor.GREEN + "Created a claim at your location" + (args.length > 0 ? " with the name of " + args[0] : "."));
             // Highlight the region
             RegionProtection.getDataManager().getPlayerSession((Player) sender)
                     .setRegionHighlighter(new RegionHighlighter((Player) sender, region));
@@ -612,9 +628,18 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             return true;
         }
 
+
+        ClaimStealEvent event = new ClaimStealEvent(((Player) sender), region);
+        RegionProtection.getInstance().getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            sender.sendMessage(ChatColor.RED + "You cannot remove this claim.");
+            return true;
+        }
+
         // Transfer the claim without transferring the trust flag. This should always succeed.
         RegionProtection.getDataManager().tryTransferOwnership((Player) sender, region, ((Player) sender).getUniqueId(),
                 false);
+        region.setRecentlyStolen(true);
 
         // Notify the sender
         ps.setRegionHighlighter(new RegionHighlighter((Player) sender, region));

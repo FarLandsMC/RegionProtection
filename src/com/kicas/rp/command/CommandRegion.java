@@ -311,11 +311,13 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
         regions.forEach(region -> {
             TextUtils.sendFormatted(
                     sender,
-                    "&(gold)Showing info for region {&(green)%0:}" +
-                            "\nBounds: $(hovercmd,/toregion %0,{&(aqua)Click here to go to this region},{&(aqua)%1 %2 %3 | %4 %5 %6})" +
-                            "\nPriority: {&(aqua)%7}" +
-                            "\nParent: {&(aqua)%8}%9%a",
+                    "&(gold)Showing info for region {&(green)%0}:" +
+                            "\nOwner: {&(green)%1}%c" +
+                            "\nBounds: $(hovercmd,/toregion %0,{&(aqua)Click here to go to this region},{&(aqua)%2 %3 %4 | %5 %6 %7})" +
+                            "\nPriority: {&(aqua)%8}" +
+                            "\nParent: {&(aqua)%9}%a%b",
                     region.getDisplayName(),
+                    region.getOwnerName(),
                     region.getMin().getBlockX(),
                     region.getMin().getBlockY(),
                     region.getMin().getBlockZ(),
@@ -334,7 +336,8 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                     region.isEmpty() || (region.hasParent() && region.getPriority() == region.getParent().getPriority() &&
                             regions.contains(region.getParent()))
                             ? ""
-                            : "\nFlags:\n" + formatFlags(region)
+                            : "\nFlags:\n" + formatFlags(region),
+                    region.isAdminOwned() ? "" : "\nRecently Stolen: " + region.isRecentlyStolen()
             );
         });
     }
