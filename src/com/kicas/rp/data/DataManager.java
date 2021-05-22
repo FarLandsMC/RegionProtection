@@ -1,12 +1,14 @@
 package com.kicas.rp.data;
 
 import com.google.gson.*;
+
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.event.ClaimCreationEvent;
 import com.kicas.rp.event.ClaimResizeEvent;
 import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.TextUtils;
+
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -19,7 +21,6 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**

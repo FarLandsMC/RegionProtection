@@ -7,9 +7,9 @@ import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.*;
 import com.kicas.rp.util.Entities;
 import com.kicas.rp.util.Materials;
-
 import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.TextUtils;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
@@ -954,16 +954,23 @@ public class PlayerEventHandler implements Listener {
 
             // Flight only applies to players in survival or adventure mode, and only if one of the regions they are
             // crossing has a flight flag.
-            if ((player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE) &&
-                    (toFlags != null && toFlags.hasFlag(RegionFlag.FLIGHT) ||
-                    fromFlags != null && fromFlags.hasFlag(RegionFlag.FLIGHT))) {
-                boolean allowFlight = toFlags == null ? player.getServer().getAllowFlight()
+            // Prevent players from taking fall damage if they lose flight perms while exiting a flight region
+            if ((
+                    player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE
+                ) && (
+                    fromFlags != null && fromFlags.hasFlag(RegionFlag.FLIGHT) ||
+                      toFlags != null &&   toFlags.hasFlag(RegionFlag.FLIGHT)
+            )) {
+                boolean allowFlight = toFlags == null
+                        ? player.getServer().getAllowFlight()
                         : toFlags.isAllowed(RegionFlag.FLIGHT);
                 player.setAllowFlight(allowFlight);
 
-                if (!allowFlight) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 200, 4,
-                            false, false, false));
+                if (!allowFlight && (player.isFlying() || player.getFallDistance() > 3)) {
+                    player.addPotionEffect(new PotionEffect(
+                            PotionEffectType.DAMAGE_RESISTANCE,
+                            200, 4,false, false, false
+                    ));
                 }
             }
 
