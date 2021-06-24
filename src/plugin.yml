@@ -18,7 +18,7 @@ commands:
     permission: rp.command.adminregion
   claim:
     description: Make a minimum-sized claim centered where you are standing.
-    usage: /claim [name]
+    usage: /claim [radius] [name]
     permission: rp.claims.create
   claimblocks:
     description: Add to, remove from, or view someone's claim blocks.
@@ -85,6 +85,10 @@ commands:
     description: Show claims where you've trusted a player.
     usage: /trusted <player>
     permission: rp.claims.manage
+  nearbyclaims:
+    description: Show the nearby claims, same as to shift right clicking with a stick
+    usage: /nearbyclaims
+    permission: rp.claims.inquiry
 permissions:
   rp.claims.create:
     description: Allows a player to steal a claim

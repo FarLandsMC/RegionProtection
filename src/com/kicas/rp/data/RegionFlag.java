@@ -76,7 +76,8 @@ public enum RegionFlag {
     ENTRY_GAMEMODE(GameModeMeta.class),
     EXIT_GAMEMODE(GameModeMeta.class),
     PLAYER_COLLISIONS,
-    MODIFY_ARMOR_STANDS;
+    MODIFY_ARMOR_STANDS,
+    DENY_ENTITY_PICKUP(MaterialFilter.class); // Prevent entities from picking up certain items
 
     public static final RegionFlag[] VALUES = values();
     private static final Map<RegionFlag, Pair<Object, Function<World, Object>>> DEFAULT_VALUES = new HashMap<>();

@@ -6,7 +6,6 @@ import com.kicas.rp.data.flagdata.LocationMeta;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.event.ClaimAbandonEvent;
-import com.kicas.rp.event.ClaimCreationEvent;
 import com.kicas.rp.event.ClaimStealEvent;
 import com.kicas.rp.util.Pair;
 import com.kicas.rp.util.TextUtils;
@@ -14,6 +13,7 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,7 +22,6 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,6 +84,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         if (args.length >= 1 && args[0].equals("all")) {
             confirmDeleteRegions = dm.getPlayerRegions(player, player.getWorld()).stream().filter(region -> region.isOwner(player.getUniqueId()) && !region.isAdminOwned()).collect(Collectors.toList()); // Double check that it's only their regions
             TextUtils.sendFormatted(sender, "&(red)Are you sure that you want to delete all of your claims? Type {&(dark_red)/abandonclaim confirm} to confirm.");
+            dm.getPlayerSession(player).setRegionHighlighter(new RegionHighlighter(player, confirmDeleteRegions,
+                Material.GLOWSTONE, Material.NETHERRACK, true));
         } else {
             // Check to ensure there's a claim at the player's location. Admin claims should be remove through /region
             // delete.
@@ -103,6 +104,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
             if (claim.getChildren().isEmpty()) {
                 confirmDeleteRegions = Collections.singletonList(claim);
                 TextUtils.sendFormatted(sender, "&(red)Are you sure that you want to remove this claim? Type {&(dark_red)/abandonclaim confirm} to confirm.");
+                dm.getPlayerSession(player).setRegionHighlighter(new RegionHighlighter(player, Collections.singletonList(claim),
+                    Material.GLOWSTONE, Material.NETHERRACK, false));
             }
             // Failed deletion due to sub-claims present, show those claims
             else {
@@ -225,6 +228,8 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
 
     /**
      * Creates a claim of the smallest possible size at the sender's location.
+     *
+     * /claim [radius] [name]
      */
     public static final SimpleCommand CLAIM = new SimpleCommand((sender, command, alias, args) -> {
         // Online sender required
@@ -239,7 +244,17 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         // Calculate the distance from the center using the minimum area, and calculate the corners
-        double width = Math.sqrt(RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) / 2;
+        double width;
+        if (args.length > 0) {
+            try {
+                width = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                width = Math.sqrt(RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) / 2;
+            }
+        } else {
+            width = Math.sqrt(RegionProtection.getRPConfig().getInt("general.minimum-claim-size")) / 2;
+        }
+
         Location center = ((Player) sender).getLocation();
         Location min = center.clone().subtract(width, DataManager.DEFAULT_CLAIM_BOTTOM_Y, width),
                 max = center.clone().add(width, 0, width);
@@ -247,10 +262,17 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         // Attempt to create the region
         Region region = RegionProtection.getDataManager().tryCreateClaim((Player) sender, min, max, true);
         if (region != null) {
-            if(args.length > 0){
-                region.setName(args[0]);
+            if(args.length > 1){
+                region.setName(args[1]);
             }
-            sender.sendMessage(ChatColor.GREEN + "Created a claim at your location" + (args.length > 0 ? " with the name of " + args[0] : "."));
+
+            int sideLen = (int) (width * 2);
+            sender.sendMessage(
+                ChatColor.GREEN + "Created a claim at your location " +
+                "with a size of " + sideLen + "x" + sideLen +
+                (args.length > 1 ? " With the name of " + args[1] + "." : ".")
+            );
+                        
             // Highlight the region
             RegionProtection.getDataManager().getPlayerSession((Player) sender)
                     .setRegionHighlighter(new RegionHighlighter((Player) sender, region));
@@ -589,6 +611,34 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
     });
 
     /**
+     * Show the nearby claims, same as shift right clicking with a stick
+     * <p>
+     * /nearbyclaims
+     */
+    public static final SimpleCommand NEARBY_CLAIMS = new SimpleCommand((sender, command, alias, args) -> {
+        // Online sender required
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "You must be in-game to use this command.");
+            return true;
+        }
+
+        Player player = (Player) sender;
+
+        List<Region> regions = RegionProtection.getDataManager().getRegionsInWorld(player.getWorld()).stream()
+            .filter(region -> region.distanceFromEdge(player.getLocation()) < 100 &&
+                !region.isAllowed(RegionFlag.OVERLAP)).collect(Collectors.toList());
+
+        // Notify the player
+        player.sendMessage(ChatColor.GOLD + "Found " + regions.size() + " claim" + (regions.size() == 1 ? "" : "s") + " nearby.");
+
+        // Highlight the regions
+        if (!regions.isEmpty()) {
+            RegionProtection.getDataManager().getPlayerSession(player).setRegionHighlighter(new RegionHighlighter(player, regions));
+        }
+        return true;
+    });
+
+    /**
      * Allows a player to take ownership of an expired claim if they have enough claim blocks.
      */
     public static final SimpleCommand STEAL = new SimpleCommand((sender, command, alias, args) -> {
@@ -712,8 +762,15 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
         }
 
         // Get and check the region the sender is standing in
-        Region region = RegionProtection.getDataManager().getParentRegionsAt(((Player) sender).getLocation()).stream()
-                .filter(r -> r.isEffectiveOwner((Player) sender)).findAny().orElse(null);
+        Region region = RegionProtection.getDataManager().getParentRegionsAt(((Player) sender).getLocation())
+            .stream()
+            .filter(r ->
+                r.isEffectiveOwner((Player) sender) &&
+                (!r.isCoOwner(((Player) sender).getUniqueId()) || // Do not allow co-owners to transfer claims.
+                sender.isOp()) // Check for op so that staff can still use the command when co-owners
+            )
+            .findAny()
+            .orElse(null);
         if (region == null) {
             sender.sendMessage(ChatColor.RED + "Please stand in the region you wish to transfer to this person.");
             return true;

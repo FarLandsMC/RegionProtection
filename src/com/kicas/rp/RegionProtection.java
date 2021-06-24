@@ -231,6 +231,7 @@ public class RegionProtection extends JavaPlugin {
         registerCommand("trust", new CommandTrust());
         registerCommand("trustlist", SimpleCommand.TRUST_LIST);
         registerCommand("trusted", SimpleCommand.TRUSTED);
+        registerCommand("nearbyclaims", SimpleCommand.NEARBY_CLAIMS);
     }
 
     /**

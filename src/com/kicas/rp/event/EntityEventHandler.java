@@ -312,4 +312,24 @@ public class EntityEventHandler implements Listener {
                 event.setCancelled(true);
         }
     }
+
+    /**
+     * Handle entities picking up items
+     *
+     * @param event the event;
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onEntityPickupItem(EntityPickupItemEvent event) {
+        if(event.getEntityType() != EntityType.PLAYER) {
+            FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getEntity().getLocation());
+
+            if(flags != null &&
+                flags.hasFlag(RegionFlag.DENY_ENTITY_PICKUP) &&
+                flags.<EnumFilter.MaterialFilter>getFlagMeta(RegionFlag.DENY_ENTITY_PICKUP).isBlocked(event.getItem().getItemStack().getType())
+            ) {
+                event.setCancelled(true);
+            }
+
+        }
+    }
 }
