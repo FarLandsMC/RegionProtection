@@ -265,6 +265,7 @@ public enum RegionFlag {
         registerDefault(EXIT_GAMEMODE, null);
         registerDefault(PLAYER_COLLISIONS, true);
         registerDefault(MODIFY_ARMOR_STANDS, false);
+        registerDefault(DENY_ENTITY_PICKUP, MaterialFilter.EMPTY_FILTER);
     }
 
     /**

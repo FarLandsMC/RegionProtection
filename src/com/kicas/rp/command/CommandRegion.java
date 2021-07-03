@@ -681,6 +681,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             // Suggest items
             case DENY_ITEM_USE:
             case DENY_WEAPON_USE:
+            case DENY_ENTITY_PICKUP:
                 return filterFormat(args[4], Stream.of(Material.values()).filter(mat -> !mat.isBlock()),
                         Utils::formattedName);
 
