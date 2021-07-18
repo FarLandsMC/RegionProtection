@@ -10,7 +10,7 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.*;
-import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
@@ -681,7 +681,6 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             // Suggest items
             case DENY_ITEM_USE:
             case DENY_WEAPON_USE:
-            case DENY_ENTITY_PICKUP:
                 return filterFormat(args[4], Stream.of(Material.values()).filter(mat -> !mat.isBlock()),
                         Utils::formattedName);
 

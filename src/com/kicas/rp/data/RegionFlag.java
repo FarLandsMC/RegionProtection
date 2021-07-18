@@ -9,7 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -215,7 +215,7 @@ public enum RegionFlag {
         registerDefault(POTION_SPLASH, config.getBoolean("region.potion-splash"), world -> true);
         registerDefault(FORCE_CHEST_ACCESS, false);
         registerDefault(PVP, config.getBoolean("player.pvp"),
-                world -> ((CraftServer) Bukkit.getServer()).getServer().getDedicatedServerProperties().pvp);
+                world -> ((CraftServer) Bukkit.getServer()).getServer().getDedicatedServerProperties().f);
         registerDefault(BED_ENTER, true);
         registerDefault(WATER_FLOW, true);
         registerDefault(LAVA_FLOW, true);
@@ -265,7 +265,6 @@ public enum RegionFlag {
         registerDefault(EXIT_GAMEMODE, null);
         registerDefault(PLAYER_COLLISIONS, true);
         registerDefault(MODIFY_ARMOR_STANDS, false);
-        registerDefault(DENY_ENTITY_PICKUP, MaterialFilter.EMPTY_FILTER);
     }
 
     /**

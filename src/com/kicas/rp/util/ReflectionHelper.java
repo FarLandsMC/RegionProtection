@@ -144,9 +144,8 @@ public final class ReflectionHelper {
                 if (entry.getValue().equals(clazz))
                     return entry.getKey();
             }
-            return clazz;
-        } else
-            return clazz;
+        }
+        return clazz;
     }
 
     public static Class<?> asPrimitive(Class<?> clazz) {
@@ -178,12 +177,9 @@ public final class ReflectionHelper {
         Constructor<T> c = getConstructor(clazz, parameterTypes);
         if (c == null)
             return null;
-        boolean accessible = c.isAccessible();
         c.setAccessible(true);
         try {
-            T object = c.newInstance(matchParameterTypes(parameters, c.getParameterTypes()));
-            c.setAccessible(accessible);
-            return object;
+            return c.newInstance(matchParameterTypes(parameters, c.getParameterTypes()));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             return null;
         }
@@ -197,12 +193,9 @@ public final class ReflectionHelper {
         Class<?>[] paramTypes = c.getParameterTypes();
         for (int i = 0; i < params.length; ++i)
             params[i] = paramSupplier.apply(paramTypes[i]);
-        boolean accessible = c.isAccessible();
         c.setAccessible(true);
         try {
-            T object = c.newInstance(params);
-            c.setAccessible(accessible);
-            return object;
+            return c.newInstance(params);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             return null;
         }
@@ -219,24 +212,18 @@ public final class ReflectionHelper {
         Method m = getMethod(methodName, clazz, parameterTypes);
         if (m == null)
             return null;
-        boolean accessible = m.isAccessible();
         m.setAccessible(true);
         try {
-            Object result = m.invoke(target, matchParameterTypes(parameters, m.getParameterTypes()));
-            m.setAccessible(accessible);
-            return result;
+            return m.invoke(target, matchParameterTypes(parameters, m.getParameterTypes()));
         } catch (IllegalAccessException | InvocationTargetException ex) {
             return null;
         }
     }
 
     public static Object invoke(Method method, Object target, Object... parameters) {
-        boolean accessible = method.isAccessible();
         method.setAccessible(true);
         try {
-            Object result = method.invoke(target, matchParameterTypes(parameters, method.getParameterTypes()));
-            method.setAccessible(accessible);
-            return result;
+            return method.invoke(target, matchParameterTypes(parameters, method.getParameterTypes()));
         } catch (IllegalAccessException | InvocationTargetException ex) {
             return null;
         }
@@ -260,16 +247,12 @@ public final class ReflectionHelper {
     }
 
     public static Object getFieldValue(Field field, Object target) {
-        boolean accessible = field.isAccessible();
         field.setAccessible(true);
-        Object result;
         try {
-            result = field.get(target);
+            return field.get(target);
         } catch (IllegalAccessException ex) {
             return null;
         }
-        field.setAccessible(accessible);
-        return result;
     }
 
     public static boolean setNonFinalFieldValue(String fieldName, Class<?> clazz, Object target, Object value) {
@@ -277,33 +260,12 @@ public final class ReflectionHelper {
     }
 
     public static boolean setNonFinalFieldValue(Field field, Object target, Object value) {
-        boolean accessible = field.isAccessible();
         field.setAccessible(true);
         try {
             field.set(target, value);
         } catch (IllegalAccessException ex) {
             return false;
         }
-        field.setAccessible(accessible);
-        return true;
-    }
-
-    public static boolean setFinalFieldValue(String fieldName, Class<?> clazz, Object target, Object value) {
-        return setFinalFieldValue(getFieldObject(fieldName, clazz), target, value);
-    }
-
-    public static boolean setFinalFieldValue(Field field, Object target, Object value) {
-        boolean accessible = field.isAccessible();
-        field.setAccessible(true);
-        int mod = field.getModifiers();
-        setNonFinalFieldValue("modifiers", Field.class, field, mod & ~Modifier.FINAL);
-        try {
-            field.set(target, value);
-        } catch (IllegalAccessException ex) {
-            return false;
-        }
-        field.setAccessible(accessible);
-        setNonFinalFieldValue("modifiers", Field.class, field, mod);
         return true;
     }
 
