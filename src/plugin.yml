@@ -2,7 +2,7 @@ api-version: 1.17
 main: com.kicas.rp.RegionProtection
 name: RegionProtection
 description: A plugin that protects regions.
-authors: [xCassyx, Kishiko73]
+authors: [xCassyx, Kishiko73, funnyboy_roks, Majekdor]
 version: 2.0-beta
 commands:
   abandonclaim:

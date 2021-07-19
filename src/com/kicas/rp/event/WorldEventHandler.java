@@ -114,8 +114,8 @@ public class WorldEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockSpread(BlockSpreadEvent event) {
-        handleGrowth(event, event.getSource().getLocation(), event.getSource().getType());
-        handleGrowth(event, event.getBlock() .getLocation(), event.getBlock() .getType());
+        handleGrowth(event, event.getSource().getLocation(), event.getSource()  .getType());
+        handleGrowth(event, event.getBlock() .getLocation(), event.getNewState().getType());
     }
 
     /**
