@@ -8,7 +8,7 @@ import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.List;
 
 public class TextUtils2 {
     private static final char ESCAPE_CHAR = '\\';
@@ -127,6 +127,26 @@ public class TextUtils2 {
         return sb.toString();
     }
 
+    /**
+     * Inserts escape characters before any of the important characters used
+     * @param expression The expression to escape
+     * @return The escaped expression
+     */
+    public static String escapeExpression(String expression) {
+        return expression.replaceAll(
+            "([" +
+                VALUE_MARKER +
+                QUOTE_MARKER +
+                COLOR_CHAR +
+                SECTION_START +
+                SECTION_END +
+                FUNCTION_CHAR +
+                "\\" + ESCAPE_CHAR +
+                "])",
+            "\\" + ESCAPE_CHAR + "$1"
+        );
+    }
+
     private static BaseComponent[] parse(String cfmt, Object[] values) throws ParserError {
         Parser parser = new Parser(cfmt);
 
@@ -227,6 +247,7 @@ public class TextUtils2 {
 
                 case FORCE_ADD:
                     parser.stack.last().text.append(ch);
+                    state = ADD_TEXT;
                     break;
 
                 case COLOR_START: {
@@ -488,7 +509,7 @@ public class TextUtils2 {
         List<BaseComponent> extra = parent.getExtra();
         if (extra != null && !extra.isEmpty()) {
             TextComponent prevChild = (TextComponent) extra.get(extra.size() - 1);
-            if (prevChild.getText().trim().isEmpty() && !child.isUnderlinedRaw() && !child.isStrikethroughRaw()) {
+            if (prevChild.getText().trim().isEmpty() && !child.isUnderlined() && !child.isStrikethrough()) {
                 child.setText(prevChild.getText() + child.getText());
                 extra.remove(extra.size() - 1);
             }
