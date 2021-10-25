@@ -9,7 +9,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -214,8 +213,11 @@ public enum RegionFlag {
         registerDefault(ANIMAL_DAMAGE, config.getBoolean("player.animal-damage"), world -> true);
         registerDefault(POTION_SPLASH, config.getBoolean("region.potion-splash"), world -> true);
         registerDefault(FORCE_CHEST_ACCESS, false);
-        registerDefault(PVP, config.getBoolean("player.pvp"),
-                world -> ((CraftServer) Bukkit.getServer()).getServer().getDedicatedServerProperties().f);
+        // TODO: 10/25/21 Find a way to fix this without nms
+        registerDefault(PVP, config.getBoolean("player.pvp"), world -> false);
+        // this is what the above used to be
+        //registerDefault(PVP, config.getBoolean("player.pvp"),
+        //        world -> ((CraftServer) Bukkit.getServer()).getServer().getDedicatedServerProperties().f);
         registerDefault(BED_ENTER, true);
         registerDefault(WATER_FLOW, true);
         registerDefault(LAVA_FLOW, true);

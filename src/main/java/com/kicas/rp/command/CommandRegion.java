@@ -10,7 +10,6 @@ import com.kicas.rp.util.Utils;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.*;
-import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
@@ -647,8 +646,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                 String prefix = args[4].substring(0, args[4].indexOf(':') + 1);
                 Map<String, org.bukkit.command.Command> knownCommands =
                         (Map<String, org.bukkit.command.Command>) ReflectionHelper.getFieldValue
-                                ("knownCommands", SimpleCommandMap.class, ((CraftServer) Bukkit.getServer())
-                                        .getCommandMap());
+                                ("knownCommands", SimpleCommandMap.class, Bukkit.getServer().getCommandMap());
 
                 return filterStartingWith(args[4], knownCommands.keySet().stream()
                         .filter(cmd -> !cmd.contains(":"))
@@ -695,7 +693,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
                         (Map<String, org.bukkit.command.Command>) ReflectionHelper.getFieldValue(
                                 "knownCommands",
                                 SimpleCommandMap.class,
-                                ((CraftServer) Bukkit.getServer()).getCommandMap()
+                                Bukkit.getServer().getCommandMap()
                         );
 
                 return filterFormat(args[4], knownCommands.keySet().stream().filter(s -> !s.contains(":")), null);

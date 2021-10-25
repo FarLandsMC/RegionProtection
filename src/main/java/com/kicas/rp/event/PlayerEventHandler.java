@@ -5,14 +5,10 @@ import static com.kicas.rp.data.flagdata.EnumFilter.MaterialFilter;
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.*;
-import com.kicas.rp.util.Entities;
-import com.kicas.rp.util.Materials;
-import com.kicas.rp.util.Pair;
-import com.kicas.rp.util.TextUtils;
+import com.kicas.rp.util.*;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.*;
 import org.bukkit.event.block.Action;
@@ -1255,7 +1251,7 @@ public class PlayerEventHandler implements Listener {
             Bukkit.getScheduler().runTask(RegionProtection.getInstance(), () -> {
                 player.teleport(location);
                 player.setVelocity(new Vector(0.0, 0.0, 0.0));
-                ((CraftPlayer) player).getHandle().stopRiding();
+                ReflectionHelper.invoke("stopRiding", ReflectionUtil.getConnection(player).getClass(), player);
             });
         }
     }
