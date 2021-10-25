@@ -1,0 +1,125 @@
+api-version: 1.17
+main: com.kicas.rp.RegionProtection
+name: RegionProtection
+description: A plugin that protects regions.
+authors: [xCassyx, Kishiko73, funnyboy_roks, Majekdor]
+version: 2.0-beta
+commands:
+  abandonclaim:
+    description: Abandon the claim you are currently standing in or abandon all your claims.
+    usage: /abandonclaim [claim|all]
+  addcoowner:
+    description: Add or remove a co-owner to the region you are currently standing in.
+    usage: /addcoowner|/removecoowner <player> [claim]
+    aliases: [removecoowner]
+  adminregion:
+    description: Change into or out of admin region creation mode.
+    usage: /adminregion
+    permission: rp.command.adminregion
+  claim:
+    description: Make a minimum-sized claim centered where you are standing.
+    usage: /claim [radius] [name]
+    permission: rp.claims.create
+  claimblocks:
+    description: Add to, remove from, or view someone's claim blocks.
+    usage: /claimblocks <name> <add|remove|view> [amount]
+    permission: rp.command.claimblocks
+  claimheight:
+    description: Change the hight of a claim.
+    usage: /claimheight <get|set> <top|bottom> [amount]
+  claimlist:
+    description: Show the list of claims that you own.
+    usage: /claimlist [player] [co-owner]
+    aliases: [claimslist]
+  claimtoggle:
+    description: Toggle various flags on your claim.
+    usage: /claimtoggle <toggle> [on|off]
+    permission: rp.claims.manage
+  expandclaim:
+    description: Expand your claim in the direction you are facing.
+    usage: /expandclaim <amount> [claim]
+    permission: rp.claims.manage
+  expel:
+    description: Expel a player from your claim.
+    usage: /expel <player> [claim]
+    permission: rp.claims.manage
+  ignoretrust:
+    description: Allows the user to ignore the trust flag in all regions.
+    usage: /ignoretrust
+    permission: rp.command.ignoretrust
+  nameclaim:
+    description: Give your claim a name
+    usage: /nameclaim [name]
+    permission: rp.claims.manage
+  region:
+    description: Create, modify, query, or delete a region.
+    usage: /region <info|flag|create|expand|retract|rename|set-priority|delete> [name] [args...]
+    aliases: [rg]
+    permission: rp.command.region
+  steal:
+    description: Take ownership of an expired claim if you have enough claim blocks.
+    usage: /steal
+    permission: rp.command.steal
+  toregion:
+    description: Teleport yourself to a region.
+    usage: /toregion <name>
+    permission: rp.command.toregion
+  transferclaim:
+    description: Transfer the ownership of your claim to another person.
+    usage: /transferclaim <newOwner>
+    permission: rp.claims.manage
+  trapped:
+    description: Get yourself out of a sticky situation.
+    usage: /trapped
+    aliases: [stuck]
+  trust:
+    description: Give players levels of access to your claim.
+    usage: /trust|/accesstrust|/containertrust|/managementtrust [player] [claim]
+    aliases: [accesstrust, at, containertrust, ct, managementtrust, mt, untrust]
+    permission: rp.claims.manage
+  trustlist:
+    description: Show who has trust in your claim.
+    usage: /trustlist [claim]
+    permission: rp.claims.manage
+  trusted:
+    description: Show claims where you've trusted a player.
+    usage: /trusted <player>
+    permission: rp.claims.manage
+  nearbyclaims:
+    description: Show the nearby claims, same as to shift right clicking with a stick
+    usage: /nearbyclaims
+    permission: rp.claims.inquiry
+permissions:
+  rp.claims.create:
+    description: Allows a player to steal a claim
+    default: true
+  rp.claims.inquiry:
+    description: Allows a player to highlight regions
+    default: true
+  rp.claims.manage:
+    description: Allows a player to use commands to modify a claim
+    default: true
+  rp.command.adminregion:
+    description: Allows a player to use /adminregion
+    default: op
+  rp.command.claimblocks:
+    description: Allows a player to use /claimblocks
+    default: op
+  rp.command.expel:
+    description: Allows a player to use /expel
+    default: true
+  rp.command.externalclaimlist:
+    description: Allows a player to view another person's claim list
+    default: op
+  rp.command.ignoretrust:
+    description: Allows a player to use /ignoretrust
+    default: op
+  rp.command.region:
+    description: Allows a player to use /region
+    default: op
+  rp.command.steal:
+    description: Allows a player to use /steal
+    default: true
+  rp.command.toregion:
+    description: Allows a player to use /toregion
+    default: op

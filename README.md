@@ -3,12 +3,7 @@ Please read the following information if you plan to contribute to this plugin o
 source.
 
 ## Building the Plugin
-The only dependency of this plugin is spigot, which should be locally built using the BuildTools jar which can be found
-[here](https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target). Probably the simplest way to
-build the plugin is to run the build script (`build.sh`) from the project root directory. This script will automatically
-create the spigot jar if it cannot be found, and will create the plugin jar in a directory named `out`. If you wish to build
-the plugin from your IDE, add the spigot jar to the classpath, and use the source compile output along with any resource
-files to create the jar (no manifest is used).
+The plugin is built using Maven. All you need to run is `mvn package`.
 
 ## Basic Plugin Layout
 Packages with descriptions:
