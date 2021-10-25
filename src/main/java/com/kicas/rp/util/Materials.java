@@ -164,7 +164,7 @@ public final class Materials {
             return material.name().endsWith("LOG");
 
         if (tool.name().endsWith("HOE"))
-            return material == GRASS_BLOCK || material == DIRT || material == DIRT_PATH;
+            return material == GRASS_BLOCK || material == DIRT || material == GRASS_PATH;
 
         return (tool.name().endsWith("SHOVEL") && material == GRASS_BLOCK) ||
                 (tool.name().endsWith("DYE") && material.name().endsWith("SIGN"));
