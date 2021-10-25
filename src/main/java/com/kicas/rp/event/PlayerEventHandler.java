@@ -28,6 +28,7 @@ import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 
@@ -1251,7 +1252,13 @@ public class PlayerEventHandler implements Listener {
             Bukkit.getScheduler().runTask(RegionProtection.getInstance(), () -> {
                 player.teleport(location);
                 player.setVelocity(new Vector(0.0, 0.0, 0.0));
-                ReflectionHelper.invoke("stopRiding", ReflectionUtil.getConnection(player).getClass(), player);
+                Object craftPlayer = null;
+                try {
+                    craftPlayer = ReflectionHelper.getMethod("getHandle", player.getClass()).invoke(player);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+                ReflectionHelper.invoke("stopRiding", craftPlayer.getClass(), craftPlayer);
             });
         }
     }
