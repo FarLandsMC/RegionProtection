@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -34,11 +34,11 @@ jobs:
 
     - name: get project version
       id: project
-      if: ${{ runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
+      if: ${{ runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
       run: echo ::set-output name=version::$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 
     - name: publish with maven
-      if: ${{ runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master' && endsWith(steps.project.outputs.version, '-SNAPSHOT')}}
+      if: ${{ runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main' && endsWith(steps.project.outputs.version, '-SNAPSHOT')}}
       run: mvn --batch-mode deploy
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
