@@ -32,6 +32,7 @@ lib/
 out/
 run/
 test/
+target/
 
 # Mac specific metafile
 .DS_Store

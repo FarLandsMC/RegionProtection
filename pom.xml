@@ -17,6 +17,7 @@
     </distributionManagement>
 
     <build>
+        <finalName>RegionProtection</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
