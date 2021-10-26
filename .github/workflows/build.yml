@@ -31,3 +31,14 @@ jobs:
 
     - name: build with maven
       run: mvn -B package --file pom.xml
+
+    - name: get project version
+      id: project
+      if: ${{ runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
+      run: echo ::set-output name=version::$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+
+    - name: publish with maven
+      if: ${{ runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master' && endsWith(steps.project.outputs.version, '-SNAPSHOT')}}
+      run: mvn --batch-mode deploy
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
