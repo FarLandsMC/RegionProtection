@@ -39,6 +39,6 @@ jobs:
 
     - name: publish with maven
       if: ${{ runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main' && endsWith(steps.project.outputs.version, '-SNAPSHOT')}}
-      run: mvn --batch-mode deploy
+      run: mvn --batch-mode -DuseGitHubPackages=true deploy
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.DEPLOY_GITHUB_TOKEN }}
