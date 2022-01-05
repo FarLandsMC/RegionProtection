@@ -428,7 +428,7 @@ public class CommandRegion extends TabCompleterBase implements CommandExecutor {
             }
 
             // Perform the extension
-            region.getMin().setY(0);
+            region.getMin().setY(region.getWorld().getMinHeight());
             region.getMax().setY(region.getWorld().getMaxHeight());
 
             TextUtils.sendFormatted(sender, "&(green)Extended region to bedrock and world height.");

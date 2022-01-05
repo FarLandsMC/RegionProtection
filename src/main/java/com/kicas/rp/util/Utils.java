@@ -334,39 +334,56 @@ public final class Utils {
      */
     public static Location findSafe(Location safe, int bottom, int top) {
         World world = safe.getWorld();
-        if (world == null)
+        if (world == null) {
             world = Bukkit.getWorlds().get(0);
+        }
 
-        final int border = (int)world.getWorldBorder().getSize() - 1 >> 1;
+        final int border = (int) world.getWorldBorder().getSize() - 1 >> 1;
         safe.setX(constrain(safe.getBlockX() - world.getWorldBorder().getCenter().getBlockX(), -border, border) +
-                world.getWorldBorder().getCenter().getBlockX());
+                  world.getWorldBorder().getCenter().getBlockX());
         safe.setZ(constrain(safe.getBlockZ() - world.getWorldBorder().getCenter().getBlockZ(), -border, border) +
-                world.getWorldBorder().getCenter().getBlockZ());
+                  world.getWorldBorder().getCenter().getBlockZ());
 
+        if (canStand(safe.getBlock()) && isSafe(safe.clone())) {
+            return safe.add(0.5, 1, 0.5);
+        }
 
-        for (int i = safe.getBlockY(), c = 0; ; i += (c = (c & 1) == 0 ? c + 1 : ~c)) {
-            safe.setY(i);
-            if (canStand(safe.getBlock()) && isSafe(safe.clone()))
+        int y = safe.getBlockY(),
+            dy = 0,
+            dyBottom = Math.abs(y - bottom),
+            dyTop = Math.abs(y - top);
+
+        for (int e = Math.min(dyBottom, dyTop); ++dy <= e; ) {
+            // Check above
+            safe.setY(y + dy);
+            if (canStand(safe.getBlock()) && isSafe(safe.clone())) {
                 return safe.add(0.5, 1, 0.5);
-
-            if (bottom >= i) {
-                for (i += c + 1; i <= top; ++i) {
-                    safe.setY(i);
-                    if (canStand(safe.getBlock()) && isSafe(safe.clone()))
-                        return safe.add(0.5, 1, 0.5);
-                }
-                return null;
             }
 
-            if (i >= top) {
-                for (i += ~c; bottom <= i; --i) {
-                    safe.setY(i);
-                    if (canStand(safe.getBlock()) && isSafe(safe.clone()))
-                        return safe.add(0.5, 1, 0.5);
-                }
-                return null;
+            // Check below
+            safe.setY(y - dy);
+            if (canStand(safe.getBlock()) && isSafe(safe.clone())) {
+                return safe.add(0.5, 1, 0.5);
             }
         }
+
+        // Finish checking if we hit world min or max to save loop conditional
+        if (dyTop > dy) {
+            while (dy <= dyTop) {
+                safe.setY(y + dy++);
+                if (canStand(safe.getBlock()) && isSafe(safe.clone())) {
+                    return safe.add(0.5, 1, 0.5);
+                }
+            }
+        } else if (dyBottom > dy) {
+            while (dy <= dyBottom) {
+                safe.setY(y - dy++);
+                if (canStand(safe.getBlock()) && isSafe(safe.clone())) {
+                    return safe.add(0.5, 1, 0.5);
+                }
+            }
+        }
+        return null;
     }
 
     /**

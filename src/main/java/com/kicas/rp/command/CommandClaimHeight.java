@@ -93,7 +93,7 @@ public class CommandClaimHeight extends TabCompleterBase implements CommandExecu
             if (newY > region.getWorld().getMaxHeight()) {
                 sender.sendMessage(ChatColor.RED + "You cannot extend a claim beyond the maximum world height.");
                 return true;
-            } else if (newY < 0) {
+            } else if (newY < region.getWorld().getMinHeight()) {
                 sender.sendMessage(ChatColor.RED + "You cannot extend a claim below bedrock.");
                 return true;
             }
