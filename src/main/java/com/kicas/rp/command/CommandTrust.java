@@ -2,7 +2,6 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
-import com.kicas.rp.data.flagdata.FlagMeta;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import org.bukkit.ChatColor;
@@ -10,6 +9,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,7 +41,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
         // Send the help messages
         if (args.length == 0) {
             sender.sendMessage(HELP_MESSAGES.get(alias.toLowerCase()));
@@ -60,7 +60,9 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
 
         Region specifiedClaim = args.length == 2 ? RegionProtection.getDataManager().getPlayerRegionByName((Player) sender, ((Player) sender).getWorld(), args[1]) : null;
 
-        if(locationClaim == null && specifiedClaim == null) {
+        List<Region> allRegions = RegionProtection.getDataManager().getPlayerRegions((Player) sender, ((Player) sender).getWorld());
+
+        if (locationClaim == null && specifiedClaim == null && !args[1].equalsIgnoreCase("all")) {
             sender.sendMessage(ChatColor.RED + "Please " +
                     (playerNamedRegions.isEmpty() ? "" : "specify or ") +
                     "stand in the claim where you wish to trust this person.");
@@ -68,12 +70,18 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
         }
 
         Region claim = specifiedClaim == null ? locationClaim : specifiedClaim;
+        TrustMeta trustMeta = null;
 
-        // Make sure the sender has permission to modify trust levels
-        TrustMeta trustMeta = claim.getAndCreateFlagMeta(RegionFlag.TRUST);
-        if (!trustMeta.hasTrust((Player) sender, TrustLevel.MANAGEMENT, claim)) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission to trust people in this claim.");
-            return true;
+        boolean allClaims = false;
+        if (args[1].equalsIgnoreCase("all")) {
+            allClaims = true;
+        } else {
+            // Make sure the sender has permission to modify trust levels
+            trustMeta = claim.getAndCreateFlagMeta(RegionFlag.TRUST);
+            if (!trustMeta.hasTrust((Player) sender, TrustLevel.MANAGEMENT, claim)) {
+                sender.sendMessage(ChatColor.RED + "You do not have permission to trust people in this claim.");
+                return true;
+            }
         }
 
         // Find the trust level based on the alias used
@@ -101,13 +109,20 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
 
         // Grant the trust and notify the sender
         if ("public".equals(args[0]) || "all".equals(args[0]) || "everyone".equals(args[0]) || "*".equals(args[0])) {
-            trustMeta.trustPublic(trust);
+            if (allClaims) {
+                for (Region region : allRegions) {
+                    TrustMeta meta = region.getAndCreateFlagMeta(RegionFlag.TRUST);
+                    meta.trustPublic(trust);
+                }
+            } else {
+                trustMeta.trustPublic(trust);
+            }
 
             if (trust == TrustLevel.NONE)
-                sender.sendMessage(ChatColor.GOLD + "Untrusted the public from your claim.");
+                sender.sendMessage(ChatColor.GOLD + "Untrusted the public from your claim" + (allClaims ? "s" : "") + ".");
             else {
                 sender.sendMessage(ChatColor.GOLD + "Granted the public " + trust.name().toLowerCase() + " trust in " +
-                        "your claim.");
+                        "your claim" + (allClaims ? "s" : "") + ".");
             }
         }
         // Grant a specific player trust
@@ -120,20 +135,37 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
             }
 
             // Check to make sure the owner isn't demoting themselves
-            if (claim.isOwner(uuid)) {
-                sender.sendMessage(ChatColor.RED + "You cannot set the trust level of " + args[0] + " in this claim " +
-                        "since they are also an owner of the claim.");
-                return true;
+            if (!allClaims) {
+                if (claim.isOwner(uuid)) {
+                    sender.sendMessage(ChatColor.RED + "You cannot set the trust level of " + args[0] +
+                        " in this claim since they are also an owner of the claim.");
+                    return true;
+                }
             }
 
             // Notify the sender
             if (trust == TrustLevel.NONE) {
-                trustMeta.untrust(uuid);
-                sender.sendMessage(ChatColor.GOLD + "Untrusted " + args[0] + " from your claim.");
+                if (allClaims) {
+                    for (Region region : allRegions) {
+                        TrustMeta meta = region.getAndCreateFlagMeta(RegionFlag.TRUST);
+                        meta.untrust(uuid);
+                    }
+                } else {
+                    trustMeta.untrust(uuid);
+                }
+                sender.sendMessage(ChatColor.GOLD + "Untrusted " + args[0] + " from your claim" + (allClaims ? "s" : "") + ".");
             } else {
+                if (allClaims) {
+                    for (Region region : allRegions) {
+                        TrustMeta meta = region.getAndCreateFlagMeta(RegionFlag.TRUST);
+                        meta.trust(uuid, trust);
+                    }
+                } else {
+                    trustMeta.trust(uuid, trust);
+                }
                 trustMeta.trust(uuid, trust);
                 sender.sendMessage(ChatColor.GOLD + "Granted " + args[0] + " " + trust.name().toLowerCase() +
-                        " trust in your claim.");
+                        " trust in your claim" + (allClaims ? "s" : "") + ".");
             }
         }
 
@@ -141,7 +173,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args)
             throws IllegalArgumentException {
         // Online players
         List<String> values;
@@ -157,9 +189,9 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
                     break;
                 }
                 List<String> finalValues = new ArrayList<>();
-                dm.getPlayerRegions((Player) sender, ((Player) sender).getWorld()).forEach(region -> {
-                    finalValues.addAll(((TrustMeta) region.getAndCreateFlagMeta(RegionFlag.TRUST)).getAllTrustedPlayerNames());
-                });
+                dm.getPlayerRegions((Player) sender, ((Player) sender).getWorld()).forEach(region ->
+                    finalValues.addAll(((TrustMeta) region.getAndCreateFlagMeta(RegionFlag.TRUST)).getAllTrustedPlayerNames()))
+                ;
                 values = finalValues;
                 break;
             case 2:
