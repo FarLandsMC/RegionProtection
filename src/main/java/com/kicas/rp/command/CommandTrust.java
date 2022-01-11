@@ -29,6 +29,8 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
             "permissions on your claim. They will not be able to resize, subdivide, or delete your claim.";
     private static final String UNTRUST_HELP = ChatColor.GOLD + "Revoke all trust from someone.";
 
+    private static final List<String> EVERYONE_ALIASES = List.of("everyone", "all", "public", "*");
+
     static {
         HELP_MESSAGES.put("accesstrust", ACCESS_HELP);
         HELP_MESSAGES.put("at", ACCESS_HELP);
@@ -73,7 +75,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
         TrustMeta trustMeta = null;
 
         boolean allClaims = false;
-        if (args[1].equalsIgnoreCase("all")) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("all")) {
             allClaims = true;
         } else {
             // Make sure the sender has permission to modify trust levels
@@ -85,30 +87,16 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
         }
 
         // Find the trust level based on the alias used
-        TrustLevel trust;
-        switch (alias) {
-            case "accesstrust":
-            case "at":
-                trust = TrustLevel.ACCESS;
-                break;
-            case "containertrust":
-            case "ct":
-                trust = TrustLevel.CONTAINER;
-                break;
-            case "trust":
-                trust = TrustLevel.BUILD;
-                break;
-            case "managementtrust":
-            case "mt":
-                trust = TrustLevel.MANAGEMENT;
-                break;
-            default: // "untrust"
-                trust = TrustLevel.NONE;
-                break;
-        }
+        TrustLevel trust = switch (alias.toLowerCase()) {
+            case "accesstrust", "at" -> TrustLevel.ACCESS;
+            case "containertrust", "ct"->  TrustLevel.CONTAINER;
+            case "trust" -> TrustLevel.BUILD;
+            case "managementtrust", "mt" -> TrustLevel.MANAGEMENT;
+            default -> TrustLevel.NONE; // "untrust"
+        };
 
         // Grant the trust and notify the sender
-        if ("public".equals(args[0]) || "all".equals(args[0]) || "everyone".equals(args[0]) || "*".equals(args[0])) {
+        if (EVERYONE_ALIASES.contains(args[0].toLowerCase())) {
             if (allClaims) {
                 for (Region region : allRegions) {
                     TrustMeta meta = region.getAndCreateFlagMeta(RegionFlag.TRUST);
