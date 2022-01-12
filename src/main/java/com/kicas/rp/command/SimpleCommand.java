@@ -2,12 +2,14 @@ package com.kicas.rp.command;
 
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
+import com.kicas.rp.data.flagdata.FlagMeta;
 import com.kicas.rp.data.flagdata.LocationMeta;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.event.ClaimAbandonEvent;
 import com.kicas.rp.event.ClaimStealEvent;
 import com.kicas.rp.util.Pair;
+import com.kicas.rp.util.ReflectionHelper;
 import com.kicas.rp.util.TextUtils;
 import com.kicas.rp.util.Utils;
 import org.bukkit.Bukkit;
@@ -403,11 +405,27 @@ public class SimpleCommand extends TabCompleterBase implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + "Invalid toggle value: " + args[1] + ". Expected \"on\" or \"off\"");
                 return true;
             }
-        } else
-            newValue = !claim.isAllowed(toggle);
+        } else {
+            if(toggle.isBoolean()) {
+                newValue = !claim.isAllowed(toggle);
+            } else {
+                newValue = !claim.hasFlag(toggle);
+            }
+        }
 
         // Modify the flag value
-        claim.setFlag(toggle, newValue);
+        if(toggle.isBoolean()) {
+            claim.setFlag(toggle, newValue);
+        } else {
+            if(newValue) {
+                FlagMeta meta = ReflectionHelper.instantiateWithDefaultParams(toggle.getMetaClass());
+                meta.readMetaString("*");
+                claim.setFlag(toggle, meta);
+
+            } else {
+                claim.deleteFlag(toggle);
+            }
+        }
         sender.sendMessage(ChatColor.GOLD + (newValue ? "Enabled" : "Disabled") + " " + Utils.formattedName(toggle) +
                 " in your claim.");
 

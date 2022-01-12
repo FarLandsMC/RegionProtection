@@ -38,7 +38,7 @@ public enum RegionFlag {
     LAVA_FLOW,
     SNOW_CHANGE,
     ICE_CHANGE,
-    CORAL_DEATH,
+    CORAL_DEATH(true),
     LEAF_DECAY,
     LIGHTNING_MOB_DAMAGE,
     PORTAL_PAIR_FORMATION,
@@ -47,7 +47,7 @@ public enum RegionFlag {
     DENY_COMMAND(StringFilter.class),
     FOLLOW, // prevent pet tp
     DENY_AGGRO(EntityFilter.class), // prevent certain mobs from targeting the player
-    DENY_GROWTH(MaterialFilter.class), // vine growth grass spread etc
+    DENY_GROWTH(true, MaterialFilter.class), // vine growth grass spread etc
     DENY_BLOCK_USE(MaterialFilter.class),
     KEEP_INVENTORY,
     KEEP_XP,
