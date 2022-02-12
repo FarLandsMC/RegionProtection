@@ -40,3 +40,6 @@ target/
 # Other
 .vscode/
 arch/
+
+# Maven Javadocs
+docs/

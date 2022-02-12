@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.kicas.rp"},{"l":"com.kicas.rp.command"},{"l":"com.kicas.rp.data"},{"l":"com.kicas.rp.data.flagdata"},{"l":"com.kicas.rp.event"},{"l":"com.kicas.rp.util"}];updateSearchResults();
