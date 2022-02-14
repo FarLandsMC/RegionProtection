@@ -26,5 +26,5 @@ jobs:
           branch: gh-pages
           clean: true
           folder: docs
-          git-config-name: FarLands
+          git-config-name: FarLandsMC
           git-config-email: <>
