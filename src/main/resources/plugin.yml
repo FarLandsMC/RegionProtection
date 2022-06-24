@@ -1,4 +1,4 @@
-api-version: 1.18
+api-version: 1.19
 main: com.kicas.rp.RegionProtection
 name: RegionProtection
 description: A plugin that protects regions.
