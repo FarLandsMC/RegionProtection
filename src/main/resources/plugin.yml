@@ -3,7 +3,7 @@ main: com.kicas.rp.RegionProtection
 name: RegionProtection
 description: A plugin that protects regions.
 authors: [xCassyx, Kishiko73, funnyboy_roks, Majekdor]
-version: ${project.verion}
+version: ${project.version}
 commands:
   abandonclaim:
     description: Abandon the claim you are currently standing in or abandon all your claims.
