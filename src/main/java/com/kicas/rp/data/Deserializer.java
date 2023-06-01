@@ -22,8 +22,9 @@ import java.util.*;
  * and this class must conform to it and previous versions of it.
  */
 public class Deserializer implements AutoCloseable {
+
     private final Decoder decoder;
-    private final int expectedFormatVersion;
+    private final int     expectedFormatVersion;
 
     public Deserializer(File file, int expectedFormatVersion) throws IOException {
         this.decoder = new Decoder(new FileInputStream(file));
@@ -39,10 +40,11 @@ public class Deserializer implements AutoCloseable {
     public Map<UUID, WorldData> readWorldData() throws IOException {
         // Check the format version
         int format = decoder.read();
-        if (format < expectedFormatVersion)
+        if (format < expectedFormatVersion) {
             RegionProtection.log("Decoding older data format version (" + format + ") for world data file.");
-        else if (format > expectedFormatVersion)
+        } else if (format > expectedFormatVersion) {
             fail("Invalid format encountered. Please make sure you are using the most recent version of the plugin.");
+        }
 
         Map<UUID, WorldData> worldData = readWorldData(format);
         decoder.close();
@@ -55,8 +57,9 @@ public class Deserializer implements AutoCloseable {
         int len = decoder.read();
         Map<UUID, WorldData> worldData = new HashMap<>(len);
         while (len > 0) {
-            if (decoder.isAtEndOfStream())
+            if (decoder.isAtEndOfStream()) {
                 failEOF();
+            }
 
             // Read the global flags
             UUID worldUid = decoder.readUuid();
@@ -87,10 +90,11 @@ public class Deserializer implements AutoCloseable {
     public Map<UUID, PersistentPlayerData> readPlayerData() throws IOException {
         // Check the format version
         int format = decoder.read();
-        if (format < expectedFormatVersion)
+        if (format < expectedFormatVersion) {
             RegionProtection.log("Decoding older data format version (" + format + ") for player data file.");
-        else if (format > expectedFormatVersion)
+        } else if (format > expectedFormatVersion) {
             fail("Invalid format encountered. Please make sure you are using the most recent version of the plugin.");
+        }
 
         Map<UUID, PersistentPlayerData> playerData = readPlayerData(format);
         decoder.close();
@@ -103,13 +107,14 @@ public class Deserializer implements AutoCloseable {
         int len = decoder.readCompressedUint();
         Map<UUID, PersistentPlayerData> playerData = new HashMap<>(len);
         while (len > 0) {
-            if (decoder.isAtEndOfStream())
+            if (decoder.isAtEndOfStream()) {
                 failEOF();
+            }
 
             UUID uuid = decoder.readUuid();
             playerData.put(uuid, new PersistentPlayerData(
-                    uuid,
-                    format == 0 ? decoder.readCompressedUint() : decoder.readCompressedInt()
+                uuid,
+                format == 0 ? decoder.readCompressedUint() : decoder.readCompressedInt()
             ));
             --len;
         }
@@ -131,8 +136,8 @@ public class Deserializer implements AutoCloseable {
         int meta = decoder.read();
 
         Region region = new Region(name, meta & 0x7F, (meta & 0x80) != 0 ? Utils.UUID_00 : decoder.readUuid(),
-                readRegionBound(world), readRegionBound(world), null,
-                format > 0 ? decoder.readArrayAsList(UUID.class) : new ArrayList<>());
+                                   readRegionBound(world, format), readRegionBound(world, format), null,
+                                   format > 0 ? decoder.readArrayAsList(UUID.class) : new ArrayList<>());
 
         readFlags(region, format);
         int len = decoder.readCompressedUint();
@@ -154,8 +159,8 @@ public class Deserializer implements AutoCloseable {
      */
     private Region readChildRegion(Region parent, int format) throws IOException {
         Region region = new Region(decoder.readUTF8Raw(), decoder.read() & 0x7F, parent.getOwner(),
-                readRegionBound(parent.getWorld()), readRegionBound(parent.getWorld()), parent,
-                format > 0 ? decoder.readArrayAsList(UUID.class) : parent.coOwners);
+                                   readRegionBound(parent.getWorld(), format), readRegionBound(parent.getWorld(), format), parent,
+                                   format > 0 ? decoder.readArrayAsList(UUID.class) : parent.coOwners);
         readFlags(region, format);
         return region;
     }
@@ -167,8 +172,13 @@ public class Deserializer implements AutoCloseable {
      * @return the location.
      * @throws IOException if an I/O error occurs.
      */
-    private Location readRegionBound(World world) throws IOException {
-        return new Location(world, decoder.readCompressedInt(), decoder.read(), decoder.readCompressedInt());
+    private Location readRegionBound(World world, int format) throws IOException {
+        return new Location(
+            world,
+            decoder.readCompressedInt(),
+            format < 5 ? decoder.read() : decoder.readCompressedInt(), // Before version 5, world height was only 0-255
+            decoder.readCompressedInt()
+        );
     }
 
     /**
@@ -211,15 +221,15 @@ public class Deserializer implements AutoCloseable {
         // Reads the flag meta value. Note: perhaps make these individual functions
         Object meta;
         try {
-            if (flag.isBoolean())
+            if (flag.isBoolean()) {
                 meta = decoder.readBoolean();
-            else if (BorderPolicy.class.equals(flag.getMetaClass()))
+            } else if (BorderPolicy.class.equals(flag.getMetaClass())) {
                 meta = new BorderPolicy(BorderPolicy.Policy.VALUES[decoder.read()]);
-            else if (GameModeMeta.class.equals(flag.getMetaClass()))
+            } else if (GameModeMeta.class.equals(flag.getMetaClass())) {
                 meta = new GameModeMeta(GameModeMeta.Mode.VALUES[decoder.read()]);
-            else if (CommandMeta.class.equals(flag.getMetaClass()))
+            } else if (CommandMeta.class.equals(flag.getMetaClass())) {
                 meta = new CommandMeta(decoder.readBoolean(), decoder.readUTF8Raw());
-            else if (EnumFilter.class.isAssignableFrom(flag.getMetaClass())) {
+            } else if (EnumFilter.class.isAssignableFrom(flag.getMetaClass())) {
                 meta = ReflectionHelper.instantiateWithDefaultParams(flag.getMetaClass());
                 boolean isWhitelist = decoder.readBoolean();
                 int len = decoder.readCompressedUint();
@@ -241,12 +251,12 @@ public class Deserializer implements AutoCloseable {
                 }
             } else if (LocationMeta.class.equals(flag.getMetaClass())) {
                 meta = new LocationMeta(decoder.readUuid(), decoder.readDouble(), decoder.readDouble(),
-                        decoder.readDouble(), decoder.readFloat(), decoder.readFloat());
-            } else if (StringFilter.class.equals(flag.getMetaClass()))
+                                        decoder.readDouble(), decoder.readFloat(), decoder.readFloat());
+            } else if (StringFilter.class.equals(flag.getMetaClass())) {
                 meta = new StringFilter(decoder.readBoolean(), new HashSet<>(decoder.readArrayAsList(String.class)));
-            else if (TextMeta.class.equals(flag.getMetaClass()))
+            } else if (TextMeta.class.equals(flag.getMetaClass())) {
                 meta = new TextMeta(decoder.readUTF8Raw());
-            else if (TrustMeta.class.equals(flag.getMetaClass())) {
+            } else if (TrustMeta.class.equals(flag.getMetaClass())) {
                 TrustMeta trustMeta = new TrustMeta(TrustLevel.VALUES[decoder.read()]);
                 int len = decoder.readCompressedUint();
                 while (len > 0) {
@@ -254,8 +264,9 @@ public class Deserializer implements AutoCloseable {
                     --len;
                 }
                 meta = trustMeta;
-            } else
+            } else {
                 throw new InternalError("Invalid flag meta class: " + flag.getMetaClass().getName());
+            }
         }
         // A stray index means we're derailed
         catch (IndexOutOfBoundsException ex) {
@@ -307,6 +318,7 @@ public class Deserializer implements AutoCloseable {
      * Thrown when an error regarding deserialization occurs.
      */
     public static final class DeserializationException extends RuntimeException {
+
         public DeserializationException(String message) {
             super(message);
         }

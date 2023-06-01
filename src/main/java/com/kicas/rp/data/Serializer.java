@@ -80,11 +80,11 @@ public class Serializer implements AutoCloseable {
         // Bounds
         Location loc = region.getMin();
         encoder.writeIntCompressed(loc.getBlockX());
-        encoder.write(Utils.constrain(loc.getBlockY(), 0, 255));
+        encoder.writeIntCompressed(loc.getBlockY());
         encoder.writeIntCompressed(loc.getBlockZ());
         loc = region.getMax();
         encoder.writeIntCompressed(loc.getBlockX());
-        encoder.write(Utils.constrain(loc.getBlockY(), 0, 255));
+        encoder.writeIntCompressed(loc.getBlockY());
         encoder.writeIntCompressed(loc.getBlockZ());
 
         // Co-owners
