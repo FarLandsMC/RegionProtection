@@ -2,6 +2,7 @@ package com.kicas.rp.event;
 
 import static com.kicas.rp.data.flagdata.EnumFilter.EntityFilter;
 import static com.kicas.rp.data.flagdata.EnumFilter.MaterialFilter;
+
 import com.kicas.rp.RegionProtection;
 import com.kicas.rp.data.*;
 import com.kicas.rp.data.flagdata.*;

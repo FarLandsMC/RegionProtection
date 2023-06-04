@@ -156,8 +156,11 @@ public final class Materials {
      * @return true if the given material changes when the given tool is used on it, false otherwise.
      */
     public static boolean changesOnUse(Material material, Material tool) {
-        if (CAKE == material || material == REPEATER || material == COMPARATOR || material == DAYLIGHT_DETECTOR ||
-                END_PORTAL_FRAME == material && ENDER_EYE == tool)
+        if (CAKE == material || material == REPEATER || material == COMPARATOR || material == DAYLIGHT_DETECTOR
+            || tool == BRUSH)
+            return true;
+
+        if (END_PORTAL_FRAME == material && ENDER_EYE == tool)
             return true;
 
         if (tool.name().endsWith("AXE"))
