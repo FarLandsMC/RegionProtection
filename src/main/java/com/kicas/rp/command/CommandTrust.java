@@ -64,7 +64,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
 
         List<Region> allRegions = RegionProtection.getDataManager().getPlayerRegions((Player) sender, ((Player) sender).getWorld());
 
-        if (locationClaim == null && specifiedClaim == null && !args[1].equalsIgnoreCase("all")) {
+        if (locationClaim == null && specifiedClaim == null && !args[0].equalsIgnoreCase("all")) {
             sender.sendMessage(ChatColor.RED + "Please " +
                     (playerNamedRegions.isEmpty() ? "" : "specify or ") +
                     "stand in the claim where you wish to trust this person.");
@@ -75,7 +75,7 @@ public class CommandTrust extends TabCompleterBase implements CommandExecutor {
         TrustMeta trustMeta = null;
 
         boolean allClaims = false;
-        if (args.length >= 2 && args[1].equalsIgnoreCase("all")) {
+        if (args.length >= 2 && args[0].equalsIgnoreCase("all")) {
             allClaims = true;
         } else {
             // Make sure the sender has permission to modify trust levels
