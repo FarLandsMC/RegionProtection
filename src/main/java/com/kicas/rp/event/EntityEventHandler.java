@@ -151,6 +151,11 @@ public class EntityEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityExplosion(EntityExplodeEvent event) {
+        // Allow wind charges to explode -- potentially want a flag or something at some point in the future
+        if (event.getEntityType() == EntityType.WIND_CHARGE) {
+            return;
+        }
+
         if (EntityType.TNT.equals(event.getEntityType())) {
             // If the explosion occurs in a location where tnt is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
