@@ -77,8 +77,8 @@ public final class Materials {
      */
     @SuppressWarnings("deprecation")
     public static List<Material> materialsEndingWith(String with, List<Material> except) {
-        return Arrays.stream(Material.values()).filter(material -> !material.isLegacy() &&
-                material.name().endsWith(with) && !except.contains(material)).collect(Collectors.toList());
+        return Arrays.stream(values()).filter(material -> !material.isLegacy() &&
+                                                          material.name().endsWith(with) && !except.contains(material)).collect(Collectors.toList());
     }
 
     /**
@@ -196,28 +196,39 @@ public final class Materials {
      * @return the material associated with the given entity, or AIR if not material is associated.
      */
     public static Material forEntity(Entity entity) {
-        if (entity instanceof Boat) {
-            switch (((Boat) entity).getWoodType()) {
-                case GENERIC:
-                    return Material.OAK_BOAT;
-                case REDWOOD:
-                    return Material.SPRUCE_BOAT;
-                default:
-                    return Material.valueOf(((Boat) entity).getWoodType().name() + "_BOAT");
-            }
+        if (entity instanceof ChestBoat boat) {
+            return switch (boat.getBoatType()) {
+                case OAK -> OAK_CHEST_BOAT;
+                case SPRUCE -> SPRUCE_CHEST_BOAT;
+                case BIRCH -> BIRCH_CHEST_BOAT;
+                case JUNGLE -> JUNGLE_CHEST_BOAT;
+                case ACACIA -> ACACIA_CHEST_BOAT;
+                case CHERRY -> CHERRY_CHEST_BOAT;
+                case DARK_OAK -> DARK_OAK_CHEST_BOAT;
+                case MANGROVE -> MANGROVE_CHEST_BOAT;
+                case BAMBOO -> BAMBOO_CHEST_RAFT;
+            };
         }
-        switch (entity.getType()) {
-            case MINECART_COMMAND: return COMMAND_BLOCK_MINECART;
-            case MINECART_CHEST: return CHEST_MINECART;
-            case MINECART_TNT: return TNT_MINECART;
-            case MINECART_FURNACE: return FURNACE_MINECART;
-            case MINECART_HOPPER: return HOPPER_MINECART;
-            case LEASH_HITCH: return LEAD;
-            default:
-            {
-                Material mat = Utils.safeValueOf(Material::valueOf, entity.getType().name());
-                return mat == null ? AIR : mat;
-            }
+        else if (entity instanceof Boat boat) {
+            return switch (boat.getBoatType()) {
+                case OAK -> OAK_BOAT;
+                case SPRUCE -> SPRUCE_BOAT;
+                case BIRCH -> BIRCH_BOAT;
+                case JUNGLE -> JUNGLE_BOAT;
+                case ACACIA -> ACACIA_BOAT;
+                case CHERRY -> CHERRY_BOAT;
+                case DARK_OAK -> DARK_OAK_BOAT;
+                case MANGROVE -> MANGROVE_BOAT;
+                case BAMBOO -> BAMBOO_RAFT;
+            };
+        } else {
+            return switch (entity.getType()) {
+                case LEASH_KNOT -> LEAD;
+                default -> {
+                    Material mat = Utils.safeValueOf(Material::valueOf, entity.getType().name());
+                    yield mat == null ? AIR : mat;
+                }
+            };
         }
     }
 

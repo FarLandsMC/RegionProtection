@@ -444,7 +444,7 @@ public class PlayerEventHandler implements Listener {
         }
 
         // Handle breaking leash hitches
-        if (event.getRightClicked().getType() == EntityType.LEASH_HITCH) {
+        if (event.getRightClicked().getType() == EntityType.LEASH_KNOT) {
             if (flags.<MaterialFilter>getFlagMeta(RegionFlag.DENY_BREAK).isBlocked(Material.LEAD)) {
                 if (EquipmentSlot.HAND == event.getHand())
                     event.getPlayer().sendMessage(ChatColor.RED + "You cannot break that here.");
@@ -464,7 +464,7 @@ public class PlayerEventHandler implements Listener {
         Material heldItem = Materials.stackType(Materials.heldItem(event.getPlayer(), event.getHand()));
 
         if ((heldItem == Material.NAME_TAG ||
-                (heldItem == Material.SHEARS && event.getRightClicked().getType() == EntityType.MUSHROOM_COW)) &&
+                (heldItem == Material.SHEARS && event.getRightClicked().getType() == EntityType.MOOSHROOM)) &&
                 !flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(event.getPlayer(), TrustLevel.BUILD, flags)) {
             if (EquipmentSlot.HAND == event.getHand())
                 event.getPlayer().sendMessage(ChatColor.RED + "This belongs to " + flags.getOwnerName() + ".");
@@ -971,7 +971,7 @@ public class PlayerEventHandler implements Listener {
 
                 if (!allowFlight && (player.isFlying() || player.getFallDistance() > 3)) {
                     player.addPotionEffect(new PotionEffect(
-                            PotionEffectType.DAMAGE_RESISTANCE,
+                            PotionEffectType.RESISTANCE,
                             200, 4,false, false, false
                     ));
                 }

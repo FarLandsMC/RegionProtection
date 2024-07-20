@@ -132,7 +132,7 @@ public class EntityEventHandler implements Listener {
         if (flags == null)
             return;
 
-        if ((event.getEntity().getType() == EntityType.SNOWMAN && !flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS)))
+        if ((event.getEntity().getType() == EntityType.SNOW_GOLEM && !flags.isAllowed(RegionFlag.ANIMAL_GRIEF_BLOCKS)))
             event.setCancelled(true);
         else if (event.getEntity().getType() == EntityType.PLAYER) {
             if (!flags.isAllowed(RegionFlag.ICE_CHANGE))
@@ -151,7 +151,7 @@ public class EntityEventHandler implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityExplosion(EntityExplodeEvent event) {
-        if (EntityType.PRIMED_TNT.equals(event.getEntityType())) {
+        if (EntityType.TNT.equals(event.getEntityType())) {
             // If the explosion occurs in a location where tnt is not allowed, cancel the event altogether
             FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(event.getLocation());
             if (flags != null && !flags.isAllowed(RegionFlag.TNT)) {
