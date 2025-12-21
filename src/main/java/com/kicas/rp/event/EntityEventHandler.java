@@ -7,6 +7,9 @@ import com.kicas.rp.data.flagdata.EnumFilter;
 import com.kicas.rp.data.flagdata.TrustLevel;
 import com.kicas.rp.data.flagdata.TrustMeta;
 import com.kicas.rp.util.Entities;
+
+import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
@@ -193,6 +196,32 @@ public class EntityEventHandler implements Listener {
                 FlagContainer flags0 = RegionProtection.getDataManager().getFlagsAt(block.getLocation());
                 return flags0 != null && !flags0.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS);
             });
+        }
+    }
+
+    /**
+     * Prevent entities pushing entities (i.e., wind charges)
+     *
+     * @param event the event
+     */
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onEntityPushedByEntity(EntityPushedByEntityAttackEvent event) {
+        Entity entity = event.getEntity();
+        FlagContainer flags = RegionProtection.getDataManager().getFlagsAt(entity.getLocation());
+        if (flags == null) return;
+
+        Entity pushedBy = event.getPushedBy();
+
+        // cancel wind charges
+        if (pushedBy instanceof WindCharge charge) {
+            ProjectileSource shooter = charge.getShooter();
+            if (shooter instanceof Player player) {
+                event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player, TrustLevel.BUILD, flags));
+            } else {
+                event.setCancelled(!flags.isAllowed(RegionFlag.HOSTILE_GRIEF_BLOCKS));
+            }
+        } else if (pushedBy instanceof Player player) {
+            event.setCancelled(!flags.<TrustMeta>getFlagMeta(RegionFlag.TRUST).hasTrust(player, TrustLevel.BUILD, flags));
         }
     }
 

@@ -43,3 +43,8 @@ arch/
 
 # Maven Javadocs
 docs/
+
+.classpath
+.factorypath
+.project
+.settings/
