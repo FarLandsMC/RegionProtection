@@ -173,13 +173,22 @@ public class CommandClaimHeight extends TabCompleterBase implements CommandExecu
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
             throws IllegalArgumentException {
-        switch (args.length) {
-            case 1:
-                return filterStartingWith(args[0], SUB_COMMANDS);
-            case 2:
-                return filterStartingWith(args[1], SIDES);
-            default:
-                return Collections.emptyList();
-        }
+        return switch (args.length) {
+            case 1 -> filterStartingWith(args[0], SUB_COMMANDS);
+            case 2 -> filterStartingWith(args[1], SIDES);
+            case 3 -> {
+                if (!(sender instanceof Player player)) yield Collections.emptyList();
+
+                if (args[0].equalsIgnoreCase("set")) {
+                    if (args[1].equalsIgnoreCase("bottom")) {
+                        yield List.of(Integer.toString(player.getWorld().getMinHeight()));
+                    } else if (args[1].equalsIgnoreCase("top")) {
+                        yield List.of(Integer.toString(player.getWorld().getMaxHeight()));
+                    }
+                }
+                yield Collections.emptyList();
+            }
+            default -> Collections.emptyList();
+        };
     }
 }
