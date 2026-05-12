@@ -20,7 +20,7 @@ jobs:
         run: mvn -B package --file pom.xml -DskipTests
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.2.3
+        uses: JamesIves/github-pages-deploy-action@v4.8.0
         with:
           token: ${{ secrets.DEPLOY_GITHUB_TOKEN }}
           branch: gh-pages
